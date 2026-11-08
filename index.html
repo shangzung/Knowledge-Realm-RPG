@@ -11,162 +11,166 @@
 :root {
   --p: #4a9fd4; --p2: #2a7ab0; --acc: #ff9a3c; --acc2: #ffd76a;
   --g: #5bb85a; --r: #e05555; --pur: #7a4fc4;
-  --wood: #c9a86c; --cream: #fffdf8; --text: #3d2b1f; --muted: #8a6a4a;
+  --ink: #4a3320; --ink2: #7a5a3a; --muted: #8a6a4a; --text: #4a3320;
+  --gold: #d9a85a; --gold-d: #b9822f; --cream: #fffdf4; --cream2: #fdeec8;
+  --navy: #27366f; --navy2: #46589f;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
-  --card: linear-gradient(180deg, #fffef9, #f7ecd4);
-  --shadow: 0 6px 0 rgba(139, 105, 60, .18);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
 html, body {
   height: 100%; height: 100dvh;
   font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
-  color: var(--text); background: #1a3040;
+  color: var(--ink); background: radial-gradient(ellipse at 50% 0%, #5fa8d8, #1f4a6e);
   overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none;
 }
 button, .btn, select { font-family: inherit; cursor: pointer; touch-action: manipulation; border: none; outline: none; }
 
+/* ===== APP 外框：天空 → 草地 ===== */
 #app {
   display: flex; flex-direction: column; height: 100%; height: 100dvh;
-  max-width: 430px; margin: 0 auto;
-  background:
-    radial-gradient(ellipse at 50% 0%, #b8e4ff 0%, transparent 50%),
-    linear-gradient(180deg, #7ec8f0 0%, #a8dcf5 25%, #c5e8a0 55%, #e8f0c0 80%, #f5f0e6 100%);
-  position: relative; overflow: hidden;
+  max-width: 430px; margin: 0 auto; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #7ccaf7 0, #bfe8fb 90px, #9ee06c 230px, #6cc04c 100%);
+  box-shadow: 0 0 40px rgba(0,0,0,.3);
 }
 
-/* ===== TOP BAR ===== */
+/* ===== 頂部狀態列（與戰鬥頂欄同風格） ===== */
 #top-status {
-  flex: 0 0 auto; padding: 8px 12px; padding-top: calc(8px + var(--safe-t));
-  background: linear-gradient(180deg, rgba(255,252,245,.97), rgba(255,245,220,.94));
-  border-bottom: 3px solid #e8c87a;
-  display: flex; align-items: center; gap: 10px; z-index: 20;
-  box-shadow: 0 3px 12px rgba(80,50,20,.08);
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px; z-index: 20;
+  padding: calc(8px + var(--safe-t)) 10px 4px;
 }
 .avatar-wrap {
-  width: 52px; height: 52px; border-radius: 50%;
-  background: linear-gradient(#fff6d6, #ffe4a0); border: 3px solid #e0a84a;
-  display: flex; align-items: center; justify-content: center; overflow: hidden;
-  flex-shrink: 0; position: relative; box-shadow: 0 3px 0 #c4892a;
+  position: relative; flex: none; width: 50px; height: 50px; border-radius: 50%;
+  background: linear-gradient(#fff6d6, #ffe4a0); border: 3px solid #fff;
+  box-shadow: 0 3px 0 #c4892a, 0 4px 10px rgba(0,0,0,.2);
 }
+#avatar-ico {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+#avatar-ico > div { width: 100% !important; height: 100% !important; }
+#avatar-ico img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: 50% 8%; transform: scale(1.75); transform-origin: 50% 18%; }
 .avatar-wrap .lv {
-  position: absolute; bottom: -2px; right: -4px;
-  background: linear-gradient(#ff7a7a, #e05555); color: #fff; font-size: 10px; font-weight: 900;
-  padding: 1px 6px; border-radius: 99px; border: 2px solid #fff;
+  position: absolute; bottom: -5px; right: -7px;
+  background: linear-gradient(#b894f2, #7a4fc4); color: #fff; font-size: 10px; font-weight: 900;
+  padding: 1px 7px; border-radius: 99px; border: 2px solid #fff; box-shadow: 0 2px 0 #4c2f8f;
 }
-.player-info { flex: 1; min-width: 0; }
-.player-name { font-weight: 900; font-size: 14px; color: #5a3a1a; }
-.exp-bar {
-  height: 10px; background: #e8dcc8; border-radius: 99px; overflow: hidden; margin-top: 4px;
-  border: 1px solid #c9a86c;
+.player-info {
+  flex: 1; min-width: 0; padding: 4px 10px 5px;
+  background: linear-gradient(180deg, #fffef2, #f4f0c8); border: 3px solid #fff; border-radius: 16px;
+  box-shadow: 0 3px 0 rgba(90,120,50,.45), 0 4px 10px rgba(0,0,0,.12);
 }
-.exp-bar > i { display: block; height: 100%; background: linear-gradient(90deg, #7ec8f0, #4a9fd4); border-radius: 99px; transition: width .3s; }
-.currency-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.player-name { font-weight: 900; font-size: 13px; color: #3f6a2c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exp-bar { height: 11px; margin-top: 3px; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.exp-bar > i { display: block; height: 100%; border-radius: 99px; transition: width .3s; background: linear-gradient(180deg, #8ad0ff, #3b8be0); }
+.currency-row { display: flex; flex-direction: column; gap: 4px; flex: none; }
 .currency {
-  background: #fff; border: 2px solid #e0c9a0; border-radius: 99px;
-  padding: 3px 9px; font-size: 12px; font-weight: 800; white-space: nowrap;
-  box-shadow: 0 2px 0 #d4b88a;
+  display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 9px;
+  font-size: 12px; font-weight: 900; color: #5a3a18; white-space: nowrap;
+  background: linear-gradient(180deg, #fffdf4, #ffeec2); border: 2px solid #e6b85a; border-radius: 99px;
+  box-shadow: 0 2px 0 #c99532, 0 3px 8px rgba(0,0,0,.12);
 }
+.currency.gem { border-color: #8ec0ef; background: linear-gradient(180deg, #f6fbff, #d7ecff); box-shadow: 0 2px 0 #6aa4d6, 0 3px 8px rgba(0,0,0,.12); }
 
-/* ===== MAIN ===== */
+/* ===== 內容區 ===== */
 #main { flex: 1; min-height: 0; overflow: hidden; position: relative; display: flex; flex-direction: column; }
 .panel {
   display: none; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; padding: 12px; padding-bottom: 18px;
+  -webkit-overflow-scrolling: touch; padding: 8px 12px 20px;
 }
-.panel.active { display: block; }
+.panel.active { display: block; animation: panelIn .25s ease; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-.hero-banner {
-  background: linear-gradient(160deg, #a8dcf5 0%, #c5e8a0 45%, #ffe8a0 100%);
-  border: 4px solid #e8c87a; border-radius: 26px; padding: 20px 16px;
-  margin-bottom: 14px; text-align: center; position: relative; overflow: hidden;
-  box-shadow: 0 6px 0 #d4a84a, 0 10px 24px rgba(80,50,20,.1);
-}
-.hero-banner h1 {
-  font-size: clamp(22px, 6.5vw, 30px); font-weight: 900;
-  background: linear-gradient(#ffd76a, #ff9a3c); -webkit-background-clip: text;
-  background-clip: text; color: transparent; letter-spacing: 1px;
-  text-shadow: none;
-}
-.hero-banner .tagline { font-size: 13px; color: #4a6a40; margin-top: 6px; font-weight: 700; }
-.big-start {
-  display: block; width: 100%; margin-top: 16px; padding: 16px;
-  background: linear-gradient(180deg, #ffd06a, #f0a020); border: 3px solid #c87810;
-  border-radius: 20px; color: #3d2b1f; font-weight: 900; font-size: 18px;
-  box-shadow: 0 6px 0 #b86808; letter-spacing: 1px;
-}
-.big-start:active { transform: translateY(3px); box-shadow: 0 3px 0 #b86808; }
-
+/* 面板：奶油金框 + 紫色緞帶標題（同「知識挑戰！」） */
 .card {
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-  border: 3px solid #e8c87a;
-  border-radius: 22px; padding: 16px; margin-bottom: 14px;
-  box-shadow: 0 5px 0 #d4a84a, 0 8px 20px rgba(80,50,20,.08);
+  position: relative; margin: 24px 0 14px; padding: 24px 12px 12px;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8);
+  border: 4px solid #d9a85a; border-radius: 22px;
+  box-shadow: 0 5px 0 #b9822f, 0 10px 20px rgba(40,60,20,.22), inset 0 2px 0 #fff;
 }
-.card h3 {
-  margin: 0 0 12px; font-size: 16px; color: #5a3a18;
-  display: flex; align-items: center; gap: 6px; font-weight: 900;
-  text-shadow: 0 1px 0 #fff;
+.card:first-child { margin-top: 20px; }
+.card > h3 {
+  position: absolute; left: 50%; top: -16px; transform: translateX(-50%); margin: 0; display: block;
+  white-space: nowrap; padding: 4px 22px; font-size: 14px; font-weight: 900; letter-spacing: 1px; color: #fff;
+  background: linear-gradient(#a37cf4, #6a3fc4); border: 2px solid #f0c860; border-radius: 10px;
+  box-shadow: 0 3px 0 #4a2a94; text-shadow: 0 1px 0 #3d1f80;
 }
+.card > .muted:first-of-type { display: block; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 @media (max-width: 380px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+.muted { color: var(--muted); font-size: 12px; font-weight: 700; }
+.center { text-align: center; }
+label.muted { display: block; margin: 2px 0 6px; }
 
-.class-card {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 12px 4px; border: 3px solid #e8c87a; border-radius: 18px;
-  background: linear-gradient(180deg, #fffef9, #fff3d6); min-height: 96px; color: var(--text);
-  box-shadow: 0 4px 0 #d4a84a;
-}
-.class-card.sel { border-color: #5b9bd5; background: linear-gradient(180deg, #eaf4ff, #d6eaff); box-shadow: 0 0 0 2px #8ec0ef, 0 4px 0 #7ab0d8; }
-.class-card b { font-size: 13px; color: #5a3a18; }
-.class-card small { font-size: 10px; color: #7a5a3a; text-align: center; line-height: 1.2; }
-
-.stage-btn {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
-  width: 100%; text-align: left; padding: 14px; border-radius: 18px;
-  border: 3px solid #e8c87a; background: linear-gradient(180deg, #fffef9, #fff3d6);
-  color: var(--text); font-weight: 700; min-height: 72px; margin-bottom: 10px;
-  box-shadow: 0 4px 0 #d4a84a;
-}
-.stage-btn.current { border-color: #5b9bd5; background: linear-gradient(180deg, #e8f4ff, #d0e8ff); }
-.stage-btn.locked { opacity: 0.48; }
-.stage-btn .meta { font-size: 11px; font-weight: 600; color: #7a5a3a; }
-.stage-btn .stars { color: #e8a820; letter-spacing: 2px; font-size: 14px; }
-
+/* 寶石按鈕 */
 .btn {
-  border: 3px solid #8c6d46; border-radius: 14px; padding: 11px 14px;
-  font-weight: 800; font-size: 14px; color: #fff;
-  background: linear-gradient(#7ec8f0, #4a9fd4); box-shadow: 0 4px 0 #3a7eaa;
-  min-height: 48px;
+  min-height: 46px; padding: 10px 16px; border-radius: 16px;
+  font-weight: 900; font-size: 15px; color: #fff; letter-spacing: .5px;
+  border: 3px solid rgba(255,255,255,.9);
+  background: linear-gradient(#6cc0ff, #2f86d8); box-shadow: 0 4px 0 #1f5f9f, 0 6px 10px rgba(0,0,0,.15);
+  text-shadow: 0 1px 0 rgba(0,0,0,.3); transition: transform .1s, box-shadow .1s;
 }
-.btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #3a7eaa; }
-.btn.green { background: linear-gradient(#8fd98a, #5bb85a); box-shadow: 0 4px 0 #3d8a3c; border-color: #3d8a3c; }
-.btn.amber { background: linear-gradient(#ffc857, #e89a20); box-shadow: 0 4px 0 #b87310; border-color: #b87310; color: #3d2b1f; }
-.btn.red { background: linear-gradient(#ff8a8a, #e05555); box-shadow: 0 4px 0 #a83333; border-color: #a83333; }
-.btn.purple { background: linear-gradient(#b08aea, #7a4fc4); box-shadow: 0 4px 0 #5a3a9a; border-color: #5a3a9a; }
-.btn.gray { background: linear-gradient(#eee, #ccc); color: #666; box-shadow: 0 4px 0 #999; border-color: #999; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1f5f9f; }
+.btn.green { background: linear-gradient(#9ae27c, #3aa83a); box-shadow: 0 4px 0 #26772a, 0 6px 10px rgba(0,0,0,.15); }
+.btn.amber { background: linear-gradient(#ffe08a, #f5a21e); box-shadow: 0 4px 0 #b87310, 0 6px 10px rgba(0,0,0,.15); color: #5a3a18; text-shadow: 0 1px 0 rgba(255,255,255,.55); }
+.btn.red { background: linear-gradient(#ff9a8a, #e0453a); box-shadow: 0 4px 0 #a02a22, 0 6px 10px rgba(0,0,0,.15); }
+.btn.purple { background: linear-gradient(#b894f2, #7a4fc4); box-shadow: 0 4px 0 #4c2f8f, 0 6px 10px rgba(0,0,0,.15); }
+.btn.gray { background: linear-gradient(#f2f2f2, #cfcfcf); color: #666; box-shadow: 0 4px 0 #999; text-shadow: none; }
+.btn.green:active { box-shadow: 0 1px 0 #26772a; } .btn.amber:active { box-shadow: 0 1px 0 #b87310; }
+.btn.red:active { box-shadow: 0 1px 0 #a02a22; } .btn.purple:active { box-shadow: 0 1px 0 #4c2f8f; }
 .btn.block { width: 100%; }
-.btn:disabled { opacity: 0.5; pointer-events: none; }
+.btn:disabled { opacity: .5; pointer-events: none; filter: grayscale(.4); }
+.btn.sm { min-height: 38px; padding: 6px 14px; font-size: 13px; border-radius: 14px; }
 
-/* ===== NAV ===== */
+/* 大按鈕「開始冒險」 */
+.big-start {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; margin: 0 0 6px; padding: 14px; font-size: 20px; font-weight: 900; letter-spacing: 3px;
+  color: #fff; border-radius: 22px; border: 4px solid #fff;
+  background: linear-gradient(#ffd45a, #f0820a);
+  box-shadow: 0 6px 0 #b45a05, 0 10px 18px rgba(0,0,0,.25);
+  text-shadow: 0 2px 0 #b45a05, 0 0 8px rgba(120,50,0,.4);
+  animation: startPulse 1.8s ease-in-out infinite;
+}
+.big-start:active { transform: translateY(4px); box-shadow: 0 2px 0 #b45a05; animation: none; }
+@keyframes startPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.12); } }
+
+/* 職業卡 */
+.class-card {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; min-height: 118px;
+  border: 3px solid #e6cf9a; border-radius: 16px; background: linear-gradient(180deg, #fff, #fdf3d6);
+  color: var(--ink); box-shadow: 0 3px 0 #d9b86a; transition: transform .12s;
+}
+.class-card:active { transform: translateY(2px); }
+.class-card.sel { border-color: #a37cf4; background: linear-gradient(180deg, #f9f3ff, #e6d8fb); box-shadow: 0 0 0 2px #ffd23a, 0 4px 0 #7a4fc4; }
+.class-card b { font-size: 13px; color: #4a3320; }
+.class-card small { font-size: 10px; color: var(--ink2); text-align: center; line-height: 1.2; font-weight: 700; }
+
+/* ===== 底部導覽（深藍金邊，同技能列） ===== */
 #nav {
-  flex: 0 0 auto; display: flex; gap: 2px; padding: 8px 4px calc(10px + var(--safe-b));
-  background: linear-gradient(180deg, #fff8e8, #f5e6c0); border-top: 4px solid #e0c070;
-  overflow-x: auto; -webkit-overflow-scrolling: touch; z-index: 20;
-  box-shadow: 0 -6px 20px rgba(80,50,20,.08);
+  flex: 0 0 auto; display: flex; gap: 2px; z-index: 20; overflow-x: auto; scrollbar-width: none;
+  padding: 8px 6px calc(8px + var(--safe-b));
+  background: linear-gradient(180deg, #46589f, #27366f); border-top: 3px solid #f0c860;
+  box-shadow: 0 -4px 14px rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.15);
 }
+#nav::-webkit-scrollbar { display: none; }
 .nav-btn {
-  flex: 1 0 auto; min-width: 54px; padding: 6px 3px; border-radius: 16px;
-  border: 2px solid transparent; background: transparent;
-  font-size: 10px; font-weight: 800; color: #5a3a18; text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  flex: 1 0 auto; min-width: 52px; padding: 2px; background: transparent;
+  font-size: 10px; font-weight: 800; color: #cfd8ff; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-.nav-btn .ico { font-size: 22px; line-height: 1; }
-.nav-btn.active {
-  background: linear-gradient(180deg, #7ec8f0, #4a9fd4); color: #fff;
-  border-color: #3a7eaa; box-shadow: 0 4px 0 #3a7eaa;
+.nav-btn .ico {
+  width: 36px; height: 36px; border-radius: 50%; font-size: 20px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.10); border: 2px solid transparent; transition: transform .18s, box-shadow .18s;
+}
+.nav-btn.active { color: #fff; }
+.nav-btn.active .ico {
+  background: radial-gradient(circle at 35% 30%, #ffe48a, #f08a10 75%); border-color: #fff;
+  transform: translateY(-4px) scale(1.1);
+  box-shadow: 0 0 12px 2px rgba(255,210,60,.8), 0 3px 0 rgba(0,0,0,.3);
 }
 
 /* ===== BATTLE — 直立式兒童 RPG（對齊宣傳圖） ===== */
@@ -496,248 +500,232 @@ button, .btn, select { font-family: inherit; cursor: pointer; touch-action: mani
   .skill-btn { width: 44px; height: 44px; font-size: 20px; }
 }
 
-/* Modals */
+/* ===== 彈窗（同面板風格） ===== */
 #levelup, #pause-menu, #result-modal, #daily-modal {
-  display: none; position: fixed; inset: 0; z-index: 300;
-  background: rgba(10,20,40,0.72); align-items: center; justify-content: center; padding: 16px;
+  display: none; position: fixed; inset: 0; z-index: 300; padding: 28px 16px 16px;
+  background: rgba(20,28,60,.72); backdrop-filter: blur(3px);
+  align-items: center; justify-content: center;
 }
 #levelup.active, #pause-menu.active, #result-modal.active, #daily-modal.active { display: flex; }
 .modal-box {
-  width: 100%; max-width: 400px; background: var(--card);
-  border: 4px solid #c9a86c; border-radius: 24px; padding: 20px; max-height: 90dvh; overflow-y: auto;
-  box-shadow: 0 12px 40px rgba(0,0,0,.25);
+  position: relative; width: 100%; max-width: 380px; padding: 30px 14px 14px;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8); border: 4px solid #d9a85a; border-radius: 24px;
+  box-shadow: 0 6px 0 #b9822f, 0 16px 40px rgba(0,0,0,.4), inset 0 2px 0 #fff;
+  animation: popIn .3s cubic-bezier(.2,1.3,.4,1); max-height: 88dvh;
 }
+@keyframes popIn { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: none; } }
+.modal-box > h2 {
+  position: absolute !important; left: 50%; top: -20px; transform: translateX(-50%); margin: 0 !important;
+  white-space: nowrap; padding: 6px 28px; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: #fff;
+  background: linear-gradient(#a37cf4, #6a3fc4); border: 2px solid #f0c860; border-radius: 12px;
+  box-shadow: 0 3px 0 #4a2a94; text-shadow: 0 1px 0 #3d1f80;
+}
+.modal-box p { margin: 4px 0; font-weight: 800; color: var(--ink); font-size: 14px; }
+.modal-box p.muted { color: var(--muted); font-size: 12px; }
+.rw-stars { font-size: 38px; letter-spacing: 6px; color: #ffc83a; text-shadow: 0 3px 0 #b5760a, 0 0 14px rgba(255,200,60,.6); line-height: 1.2; margin: 4px 0 6px; }
+.rw-stars s { text-decoration: none; color: #d9ccb0; text-shadow: 0 2px 0 #b9a883; }
+.rw-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0 4px; }
+.rw-row .bt-chip, .modal-box .bt-chip { height: 30px; font-size: 13px; }
 .skill-pick { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .skill-pick button {
-  text-align: left; padding: 14px; border-radius: 16px; border: 3px solid #e0c9a0;
-  background: #fff; font-weight: 700; color: var(--text); box-shadow: 0 3px 0 #d4b88a;
+  text-align: left; padding: 12px 14px; border-radius: 16px; border: 3px solid #a37cf4;
+  background: linear-gradient(180deg, #fff, #f3eaff); font-weight: 800; color: var(--ink); box-shadow: 0 4px 0 #7a4fc4;
 }
+.skill-pick button:active { transform: translateY(3px); box-shadow: 0 1px 0 #7a4fc4; }
+.skill-pick button b { font-size: 15px; color: #4a2a94; }
 
-#toasts {
-  position: fixed; top: 14%; left: 50%; transform: translateX(-50%);
-  z-index: 400; pointer-events: none; display: flex; flex-direction: column; gap: 6px;
-  width: 90%; max-width: 360px;
-}
+/* Toast：奶油金膠囊 */
+#toasts { position: fixed; top: 14%; left: 50%; transform: translateX(-50%); z-index: 400; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 92%; max-width: 380px; }
 .toast {
-  background: rgba(40, 30, 20, 0.92); color: #fff; padding: 12px 16px; border-radius: 14px;
-  font-weight: 700; font-size: 14px; text-align: center; animation: fadeUp 2.2s ease forwards;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8); color: #4a3320; padding: 9px 18px; border-radius: 99px;
+  border: 3px solid #d9a85a; box-shadow: 0 4px 0 #b9822f, 0 8px 16px rgba(0,0,0,.25);
+  font-weight: 900; font-size: 14px; text-align: center; animation: fadeUp 2.2s ease forwards;
 }
-@keyframes fadeUp {
-  0% { opacity: 0; transform: translateY(8px); }
-  15% { opacity: 1; transform: translateY(0); }
-  80% { opacity: 1; }
-  100% { opacity: 0; }
-}
+@keyframes fadeUp { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
 
+/* ===== 清單 / 進度 / 標籤 ===== */
 .list-item {
-  display: flex; gap: 12px; align-items: center; padding: 14px;
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-  border: 3px solid #e8c87a; border-radius: 18px; margin-bottom: 10px;
-  box-shadow: 0 4px 0 #d4a84a, 0 6px 12px rgba(80,50,20,.06);
+  display: flex; gap: 10px; align-items: center; padding: 10px; margin-bottom: 10px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 18px;
+  box-shadow: 0 3px 0 #d9b86a;
 }
+.list-item:last-child { margin-bottom: 2px; }
+.list-item > :first-child:not(.info) {
+  flex: none; width: 58px; height: 58px; border-radius: 16px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 30px;
+  background: linear-gradient(180deg, #eaf6ff, #cfe8ff); border: 3px solid #8ec4ee;
+}
+.list-item > :first-child > div { margin: 0 auto; }
 .list-item .info { flex: 1; min-width: 0; }
-.list-item .info b { display: block; font-size: 15px; color: #5a3a18; }
-.list-item .info small { color: #7a5a3a; font-size: 12px; }
-.progress { height: 10px; background: #e8dcc8; border-radius: 99px; overflow: hidden; margin-top: 4px; border: 1px solid #c9a86c; }
-.progress > i { display: block; height: 100%; background: linear-gradient(90deg, #7ec8f0, #4a9fd4); }
+.list-item .info b { display: block; font-size: 15px; font-weight: 900; color: #4a3320; }
+.list-item .info small { display: block; color: var(--ink2); font-size: 11.5px; font-weight: 700; line-height: 1.4; }
+.progress { height: 12px; margin-top: 5px; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.progress > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(180deg, #8ad0ff, #3b8be0); transition: width .3s; }
 .tag {
-  font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 99px;
+  flex: none; font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 99px; white-space: nowrap;
   background: linear-gradient(180deg, #fff6d6, #f0c860); color: #5a3a18; border: 2px solid #e0b86a;
 }
+.tag.ok { background: linear-gradient(180deg, #c9f2b8, #7fd36a); border-color: #4aa840; color: #1f5a1a; }
 select {
-  width: 100%; padding: 12px; border-radius: 16px; border: 3px solid #e8c87a;
-  font-size: 14px; font-weight: 700; background: linear-gradient(180deg, #fffef9, #fff6e0); color: var(--text); min-height: 48px;
-  box-shadow: 0 3px 0 #d4a84a;
+  width: 100%; padding: 10px 12px; min-height: 46px; border-radius: 14px; border: 3px solid #a37cf4;
+  font-size: 14px; font-weight: 800; color: var(--ink); background: linear-gradient(180deg, #fff, #f3eaff);
+  box-shadow: 0 3px 0 #7a4fc4;
 }
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.muted { color: var(--muted); font-size: 12px; }
-.center { text-align: center; }
+
+/* ===== 首頁：場景英雄區 ===== */
+.home-scene {
+  position: relative; height: clamp(236px, 33vh, 310px); margin: 8px 0 14px; overflow: hidden;
+  border: 4px solid #d9a85a; border-radius: 24px;
+  box-shadow: 0 5px 0 #b9822f, 0 10px 20px rgba(40,60,20,.25);
+  --hs: clamp(120px, 20vh, 170px);
+}
+.hs-top { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 6; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.hs-chap {
+  min-width: 0; height: 30px; padding: 0 12px; display: flex; align-items: center; gap: 4px;
+  font-size: 12.5px; font-weight: 900; color: #3f6a2c;
+  background: linear-gradient(180deg, #fffef2, #f4f0c8); border: 3px solid #fff; border-radius: 99px;
+  box-shadow: 0 3px 0 rgba(90,120,50,.45), 0 4px 10px rgba(0,0,0,.12);
+}
+.hs-chap b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hs-stage { position: absolute; left: 0; right: 0; bottom: 64px; z-index: 3; display: flex; justify-content: center; align-items: flex-end; padding-left: calc(var(--hs) * .35); }
+.hs-hero { position: relative; flex: none; width: var(--hs); height: var(--hs); filter: drop-shadow(0 4px 5px rgba(20,60,20,.3)); animation: floatY 3.4s ease-in-out infinite; }
+.hs-hero > div, .hs-hero img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.hs-hero::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 70%; height: 12px; border-radius: 50%; z-index: -1; background: radial-gradient(ellipse, rgba(20,70,20,.38), transparent 72%); }
+.hs-pet { position: absolute; left: calc(50% - var(--hs) * .98); bottom: 0; width: calc(var(--hs) * .44); height: calc(var(--hs) * .44); z-index: 4; animation: petBob 2.2s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(20,60,20,.3)); }
+.hs-pet:empty { display: none; }
+.hs-pet > div, .hs-pet img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.hs-pet .art-fallback { text-align: center; transform: scaleX(-1); font-size: calc(var(--hs) * .32) !important; line-height: calc(var(--hs) * .44); }
+.hs-card {
+  position: absolute; left: 10px; right: 10px; bottom: 8px; z-index: 6; padding: 6px 10px 6px;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8); border: 3px solid #d9a85a; border-radius: 16px;
+  box-shadow: 0 3px 0 #b9822f, 0 6px 12px rgba(40,60,20,.2);
+}
+.hs-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.hs-name { font-size: 15px; font-weight: 900; color: #6a35a8; }
+.hs-lv { font-size: 11px; font-weight: 900; color: #fff; padding: 1px 8px; border-radius: 99px; background: linear-gradient(#b894f2, #7a4fc4); margin-left: 6px; }
+.hs-exp { margin-top: 3px; }
+.hs-exp .bar span { font-size: 9px; }
+.hs-exp .bar { height: 14px; margin-top: 0; }
+.bar { position: relative; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.bar i { display: block; height: 100%; border-radius: 99px; transition: width .3s; background: linear-gradient(180deg, #8ad0ff, #3b8be0); }
+.bar span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 900; color: #fff; text-shadow: 0 1px 1px rgba(20,30,70,.65); }
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* 每日任務 */
+.daily-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.daily-card {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 16px; box-shadow: 0 3px 0 #d9b86a;
+}
+.daily-card .d-ico { flex: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; background: radial-gradient(circle at 35% 30%, #ffe48a, #f08a10 75%); border: 2px solid #fff; box-shadow: 0 2px 0 #b87310; }
+.daily-card .d-body { flex: 1; min-width: 0; }
+.daily-card .d-name { font-weight: 900; font-size: 14px; color: #4a3320; }
+.daily-card .d-prog { height: 10px; margin: 4px 0 2px; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.daily-card .d-prog > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(180deg, #b6f09a, #3aa83a); }
+.daily-card .d-meta { font-size: 11px; color: var(--ink2); font-weight: 800; }
+.daily-card.done { border-color: #5bb85a; background: linear-gradient(180deg, #f3fff0, #d9f5cf); box-shadow: 0 3px 0 #4aa840; }
+.daily-card.done .d-ico { background: radial-gradient(circle at 35% 30%, #c4f4a8, #3aa83a 75%); box-shadow: 0 2px 0 #26772a; }
+
+/* 快速出發：寶石圖示磚 */
+.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.quick-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 18px;
+  box-shadow: 0 4px 0 #d9b86a; font-weight: 900; font-size: 12px; color: #4a3320; transition: transform .1s;
+}
+.quick-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9b86a; }
+.quick-btn .q-ico {
+  width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; line-height: 1;
+  border: 3px solid #f0c860; box-shadow: 0 3px 0 rgba(0,0,0,.3), inset 0 2px 0 rgba(255,255,255,.4);
+}
+.quick-btn:nth-child(1) .q-ico { background: radial-gradient(circle at 35% 30%, #ffb0a0, #e0453a 70%); }
+.quick-btn:nth-child(2) .q-ico { background: radial-gradient(circle at 35% 30%, #aee4ff, #2f86d8 70%); }
+.quick-btn:nth-child(3) .q-ico { background: radial-gradient(circle at 35% 30%, #ffe48a, #f08a10 70%); }
+.quick-btn:nth-child(4) .q-ico { background: radial-gradient(circle at 35% 30%, #c4f4a8, #3aa83a 70%); }
+.quick-btn:nth-child(5) .q-ico { background: radial-gradient(circle at 35% 30%, #ffd0e8, #e0509a 70%); }
+.quick-btn.purple { background: linear-gradient(180deg, #f9f3ff, #e6d8fb); border-color: #a37cf4; box-shadow: 0 4px 0 #7a4fc4; color: #4a2a94; }
+.quick-btn.purple .q-ico { background: radial-gradient(circle at 35% 30%, #d4b4ff, #6a3fc4 70%); }
+
+/* 數據磚 */
+.stat-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-tile { padding: 8px 4px; text-align: center; background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 14px; box-shadow: 0 3px 0 #d9b86a; }
+.stat-tile b { display: block; font-size: 19px; font-weight: 900; color: #6a35a8; line-height: 1.2; }
+.stat-tile span { font-size: 10.5px; font-weight: 800; color: var(--ink2); }
+.subj-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; font-weight: 900; color: #4a3320; }
+.subj-row > span { flex: none; width: 42px; }
+.subj-row .progress { flex: 1; margin: 0; height: 14px; }
+.subj-row > b { flex: none; width: 84px; white-space: nowrap; text-align: right; font-size: 11.5px; color: #6a35a8; }
+.tip-box { margin-top: 12px; padding: 10px 12px; border-radius: 14px; font-size: 12px; font-weight: 800; line-height: 1.5; color: #4a3320; background: linear-gradient(180deg, #f3eaff, #e6d8fb); border: 3px solid #a37cf4; }
+
+/* ===== 冒險：章節卡 ===== */
+.chapter-card {
+  position: relative; margin-bottom: 14px; overflow: hidden; border-radius: 20px;
+  border: 3px solid #d9a85a; background: linear-gradient(180deg, #fffdf4, #fdeec8);
+  box-shadow: 0 4px 0 #b9822f, 0 8px 14px rgba(40,60,20,.18); transition: transform .1s;
+}
+.chapter-card:active { transform: translateY(2px); }
+.chapter-card.locked { filter: grayscale(.8) brightness(.9); }
+.chapter-card .ch-top {
+  position: relative; height: 96px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 125%, #86d65e 55%, transparent 56%),
+    radial-gradient(ellipse 80% 70% at 85% 130%, #5fba47 55%, transparent 56%),
+    linear-gradient(180deg, var(--zc, #7ccaf7) 0%, #dff3ff 100%);
+}
+.chapter-card .ch-top::before { content: ''; position: absolute; right: 70px; top: 10px; width: 46px; height: 16px; border-radius: 99px; background: #fff; opacity: .85; box-shadow: -18px 8px 0 -3px #fff, 14px 6px 0 -4px #fff; }
+.ch-chap { display: inline-block; padding: 1px 10px; font-size: 11px; font-weight: 900; color: #fff; border-radius: 99px; background: linear-gradient(#b894f2, #7a4fc4); box-shadow: 0 2px 0 #4c2f8f; }
+.ch-name { margin-top: 4px; font-size: 21px; font-weight: 900; color: #fff; -webkit-text-stroke: 3px #3f6a2c; paint-order: stroke fill; text-shadow: 0 3px 0 #3f6a2c; letter-spacing: 1px; }
+.chapter-card .ch-boss { position: relative; z-index: 2; width: 92px; height: 92px; margin-bottom: -6px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; filter: drop-shadow(0 4px 4px rgba(20,60,20,.35)); }
+.chapter-card .ch-boss > div, .chapter-card .ch-boss img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.chapter-card .ch-body { padding: 8px 12px 12px; padding-right: 92px; min-height: 64px; }
+.chapter-card .ch-title { font-size: 14px; font-weight: 900; color: #4a3320; }
+.chapter-card .ch-meta { font-size: 11.5px; color: var(--ink2); font-weight: 700; margin-top: 2px; }
+.chapter-card .ch-stars { margin-top: 3px; font-size: 18px; letter-spacing: 3px; color: #ffc83a; text-shadow: 0 2px 0 #b5760a; }
+.chapter-card .ch-go {
+  position: absolute; right: 12px; bottom: 12px; padding: 8px 20px; font-size: 14px; font-weight: 900; color: #fff;
+  background: linear-gradient(#9ae27c, #3aa83a); border: 3px solid #fff; border-radius: 14px;
+  box-shadow: 0 4px 0 #26772a, 0 6px 10px rgba(0,0,0,.18); text-shadow: 0 1px 0 rgba(0,0,0,.3);
+}
+.chapter-card .ch-go:active { transform: translateY(3px); box-shadow: 0 1px 0 #26772a; }
+
+/* ===== 地圖：連接路線 ===== */
+.map-world { display: flex; flex-direction: column; gap: 14px; padding: 2px 0; }
+.map-node {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 18px; box-shadow: 0 3px 0 #d9b86a;
+}
+.map-node:not(:last-child)::after { content: ''; position: absolute; left: 34px; top: 100%; height: 14px; border-left: 5px dotted #b9822f; opacity: .7; }
+.map-node.current { border-color: #a37cf4; box-shadow: 0 0 0 2px #ffd23a, 0 4px 0 #7a4fc4; background: linear-gradient(180deg, #fff, #f3eaff); }
+.map-node.locked { filter: grayscale(1) brightness(.85); opacity: .8; }
+.map-node .mn-num { flex: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #fff; background: radial-gradient(circle at 35% 30%, #d4b4ff, #6a3fc4 70%); border: 3px solid #f0c860; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
+.map-node .mn-icon { flex: none; width: 56px; height: 56px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 28px; background: linear-gradient(180deg, #eaf6ff, #cfe8ff); border: 3px solid #8ec4ee; }
+.map-node .mn-icon > div, .map-node .mn-icon img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.map-node .mn-info { flex: 1; min-width: 0; }
+.map-node .mn-name { font-weight: 900; font-size: 14px; color: #4a3320; }
+.map-node .mn-meta { font-size: 11px; color: var(--ink2); font-weight: 700; }
+.map-node .mn-stars { color: #ffc83a; font-size: 14px; letter-spacing: 2px; text-shadow: 0 1px 0 #b5760a; }
+
+/* ===== 圖鑑 ===== */
 .codex-item {
-  text-align: center; padding: 12px 6px; border-radius: 18px;
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-  border: 3px solid #e8c87a;
-  box-shadow: 0 4px 0 #d4a84a;
+  position: relative; text-align: center; padding: 8px 4px 6px; border-radius: 16px; min-width: 0;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; box-shadow: 0 3px 0 #d9b86a;
 }
-.codex-item.locked { filter: grayscale(1) brightness(0.4); opacity: 0.75; }
-.codex-item .c-icon { font-size: 40px; line-height: 1.2; filter: drop-shadow(0 3px 4px rgba(0,0,0,.12)); }
-.codex-item .c-name { font-size: 12px; font-weight: 800; margin-top: 4px; color: #5a3a18; }
-.task-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px;
-  background: #fff; border: 2px solid #e0c9a0; border-radius: 14px; margin-bottom: 8px;
-}
+.codex-item.locked { background: linear-gradient(180deg, #e7e2da, #cfc8bc); border-color: #bdb5a5; box-shadow: 0 3px 0 #9d9484; }
+.codex-item.locked .c-icon { filter: brightness(0) opacity(.45); }
+.codex-item .c-icon { height: 58px; display: flex; align-items: center; justify-content: center; font-size: 36px; line-height: 1; filter: drop-shadow(0 3px 3px rgba(0,0,0,.15)); }
+.codex-item .c-icon > div { margin: 0 auto; }
+.codex-item .c-name { font-size: 11.5px; font-weight: 900; margin-top: 2px; color: #4a3320; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.codex-item .muted { font-size: 9.5px; }
+.codex-sum { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; font-weight: 800; }
+.codex-sum .progress { flex: 1; margin: 0; height: 16px; }
+
+.task-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 3px solid #e6cf9a; border-radius: 14px; margin-bottom: 8px; }
 .task-item .prog { flex: 1; }
 
-/* ===== PREMIUM HOME ===== */
-.home-hero {
-  display: flex; gap: 14px; align-items: center;
-  background: linear-gradient(145deg, #a8dcf5 0%, #c5e8a0 50%, #ffe8a0 100%);
-  border: 4px solid #e8c87a; border-radius: 26px; padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 6px 0 #d4a84a, 0 12px 28px rgba(80,50,20,.12);
-  position: relative; overflow: hidden;
-}
-.home-hero-art {
-  width: 100px; height: 100px; border-radius: 22px;
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-  border: 3px solid #e8c87a;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 56px; flex-shrink: 0;
-  box-shadow: 0 4px 0 #d4a84a;
-  overflow: hidden;
-}
-.home-hero-art img, .home-hero-art > div { width: 90px !important; height: 90px !important; }
-.home-hero-info { flex: 1; min-width: 0; }
-.home-hero-name { font-size: 18px; font-weight: 900; color: #3d2b1f; }
-.home-hero-lv { font-size: 13px; font-weight: 800; color: #5a4a20; margin: 2px 0 6px; }
-.home-exp-wrap { margin-bottom: 6px; }
-.home-exp-bar {
-  height: 12px; background: rgba(255,255,255,.55); border-radius: 99px; overflow: hidden;
-  border: 2px solid #c9a86c;
-}
-.home-exp-bar > i { display: block; height: 100%; background: linear-gradient(90deg, #7ec8f0, #4a9fd4); border-radius: 99px; transition: width .3s; }
-.home-exp-txt { font-size: 10px; font-weight: 700; color: #5a4a20; margin-top: 2px; }
-.home-currency { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 13px; font-weight: 800; }
-.home-currency b { color: #3d2b1f; }
-.vip-badge {
-  background: linear-gradient(180deg, #ffe07a, #ff9a30); color: #5a2e00;
-  font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 99px;
-  border: 2px solid #f0b020;
-}
-
-.home-section { margin-bottom: 12px; }
-.section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.section-head h3 { margin: 0; }
-
-.daily-grid { display: flex; flex-direction: column; gap: 8px; }
-.daily-card {
-  display: flex; align-items: center; gap: 12px; padding: 12px;
-  background: linear-gradient(180deg, #fffef9, #fff8e8);
-  border: 2px solid #e8c87a; border-radius: 16px;
-  box-shadow: 0 3px 0 #e0c070;
-}
-.daily-card .d-ico { font-size: 28px; width: 40px; text-align: center; }
-.daily-card .d-body { flex: 1; min-width: 0; }
-.daily-card .d-name { font-weight: 800; font-size: 14px; color: #5a3a18; }
-.daily-card .d-prog { height: 8px; background: #e8dcc8; border-radius: 99px; overflow: hidden; margin: 4px 0 2px; border: 1px solid #c9a86c; }
-.daily-card .d-prog > i { display: block; height: 100%; background: linear-gradient(90deg, #8fd98a, #5bb85a); border-radius: 99px; }
-.daily-card .d-meta { font-size: 11px; color: #7a5a3a; font-weight: 700; }
-.daily-card.done { border-color: #5bb85a; background: linear-gradient(180deg, #f0fff0, #e0f8e0); }
-
-.quick-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-}
-.quick-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 14px 6px; border-radius: 18px;
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-  border: 3px solid #e8c87a;
-  box-shadow: 0 4px 0 #d4a84a;
-  font-weight: 800; font-size: 12px; color: #5a3a18;
-  transition: transform .12s;
-}
-.quick-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #d4a84a; }
-.quick-btn .q-ico { font-size: 28px; line-height: 1; }
-.quick-btn.purple {
-  background: linear-gradient(180deg, #f0e0ff, #d8b8f0);
-  border-color: #a070d0; box-shadow: 0 4px 0 #7a4fc4; color: #4a2a70;
-}
-
-.home-stats-box {
-  background: linear-gradient(180deg, #fffef9, #fff8e8);
-  border: 2px solid #e8c87a; border-radius: 14px; padding: 12px;
-  font-size: 13px; font-weight: 700; color: #5a3a18; line-height: 1.6;
-}
-
-/* Chapter cards for Adventure */
-.chapter-card {
-  position: relative; border-radius: 22px; overflow: hidden;
-  border: 3px solid #e8c87a; margin-bottom: 12px;
-  box-shadow: 0 5px 0 #d4a84a, 0 8px 20px rgba(80,50,20,.1);
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-}
-.chapter-card.locked { filter: grayscale(0.7) brightness(0.85); opacity: 0.75; }
-.chapter-card .ch-top {
-  height: 90px; display: flex; align-items: flex-end; justify-content: space-between;
-  padding: 12px 14px; position: relative;
-  background: linear-gradient(120deg, #a8dcf5, #c5e8a0 60%, #ffe8a0);
-}
-.chapter-card .ch-boss {
-  width: 72px; height: 72px; border-radius: 16px;
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-  border: 3px solid #e8c87a; display: flex; align-items: center; justify-content: center;
-  font-size: 40px; box-shadow: 0 3px 0 #d4a84a; overflow: hidden;
-}
-.chapter-card .ch-body { padding: 12px 14px; }
-.chapter-card .ch-title { font-size: 16px; font-weight: 900; color: #5a3a18; }
-.chapter-card .ch-meta { font-size: 12px; color: #7a5a3a; font-weight: 700; margin-top: 2px; }
-.chapter-card .ch-stars { color: #e8a820; font-size: 16px; letter-spacing: 2px; margin-top: 4px; }
-.chapter-card .ch-go {
-  position: absolute; right: 12px; bottom: 12px;
-  background: linear-gradient(180deg, #8fd98a, #5bb85a); color: #fff;
-  border: 2px solid #3d8a3c; border-radius: 12px; padding: 6px 14px;
-  font-weight: 900; font-size: 13px; box-shadow: 0 3px 0 #3d8a3c;
-}
-
-/* Map nodes */
-.map-world {
-  display: flex; flex-direction: column; gap: 8px; padding: 4px 0;
-}
-.map-node {
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  background: linear-gradient(180deg, #fffef9, #fff3d6);
-  border: 3px solid #e8c87a; border-radius: 18px;
-  box-shadow: 0 4px 0 #d4a84a;
-  position: relative;
-}
-.map-node.locked { filter: grayscale(1) brightness(0.7); opacity: 0.7; }
-.map-node .mn-icon {
-  width: 56px; height: 56px; border-radius: 14px;
-  background: linear-gradient(180deg, #eaf4ff, #d6eaff);
-  border: 2px solid #8ec0ef; display: flex; align-items: center; justify-content: center;
-  font-size: 28px; flex-shrink: 0;
-}
-.map-node .mn-info { flex: 1; min-width: 0; }
-.map-node .mn-name { font-weight: 900; font-size: 15px; color: #5a3a18; }
-.map-node .mn-meta { font-size: 11px; color: #7a5a3a; font-weight: 700; }
-.map-node .mn-stars { color: #e8a820; font-size: 14px; letter-spacing: 1px; }
-
-/* Animations */
-@keyframes floatY {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-@keyframes breath {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-}
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 4px 0 #d4a84a, 0 0 0 rgba(255,180,40,0); }
-  50% { box-shadow: 0 4px 0 #d4a84a, 0 0 16px rgba(255,180,40,.45); }
-}
-.home-hero-art { animation: floatY 3.5s ease-in-out infinite; }
-.quick-btn:nth-child(odd) { animation: breath 3s ease-in-out infinite; }
-.nav-btn.active { animation: glowPulse 2s ease-in-out infinite; }
-
-/* Better nav */
-#nav {
-  flex: 0 0 auto; display: flex; gap: 2px; padding: 8px 2px calc(10px + var(--safe-b));
-  background: linear-gradient(180deg, #fff8e8, #f5e6c0); border-top: 4px solid #e0c070;
-  overflow-x: auto; -webkit-overflow-scrolling: touch; z-index: 20;
-  box-shadow: 0 -6px 20px rgba(80,50,20,.1);
-}
-.nav-btn {
-  flex: 1 0 auto; min-width: 58px; padding: 8px 2px; border-radius: 16px;
-  border: 2px solid transparent; background: transparent;
-  font-size: 10px; font-weight: 800; color: #5a3a18; text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  transition: transform .15s;
-}
-.nav-btn .ico { font-size: 26px; line-height: 1; transition: transform .2s; }
-.nav-btn.active {
-  background: linear-gradient(180deg, #7ec8f0, #4a9fd4); color: #fff;
-  border-color: #3a7eaa; box-shadow: 0 4px 0 #3a7eaa;
-}
-.nav-btn.active .ico { transform: scale(1.15); }
+/* 設定頁按鈕間距 */
+.off { font-style: normal; color: #d9ccb0 !important; text-shadow: 0 1px 0 #b9a883 !important; -webkit-text-stroke: 0 !important; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
 </style>
 </head>
 <body>
@@ -745,52 +733,48 @@ select {
   <!-- TOP STATUS -->
   <div id="top-status">
     <div class="avatar-wrap" id="avatar-wrap">
-      <span id="avatar-ico" style="font-size:28px">⚔️</span>
+      <div id="avatar-ico">⚔️</div>
       <span class="lv" id="avatar-lv">1</span>
     </div>
     <div class="player-info">
       <div class="player-name" id="player-name">知識冒險家</div>
       <div class="exp-bar"><i id="exp-fill" style="width:0%"></i></div>
-      <div class="muted" id="exp-label" style="font-size:10px;margin-top:2px">0 / 30</div>
     </div>
     <div class="currency-row">
-      <span class="currency">💰 <span id="gold-label">0</span></span>
-      <span class="currency">💎 <span id="dia-label">0</span></span>
+      <span class="currency">🪙 <span id="gold-label">0</span></span>
+      <span class="currency gem">💎 <span id="dia-label">0</span></span>
     </div>
+    <span id="exp-label" hidden></span>
   </div>
 
   <div id="main">
     <!-- HOME -->
     <div class="panel active" id="panel-home">
-      <!-- 玩家英雄區 -->
-      <div class="home-hero">
-        <div class="home-hero-art" id="home-hero-art">⚔️</div>
-        <div class="home-hero-info">
-          <div class="home-hero-name" id="home-hero-name">知識冒險家</div>
-          <div class="home-hero-lv">Lv.<span id="home-hero-lv">1</span> · 戰力 <span id="home-power">100</span></div>
-          <div class="home-exp-wrap">
-            <div class="home-exp-bar"><i id="home-exp-fill" style="width:0%"></i></div>
-            <div class="home-exp-txt" id="home-exp-txt">0 / 30</div>
-          </div>
-          <div class="home-currency">
-            <span>💰 <b id="home-gold">0</b></span>
-            <span>💎 <b id="home-dia">0</b></span>
-            <span class="vip-badge">VIP 預留</span>
-          </div>
+      <div class="home-scene">
+        <div class="bg-layer" id="home-bg"></div>
+        <div class="hs-top">
+          <div class="hs-chap">📍 <b id="home-chap">第一章 · 初心村</b></div>
+          <span class="bt-chip">⚔️ 戰力 <span id="home-power">100</span></span>
+        </div>
+        <div class="hs-stage">
+          <div class="hs-pet" id="home-pet"></div>
+          <div class="hs-hero" id="home-hero-art">⚔️</div>
+        </div>
+        <div class="hs-card">
+          <div class="hs-row"><div><span class="hs-name" id="home-hero-name">知識冒險家</span><span class="hs-lv">Lv.<span id="home-hero-lv">1</span></span></div></div>
+          <div class="hs-exp"><div class="bar"><i id="home-exp-fill" style="width:0%"></i><span id="home-exp-txt">EXP 0/30</span></div></div>
         </div>
       </div>
 
-      <!-- 每日登入 / 任務 -->
-      <div class="card home-section">
-        <div class="section-head">
-          <h3>📅 每日任務</h3>
-          <button class="btn amber" type="button" style="min-height:36px;padding:6px 12px;font-size:13px" onclick="Game.claimDaily()">領取獎勵</button>
-        </div>
+      <button class="big-start" type="button" onclick="Game.quickStart()">⚔️ 開始冒險</button>
+
+      <div class="card">
+        <h3>📅 每日任務</h3>
         <div id="daily-list" class="daily-grid"></div>
+        <button class="btn amber block" type="button" onclick="Game.claimDaily()">🎁 領取獎勵</button>
       </div>
 
-      <!-- 快速入口 -->
-      <div class="card home-section">
+      <div class="card">
         <h3>🚀 快速出發</h3>
         <div class="quick-grid">
           <button class="quick-btn" type="button" onclick="Game.tab('adventure')"><span class="q-ico">⚔️</span><span>冒險</span></button>
@@ -802,26 +786,25 @@ select {
         </div>
       </div>
 
-      <!-- 今日概況 -->
-      <div class="card home-section">
+      <div class="card">
         <h3>📊 今日概況</h3>
-        <div id="home-stats" class="home-stats-box"></div>
+        <div id="home-stats"></div>
       </div>
     </div>
 
     <!-- ADVENTURE / STAGE SELECT -->
     <div class="panel" id="panel-adventure">
       <div class="card">
-        <h3>① 角色與題庫</h3>
+        <h3>🎓 角色與題庫</h3>
         <label class="muted">題庫等級（幼稚園～小六）</label>
         <select id="grade-select" onchange="Game.setGrade(+this.value)"></select>
-        <div style="height:10px"></div>
+        <div style="height:12px"></div>
         <label class="muted">英雄職業</label>
         <div class="grid3" id="class-grid"></div>
       </div>
       <div class="card">
-        <h3>② 選擇章節挑戰</h3>
-        <p class="muted" style="margin-bottom:10px">擊敗區域 Boss 解鎖下一章。通關可建設城市、養寵。</p>
+        <h3>⚔️ 選擇章節挑戰</h3>
+        <p class="muted" style="margin-bottom:12px">擊敗區域 Boss 解鎖下一章。通關可建設城市、養寵。</p>
         <div id="stage-list"></div>
       </div>
     </div>
@@ -830,7 +813,7 @@ select {
     <div class="panel" id="panel-map">
       <div class="card">
         <h3>🗺️ 知識世界地圖</h3>
-        <p class="muted" style="margin-bottom:10px">已解鎖區域彩色顯示，擊敗 Boss 開啟下一章。</p>
+        <p class="muted" style="margin-bottom:12px">已解鎖區域彩色顯示，擊敗 Boss 開啟下一章。</p>
         <div id="map-list" class="map-world"></div>
       </div>
     </div>
@@ -839,7 +822,7 @@ select {
     <div class="panel" id="panel-city">
       <div class="card">
         <h3>🏘 城市建設</h3>
-        <p class="muted" id="city-summary"></p>
+        <p class="muted" id="city-summary" style="margin-bottom:10px"></p>
         <div id="build-list"></div>
       </div>
     </div>
@@ -848,7 +831,7 @@ select {
     <div class="panel" id="panel-pets">
       <div class="card">
         <h3>🐾 寵物夥伴</h3>
-        <p class="muted">出戰寵物會在戰鬥中助攻。擊敗怪物可讓寵物成長、進化。</p>
+        <p class="muted" style="margin-bottom:10px">出戰寵物會在戰鬥中助攻。擊敗怪物可讓寵物成長、進化。</p>
         <div id="pet-list"></div>
       </div>
     </div>
@@ -865,8 +848,8 @@ select {
     <div class="panel" id="panel-codex">
       <div class="card">
         <h3>📖 怪物圖鑑</h3>
-        <div class="muted" id="codex-summary" style="margin-bottom:12px"></div>
-        <div class="grid4" id="codex-list" style="gap:10px"></div>
+        <div class="codex-sum" id="codex-summary"></div>
+        <div class="grid4" id="codex-list" style="gap:8px"></div>
       </div>
     </div>
 
@@ -890,14 +873,13 @@ select {
     <div class="panel" id="panel-settings">
       <div class="card">
         <h3>⚙️ 設定</h3>
-        <button class="btn block" type="button" onclick="Game.toggleSound()">音效：<span id="sound-label">開</span></button>
-        <div style="height:8px"></div>
-        <button class="btn amber block" type="button" onclick="Game.exportSave()">匯出存檔（複製）</button>
-        <div style="height:8px"></div>
-        <button class="btn block" type="button" onclick="Game.importSave()">匯入存檔</button>
-        <div style="height:8px"></div>
-        <button class="btn red block" type="button" onclick="Game.resetSave()">清除存檔</button>
-        <p class="muted" style="margin-top:12px">知識之城 RPG · 課綱題庫 · 缺圖自動使用像素插圖<br>版本 2026.11 最終版（無列車系統）</p>
+        <div class="stack">
+          <button class="btn purple block" type="button" onclick="Game.toggleSound()">🔊 音效：<span id="sound-label">開</span></button>
+          <button class="btn amber block" type="button" onclick="Game.exportSave()">📤 匯出存檔（複製）</button>
+          <button class="btn block" type="button" onclick="Game.importSave()">📥 匯入存檔</button>
+          <button class="btn red block" type="button" onclick="Game.resetSave()">🗑️ 清除存檔</button>
+        </div>
+        <p class="muted center" style="margin-top:14px">知識之城 RPG · 課綱題庫<br>缺圖時自動使用內建插圖 · 版本 2026.11</p>
       </div>
     </div>
   </div>
@@ -1141,7 +1123,8 @@ const Art = {
 };
 
 /* ===== 戰鬥場景背景（內建 SVG：放了 img/bg_battle.png 會自動蓋過它） ===== */
-Art.battleScene = function () {
+Art.battleScene = function (pf) {
+  pf = pf || 'b';
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const W = 430, H = 340;
   const cloud = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity=".93"><ellipse cx="0" cy="0" rx="28" ry="10"/><ellipse cx="-15" cy="-6" rx="15" ry="10"/><ellipse cx="8" cy="-11" rx="18" ry="12"/><ellipse cx="23" cy="-2" rx="13" ry="8"/></g>`;
@@ -1179,13 +1162,13 @@ Art.battleScene = function () {
 
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
-    <linearGradient id="bgSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6cc4f6"/><stop offset=".55" stop-color="#b9e6fb"/><stop offset="1" stop-color="#e6f8e2"/></linearGradient>
-    <radialGradient id="bgSun" cx="78%" cy="14%" r="55%"><stop offset="0" stop-color="#fffbe0" stop-opacity=".95"/><stop offset=".4" stop-color="#fff3b8" stop-opacity=".4"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-    <linearGradient id="bgFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#95e360"/><stop offset="1" stop-color="#5fba47"/></linearGradient>
-    <linearGradient id="bgFall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f8ff"/><stop offset="1" stop-color="#8fd4f5"/></linearGradient>
+    <linearGradient id="${pf}Sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6cc4f6"/><stop offset=".55" stop-color="#b9e6fb"/><stop offset="1" stop-color="#e6f8e2"/></linearGradient>
+    <radialGradient id="${pf}Sun" cx="78%" cy="14%" r="55%"><stop offset="0" stop-color="#fffbe0" stop-opacity=".95"/><stop offset=".4" stop-color="#fff3b8" stop-opacity=".4"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${pf}Front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#95e360"/><stop offset="1" stop-color="#5fba47"/></linearGradient>
+    <linearGradient id="${pf}Fall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f8ff"/><stop offset="1" stop-color="#8fd4f5"/></linearGradient>
   </defs>
-  <rect width="${W}" height="${H}" fill="url(#bgSky)"/>
-  <rect width="${W}" height="${H}" fill="url(#bgSun)"/>
+  <rect width="${W}" height="${H}" fill="url(#${pf}Sky)"/>
+  <rect width="${W}" height="${H}" fill="url(#${pf}Sun)"/>
   ${sparkles}
   ${cloud(70, 78, 1.1)}${cloud(330, 58, .9)}${cloud(205, 40, .7)}${cloud(400, 118, .75)}
   <path d="M-20 222 L50 142 L96 188 L160 118 L232 206 L290 150 L350 196 L410 140 L450 176 L450 240 L-20 240Z" fill="#b8c9f3"/>
@@ -1196,7 +1179,7 @@ Art.battleScene = function () {
     <path d="M268 112 L352 112 L362 214 L258 214 Z" fill="#9c7752"/>
     <path d="M268 112 L352 112 L356 122 L264 122Z" fill="#7bd25a"/>
     <path d="M276 128 L286 214 M338 128 L346 214" stroke="#7d5a3a" stroke-width="3" opacity=".45"/>
-    <rect x="298" y="118" width="28" height="92" rx="4" fill="url(#bgFall)"/>
+    <rect x="298" y="118" width="28" height="92" rx="4" fill="url(#${pf}Fall)"/>
     ${streaks}
     <ellipse cx="312" cy="210" rx="34" ry="8" fill="#fff" opacity=".7"/><ellipse cx="312" cy="206" rx="22" ry="5" fill="#fff" opacity=".85"/>
     ${tree(284, 118, .6)}${tree(340, 118, .5, '#4aa84e', '#74cc60')}
@@ -1204,7 +1187,7 @@ Art.battleScene = function () {
   <path d="M0 222 Q70 198 150 214 T300 208 T430 202 L430 340 L0 340Z" fill="#a4e078"/>
   ${treeline}
   <path d="M0 238 Q90 216 190 232 T430 226 L430 340 L0 340Z" fill="#86d65e"/>
-  <path d="M0 256 Q110 238 230 252 T430 244 L430 340 L0 340Z" fill="url(#bgFront)"/>
+  <path d="M0 256 Q110 238 230 252 T430 244 L430 340 L0 340Z" fill="url(#${pf}Front)"/>
   <ellipse cx="90" cy="292" rx="110" ry="16" fill="#b0f07a" opacity=".35"/><ellipse cx="330" cy="304" rx="130" ry="18" fill="#b0f07a" opacity=".3"/>
   ${tufts}${flowers}
   ${tree(22, 258, 1.1, '#3a9444', '#62bf55')}${tree(412, 252, 1.0, '#3a9444', '#62bf55')}
@@ -2169,7 +2152,7 @@ const SKILLS = {
   // 通用（所有職業可學）
   common: [
     { id: 'exp', name: '📚 勤學', desc: '戰鬥經驗 +25%', exp: 0.25 },
-    { id: 'gold', name: '💰 財運', desc: '戰鬥金幣 +25%', gold: 0.25 },
+    { id: 'gold', name: '🪙 財運', desc: '戰鬥金幣 +25%', gold: 0.25 },
     { id: 'heal', name: '💚 回復', desc: '答對時回復 8% 最大生命', heal: 0.08 },
     { id: 'hint', name: '💡 小提示', desc: '每關可使用 1 次提示', hint: 1 },
     { id: 'combo', name: '🔗 連擊之心', desc: '連擊傷害加成提高', combo: 1 },
@@ -2360,31 +2343,44 @@ const Game = {
 
   renderTop() {
     const s = this.state, cls = DB.classes[s.heroClass] || { icon: '⚔️', name: '英雄' };
-    document.getElementById('avatar-ico').textContent = cls.icon;
+    document.getElementById('avatar-ico').innerHTML = Art.html('hero:' + s.heroClass, 46, cls.icon);
     document.getElementById('avatar-lv').textContent = s.level;
     document.getElementById('player-name').textContent = cls.name + ' · Lv.' + s.level;
-    document.getElementById('gold-label').textContent = s.gold | 0;
-    document.getElementById('dia-label').textContent = s.dia | 0;
+    document.getElementById('gold-label').textContent = (s.gold | 0).toLocaleString();
+    document.getElementById('dia-label').textContent = (s.dia | 0).toLocaleString();
     const pct = s.expTo ? Math.min(100, s.exp / s.expTo * 100) : 0;
     document.getElementById('exp-fill').style.width = pct + '%';
-    document.getElementById('exp-label').textContent = `${s.exp | 0} / ${s.expTo | 0}`;
   },
+
+  topZone() {
+    const u = this.state.unlockedZones || [0];
+    return Math.max(0, Math.min(DB.zones.length - 1, Math.max.apply(null, u)));
+  },
+
+  quickStart() { this.startStage(this.topZone()); },
 
   renderHome() {
     const s = this.state, d = s.daily;
     const cls = DB.classes[s.heroClass] || { name: '英雄', icon: '⚔️' };
 
-    // 英雄區
-    const artEl = document.getElementById('home-hero-art');
-    if (artEl) artEl.innerHTML = Art.html('hero:' + s.heroClass, 90, cls.icon);
+    // 場景
+    const hb = document.getElementById('home-bg');
+    if (hb && !hb.firstChild) hb.innerHTML = Art.battleScene('h');
+    const z = DB.zones[this.topZone()];
+    document.getElementById('home-chap').textContent = z.chap + ' · ' + z.name;
+    document.getElementById('home-hero-art').innerHTML = Art.html('hero:' + s.heroClass, 170, cls.icon);
+    const petEl = document.getElementById('home-pet');
+    const ap = Object.entries(s.pets || {}).find(([, p]) => p.active);
+    if (ap) {
+      const pdef = DB.pets.find(x => x.id === ap[0]), st = ap[1].stage || 0;
+      petEl.innerHTML = Art.html('pet:' + ap[0] + ':' + st, 70, (pdef && pdef.icons[st]) || '🐾');
+    } else petEl.innerHTML = '';
     document.getElementById('home-hero-name').textContent = cls.name;
     document.getElementById('home-hero-lv').textContent = s.level;
     document.getElementById('home-power').textContent = Math.round((s.atk || 10) * 12 + (s.maxHp || 100) * 0.8 + s.level * 15);
     const pct = s.expTo ? Math.min(100, s.exp / s.expTo * 100) : 0;
     document.getElementById('home-exp-fill').style.width = pct + '%';
-    document.getElementById('home-exp-txt').textContent = `${s.exp | 0} / ${s.expTo | 0}`;
-    document.getElementById('home-gold').textContent = s.gold | 0;
-    document.getElementById('home-dia').textContent = s.dia | 0;
+    document.getElementById('home-exp-txt').textContent = `EXP ${s.exp | 0}/${s.expTo | 0}`;
 
     // 每日任務
     const list = document.getElementById('daily-list');
@@ -2396,16 +2392,17 @@ const Game = {
         <div class="d-body">
           <div class="d-name">${t.name}</div>
           <div class="d-prog"><i style="width:${pct2}%"></i></div>
-          <div class="d-meta">${cur}/${t.target}　獎勵 💰${t.reward.gold || 0} ✨${t.reward.exp || 0}</div>
+          <div class="d-meta">${Math.min(cur, t.target)}/${t.target}　獎勵 🪙${t.reward.gold || 0} ✨${t.reward.exp || 0}</div>
         </div>
       </div>`;
     }).join('');
 
     // 概況
     const rate = s.stats.answered ? Math.round(s.stats.correct / s.stats.answered * 100) : 0;
-    document.getElementById('home-stats').innerHTML =
-      `累計答題 <b>${s.stats.answered | 0}</b>　正確率 <b>${rate}%</b>　最高連擊 <b>${s.stats.comboMax | 0}</b><br>
-       今日答對 <b>${d.correctToday | 0}</b>　通關 <b>${d.stagesToday | 0}</b>　錯題本 <b>${s.wrongLog.length}</b> 題`;
+    const tile = (v, l) => `<div class="stat-tile"><b>${v}</b><span>${l}</span></div>`;
+    document.getElementById('home-stats').innerHTML = `<div class="stat-tiles">
+      ${tile(s.stats.answered | 0, '累計答題')}${tile(rate + '%', '正確率')}${tile(s.stats.comboMax | 0, '最高連擊')}
+      ${tile(d.correctToday | 0, '今日答對')}${tile(d.stagesToday | 0, '今日通關')}${tile(s.wrongLog.length, '錯題本')}</div>`;
   },
 
   claimDaily() {
@@ -2419,7 +2416,7 @@ const Game = {
     });
     if (gold + exp + dia === 0) { this.toast('尚未完成任何每日任務'); return; }
     this.state.gold += gold; this.state.dia += dia; this.gainExp(exp);
-    d.claimed = true; this.save(); this.toast(`領取 💰${gold} ✨${exp} 💎${dia}`); this.renderAll();
+    d.claimed = true; this.save(); this.toast(`領取 🪙${gold} ✨${exp} 💎${dia}`); this.renderAll();
   },
 
   renderAdventure() {
@@ -2430,7 +2427,7 @@ const Game = {
     cg.innerHTML = '';
     Object.entries(DB.classes).forEach(([k, c]) => {
       const el = document.createElement('button'); el.type = 'button'; el.className = 'class-card' + (s.heroClass === k ? ' sel' : '');
-      el.innerHTML = `${Art.html('hero:' + k, 48, c.icon)}<b>${c.name}</b><small>${c.desc}</small>`;
+      el.innerHTML = `${Art.html('hero:' + k, 60, c.icon)}<b>${c.name}</b><small>${c.desc}</small>`;
       el.onclick = () => {
         this.state.heroClass = k;
         // 換職業時，只保留新職業可用的技能（避免戰士身上掛火球術）
@@ -2446,19 +2443,16 @@ const Game = {
       const stars = s.stageStars[i] || 0;
       const el = document.createElement('div');
       el.className = 'chapter-card' + (unlocked ? '' : ' locked');
-      const bossArt = unlocked ? Art.html('boss:' + i, 64, z.boss.icon) : `<span style="font-size:36px">🔒</span>`;
+      const bossArt = unlocked ? Art.html('boss:' + i, 92, z.boss.icon) : `<span style="font-size:40px">🔒</span>`;
       el.innerHTML = `
-        <div class="ch-top" style="background:linear-gradient(120deg, ${z.color}88, #c5e8a0 70%, #ffe8a0)">
-          <div>
-            <div style="font-size:12px;font-weight:800;color:#3d2b1f;opacity:.85">${z.chap}</div>
-            <div style="font-size:18px;font-weight:900;color:#3d2b1f">${z.name}</div>
-          </div>
+        <div class="ch-top" style="--zc:${z.color}">
+          <div><span class="ch-chap">${z.chap}</span><div class="ch-name">${z.name}</div></div>
           <div class="ch-boss">${bossArt}</div>
         </div>
         <div class="ch-body">
           <div class="ch-title">${unlocked ? '可挑戰' : '未解鎖'}</div>
           <div class="ch-meta">${unlocked ? `Boss：${z.boss.name} · 推薦 Lv.${z.minLv}+` : '需先擊敗前一章 Boss'}</div>
-          <div class="ch-stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+          <div class="ch-stars">${'★'.repeat(stars)}<i class="off">${'★'.repeat(3 - stars)}</i></div>
           ${unlocked ? `<button class="ch-go" type="button">出發</button>` : ''}
         </div>`;
       if (unlocked) {
@@ -2478,15 +2472,16 @@ const Game = {
       const unlocked = s.unlockedZones.includes(i);
       const stars = s.stageStars[i] || 0;
       const el = document.createElement('div');
-      el.className = 'map-node' + (unlocked ? '' : ' locked');
+      el.className = 'map-node' + (unlocked ? '' : ' locked') + (unlocked && i === this.topZone() ? ' current' : '');
       el.innerHTML = `
-        <div class="mn-icon" style="background:linear-gradient(180deg, ${z.color}55, ${z.color}22)">${unlocked ? z.boss.icon : '🔒'}</div>
+        <div class="mn-num">${i + 1}</div>
+        <div class="mn-icon">${unlocked ? Art.html('boss:' + i, 50, z.boss.icon) : '🔒'}</div>
         <div class="mn-info">
-          <div class="mn-name" style="color:${unlocked ? z.color : '#888'}">${z.chap} · ${z.name}</div>
+          <div class="mn-name">${z.chap} · ${z.name}</div>
           <div class="mn-meta">${unlocked ? `Boss：${z.boss.name}` : '尚未解鎖'}</div>
-          <div class="mn-stars">${unlocked ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '-'}</div>
+          <div class="mn-stars">${unlocked ? '★'.repeat(stars) + '<i class="off">' + '★'.repeat(3 - stars) + '</i>' : '—'}</div>
         </div>
-        ${unlocked ? `<button class="btn green" type="button" style="min-height:40px;padding:8px 12px;font-size:13px">挑戰</button>` : ''}`;
+        ${unlocked ? `<button class="btn green sm" type="button">挑戰</button>` : ''}`;
       if (unlocked) {
         const btn = el.querySelector('button');
         if (btn) btn.onclick = (e) => { e.stopPropagation(); this.startStage(i); };
@@ -2953,11 +2948,12 @@ const Game = {
 
   showResult(win, B, stars, x) {
     document.getElementById('result-title').textContent = win ? '🎊 挑戰成功！' : '💨 再試一次吧';
+    const f = x.f, chip = (i, v) => `<span class="bt-chip">${i} +${Math.round(v * f)}</span>`;
     document.getElementById('result-body').innerHTML =
-      (win ? `<p style="color:#e8a820;font-size:26px;margin:4px">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</p>` : '<p>別灰心，可降低題庫等級或先打錯題魔王複習！</p>') +
+      (win ? `<div class="rw-stars">${'★'.repeat(stars)}<s>${'★'.repeat(3 - stars)}</s></div>` : '<p class="muted" style="margin:6px 0">別灰心，可降低題庫等級或先打錯題魔王複習！</p>') +
       `<p>答對 ${B.correct}/${B.total}</p>
-       <p>💰 +${Math.round(x.r.gold * x.f)}　✨ +${Math.round(x.r.exp * x.f)}　🪵 +${Math.round(x.r.wood * x.f)}　🪨 +${Math.round(x.r.stone * x.f)}　⚙️ +${Math.round(x.r.steel * x.f)}</p>` +
-      (win && x.city ? `<p class="muted">城市收租 💰${x.city}</p>` : '');
+       <div class="rw-row">${chip('🪙', x.r.gold)}${chip('✨', x.r.exp)}${chip('🪵', x.r.wood)}${chip('🪨', x.r.stone)}${chip('⚙️', x.r.steel)}</div>` +
+      (win && x.city ? `<p class="muted">城市收租 🪙${x.city}</p>` : '');
     document.getElementById('result-modal').classList.add('active');
   },
 
@@ -3032,15 +3028,15 @@ const Game = {
 
   renderCity() {
     const s = this.state, rank = DB.cityRanks.slice().reverse().find(r => s.pop >= r.minPop) || DB.cityRanks[0];
-    document.getElementById('city-summary').textContent = `${rank.name} · 人口 ${s.pop} · 每次通關收租 💰${this.cityIncome()}`;
+    document.getElementById('city-summary').textContent = `${rank.name} · 人口 ${s.pop} · 每次通關收租 🪙${this.cityIncome()}`;
     const list = document.getElementById('build-list'); list.innerHTML = '';
     DB.buildings.forEach(b => {
       const lv = s.buildings[b.id] || 0, k = lv + 1;
       const c = { gold: b.cost.gold * k, wood: b.cost.wood * k, stone: b.cost.stone * k, steel: b.cost.steel * k };
       const el = document.createElement('div'); el.className = 'list-item';
-      el.innerHTML = `<div style="font-size:28px">${b.icon}</div><div class="info"><b>${b.name} Lv.${lv}</b><small>${b.desc}</small>
-        <small>💰${c.gold} 🪵${c.wood} 🪨${c.stone} ⚙️${c.steel}　+${b.pop}人口 +${b.income}收租</small></div>
-        <button class="btn green" type="button" style="min-height:40px;padding:8px 10px">${lv ? '升級' : '建造'}</button>`;
+      el.innerHTML = `<div>${b.icon}</div><div class="info"><b>${b.name} Lv.${lv}</b><small>${b.desc}</small>
+        <small>🪙${c.gold} 🪵${c.wood} 🪨${c.stone} ⚙️${c.steel}　+${b.pop}人口 +${b.income}收租</small></div>
+        <button class="btn green sm" type="button">${lv ? '升級' : '建造'}</button>`;
       el.querySelector('button').onclick = () => {
         const t = this.state;
         if (t.gold < c.gold || t.wood < c.wood || t.stone < c.stone || t.steel < c.steel) { this.toast('資源不足'); return; }
@@ -3057,14 +3053,14 @@ const Game = {
     DB.pets.forEach(p => {
       const st = s.pets[p.id], el = document.createElement('div'); el.className = 'list-item';
       if (!st) {
-        el.innerHTML = `<div style="opacity:.35">${Art.html('pet:' + p.id + ':0', 48, '🐾')}</div>
+        el.innerHTML = `<div style="opacity:.35">${Art.html('pet:' + p.id + ':0', 52, p.icons[0])}</div>
           <div class="info"><b>${p.stages[0]}</b><small>尚未獲得 · ${p.desc}</small></div>`;
       } else {
         const need = [10, 30][st.stage], pct = st.stage >= 2 ? 100 : Math.min(100, (st.exp || 0) / need * 100);
-        el.innerHTML = `<div>${Art.html('pet:' + p.id + ':' + st.stage, 48, p.icons[st.stage])}</div>
+        el.innerHTML = `<div>${Art.html('pet:' + p.id + ':' + st.stage, 52, p.icons[st.stage])}</div>
           <div class="info"><b>${p.stages[st.stage]}</b><small>${p.desc}（${['幼年', '成長', '完全體'][st.stage]}）</small>
           <div class="progress"><i style="width:${pct}%"></i></div></div>
-          <button class="btn ${st.active ? 'green' : 'amber'}" type="button">${st.active ? '出戰中' : '出戰'}</button>`;
+          <button class="btn sm ${st.active ? 'green' : 'amber'}" type="button">${st.active ? '出戰中' : '出戰'}</button>`;
         el.querySelector('button').onclick = () => {
           Object.values(this.state.pets).forEach(x => x.active = false);
           this.state.pets[p.id].active = true;
@@ -3081,10 +3077,10 @@ const Game = {
     DB.equip.forEach(q => {
       const lv = s.equip[q.id] || 0, cg = 50 * (lv + 1), cs = 2 * (lv + 1);
       const el = document.createElement('div'); el.className = 'list-item';
-      el.innerHTML = `<div style="font-size:30px">${q.icon}</div><div class="info">
+      el.innerHTML = `<div>${q.icon}</div><div class="info">
         <b>${DB.equipTier[lv]}${q.name} Lv.${lv}</b><small>${q.desc}</small>
-        ${lv < 10 ? `<small>強化：💰${cg} ⚙️${cs}</small>` : '<small>已滿級</small>'}</div>
-        <button class="btn amber" type="button" ${lv >= 10 ? 'disabled' : ''} style="min-height:40px;padding:8px 10px">強化</button>`;
+        ${lv < 10 ? `<small>強化：🪙${cg} ⚙️${cs}</small>` : '<small>已滿級</small>'}</div>
+        <button class="btn amber sm" type="button" ${lv >= 10 ? 'disabled' : ''}>強化</button>`;
       el.querySelector('button').onclick = () => {
         const t = this.state;
         if (t.gold < cg || t.steel < cs) { this.toast('資源不足'); return; }
@@ -3101,8 +3097,7 @@ const Game = {
     const s = this.state, got = Object.keys(s.codex || {}).length;
     const pct = Math.round(got / 52 * 100);
     document.getElementById('codex-summary').innerHTML =
-      `已收集 <b>${got} / 52</b>　完成度 <b>${pct}%</b>
-       <div class="progress" style="margin-top:6px;height:12px"><i style="width:${pct}%"></i></div>`;
+      `<span>已收集 <b>${got}/52</b></span><div class="progress"><i style="width:${pct}%"></i></div><b>${pct}%</b>`;
     const list = document.getElementById('codex-list'); list.innerHTML = '';
     DB.monsters.forEach(m => {
       const owned = !!s.codex[m.id];
@@ -3110,7 +3105,7 @@ const Game = {
       const el = document.createElement('div');
       el.className = 'codex-item' + (owned ? '' : ' locked');
       el.innerHTML = `
-        <div class="c-icon">${owned ? (Art.html('mon:' + m.id, 48, m.icon) || m.icon) : '❓'}</div>
+        <div class="c-icon">${Art.html('mon:' + m.id, 56, m.icon)}</div>
         <div class="c-name">${owned ? m.name : '???'}</div>
         <div class="muted" style="font-size:9px">${owned ? `擊敗 ${cnt} 次` : '未發現'}</div>`;
       list.appendChild(el);
@@ -3122,8 +3117,8 @@ const Game = {
     document.getElementById('achieve-list').innerHTML = DB.achievements.map(a => {
       const done = !!s.achievements[a.id];
       return `<div class="list-item"><div>${done ? '🏅' : '🔒'}</div>
-        <div class="info"><b>${a.name}</b><small>${a.desc}　獎勵 💰${a.reward}</small></div>
-        <span class="tag">${done ? '已達成' : '未完成'}</span></div>`;
+        <div class="info"><b>${a.name}</b><small>${a.desc}　獎勵 🪙${a.reward}</small></div>
+        <span class="tag${done ? ' ok' : ''}">${done ? '已達成' : '未完成'}</span></div>`;
     }).join('');
   },
 
@@ -3132,24 +3127,27 @@ const Game = {
     DB.achievements.forEach(a => {
       if (!s.achievements[a.id] && a.check(s)) {
         s.achievements[a.id] = true; s.gold += a.reward;
-        this.toast('🏅 成就：' + a.name + ' +' + a.reward + '💰');
+        this.toast('🏅 成就：' + a.name + ' +' + a.reward + '🪙');
       }
     });
   },
 
   renderParent() {
     const s = this.state, t = s.stats, rate = t.answered ? Math.round(t.correct / t.answered * 100) : 0;
-    const rows = Object.entries(s.subjStats).map(([k, v]) =>
-      `<p>${k}：${v.correct}/${v.total}（${v.total ? Math.round(v.correct / v.total * 100) : 0}%）</p>`
-    ).join('') || '<p class="muted">尚無資料</p>';
+    const tile = (v, l) => `<div class="stat-tile"><b>${v}</b><span>${l}</span></div>`;
+    const rows = Object.entries(s.subjStats).map(([k, v]) => {
+      const p = v.total ? Math.round(v.correct / v.total * 100) : 0;
+      return `<div class="subj-row"><span>${k}</span><div class="progress"><i style="width:${p}%"></i></div><b>${v.correct}/${v.total} · ${p}%</b></div>`;
+    }).join('') || '<p class="muted center" style="margin-top:8px">尚無資料，先去冒險吧！</p>';
     document.getElementById('parent-body').innerHTML =
-      `<p><b>目前題庫</b> ${LV[s.grade][0]} · ${LV[s.grade][1]}</p>
-       <p><b>累計答題</b> ${t.answered | 0}　<b>正確率</b> ${rate}%</p>
-       <p><b>最高連擊</b> ${t.comboMax | 0}　<b>等級</b> ${s.level}</p>
-       <p><b>遊玩時間</b> ${Math.round(t.playMinutes || 0)} 分鐘　<b>錯題</b> ${s.wrongLog.length}</p>
-       <hr style="border:none;border-top:1px solid #e0c9a0;margin:10px 0">${rows}
-       <p class="muted">建議：正確率穩定超過 85% 就升一級題庫，每天打一次錯題魔王。</p>
-       <button class="btn amber block" type="button" onclick="Game.startWeakBoss()">開始錯題複習戰</button>`;
+      `<p class="muted" style="margin-bottom:8px">目前題庫：<b style="color:#6a35a8">${LV[s.grade][0]} · ${LV[s.grade][1]}</b></p>
+       <div class="stat-tiles">
+         ${tile(t.answered | 0, '累計答題')}${tile(rate + '%', '正確率')}${tile(t.comboMax | 0, '最高連擊')}
+         ${tile(s.level, '等級')}${tile(Math.round(t.playMinutes || 0) + '分', '遊玩時間')}${tile(s.wrongLog.length, '錯題')}
+       </div>
+       <p style="margin:14px 0 2px;font-weight:900;color:#4a3320">📚 科目表現</p>${rows}
+       <div class="tip-box">💡 建議：正確率穩定超過 85% 就升一級題庫，每天打一次錯題魔王。</div>
+       <button class="btn purple block" type="button" style="margin-top:12px" onclick="Game.startWeakBoss()">👾 開始錯題複習戰</button>`;
   },
 
   toggleSound() {
