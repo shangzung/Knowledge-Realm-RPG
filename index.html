@@ -776,6 +776,20 @@ html.zy-on .zy[data-t="˙"]::before {
 html.zy-on .hs-chap b { font-size: .94em; letter-spacing: 0; }
 html.zy-on .sc-name { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; }
 html.zy-on .skill-slot small { max-width: 84px; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; font-size: 9px; }
+
+/* ===== 戰鬥動作與技能特效（純程式繪製，不需圖片） ===== */
+#fx-layer { position: absolute; inset: 0; pointer-events: none; z-index: 9; overflow: hidden; }
+.fxe { position: absolute; transform: translate(-50%, -50%); line-height: 1; pointer-events: none; will-change: transform, opacity; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.fxring { position: absolute; border-radius: 50%; border: 5px solid #fff; transform: translate(-50%, -50%); pointer-events: none; }
+.fxslash { position: absolute; height: 9px; width: 120px; border-radius: 9px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, #fff 30%, #fff 70%, transparent); box-shadow: 0 0 12px #bfe3ff; }
+.fxarrow { position: absolute; width: 54px; height: 5px; border-radius: 3px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, #8a5a2b 30%, #8a5a2b); }
+.fxarrow::after { content: ''; position: absolute; right: -9px; top: -5px; border-left: 13px solid #dfe5ea; border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
+.fxarrow.big { width: 90px; height: 7px; }
+.fxdot { position: absolute; width: 13px; height: 13px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(#fff, #ffd23a 55%, #ff8a1a); box-shadow: 0 0 8px #ffb02a; }
+.fxflash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
 </style>
 </head>
 <body>
@@ -2106,6 +2120,149 @@ const SWATCH = { '紅色': '#e8413c', '橘色': '#f58a1f', '黃色': '#ffd21f', 
   '白色': '#ffffff', '黑色': '#2b2b2b', '咖啡色': '#8a5a34', '粉紅色': '#ff9cc2', '灰色': '#9aa0a6' };
 const COLOR_RE = /(紅|橘|黃|綠|藍|紫|粉紅|咖啡|灰|金|銀|黑|白)色|^(red|orange|yellow|green|blue|purple|pink|brown|black|white|gray|grey)$/i;
 
+/* ===== 戰鬥特效引擎：攻擊衝刺、各職業技能、受擊、擊倒 ===== */
+const FX = {
+  layer() {
+    const sc = document.getElementById('battle-scene'); if (!sc) return null;
+    let l = document.getElementById('fx-layer');
+    if (!l || l.parentNode !== sc) { if (l) l.remove(); l = document.createElement('div'); l.id = 'fx-layer'; sc.appendChild(l); }
+    return l;
+  },
+  pos(id) {
+    const l = this.layer(), el = document.getElementById(id); if (!l || !el) return null;
+    const a = l.getBoundingClientRect(), b = el.getBoundingClientRect();
+    return { x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2, w: b.width, h: b.height };
+  },
+  mk(cls, x, y, txt, size) {
+    const l = this.layer(); if (!l) return null;
+    const d = document.createElement('div'); d.className = cls;
+    if (txt) d.textContent = txt;
+    d.style.left = x + 'px'; d.style.top = y + 'px';
+    if (size) d.style.fontSize = size + 'px';
+    l.appendChild(d); return d;
+  },
+  done(d, ms) { setTimeout(() => d && d.remove(), ms + 40); },
+  at(ms, fn) { setTimeout(() => { try { fn(); } catch (e) {} }, ms); },
+  proj(txt, a, b, o) {
+    o = o || {};
+    const d = this.mk('fxe' + (o.cls ? ' ' + o.cls : ''), a.x, a.y, txt, o.size || 40); if (!d) return;
+    const dx = b.x - a.x, dy = b.y - a.y, dur = o.dur || 320;
+    const ang = o.aim ? Math.atan2(dy, dx) * 180 / Math.PI : 0;
+    const T = (x, y, r, s) => `translate(-50%,-50%) translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`;
+    const f = [{ transform: T(0, 0, ang, o.s0 || .7), opacity: 0 }, { transform: T(dx * .12, dy * .12, ang, o.s0 || .7), opacity: 1, offset: .12 }];
+    if (o.arc) f.push({ transform: T(dx / 2, dy / 2 - o.arc, ang + (o.spin || 0) / 2, 1), opacity: 1, offset: .5 });
+    f.push({ transform: T(dx, dy, ang + (o.spin || 0), o.s1 || 1), opacity: 1 });
+    d.animate(f, { duration: dur, easing: o.ease || 'cubic-bezier(.35,0,.8,.55)', fill: 'forwards' });
+    this.done(d, dur);
+  },
+  burst(txt, p, size, dur, spin) {
+    const d = this.mk('fxe', p.x, p.y, txt, size); if (!d) return; dur = dur || 450;
+    const T = (s, r) => `translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
+    d.animate([{ transform: T(.3, 0), opacity: 1 }, { transform: T(1.25, (spin || 0) * .6), opacity: 1, offset: .45 }, { transform: T(1.5, spin || 0), opacity: 0 }], { duration: dur, fill: 'forwards' });
+    this.done(d, dur);
+  },
+  ring(p, color, size) {
+    const d = this.mk('fxring', p.x, p.y); if (!d) return;
+    d.style.width = d.style.height = (size || 90) + 'px'; d.style.borderColor = color || '#fff'; d.style.boxShadow = '0 0 14px ' + (color || '#fff');
+    d.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: .95 }, { transform: 'translate(-50%,-50%) scale(1.5)', opacity: 0 }], { duration: 460, fill: 'forwards', easing: 'ease-out' });
+    this.done(d, 460);
+  },
+  slash(p, ang, delay) {
+    this.at(delay || 0, () => {
+      const d = this.mk('fxslash', p.x, p.y); if (!d) return;
+      const T = s => `translate(-50%,-50%) rotate(${ang}deg) scaleX(${s})`;
+      d.animate([{ transform: T(0), opacity: 1 }, { transform: T(1.1), opacity: 1, offset: .4 }, { transform: T(1.25), opacity: 0 }], { duration: 330, fill: 'forwards' });
+      this.done(d, 330);
+    });
+  },
+  flash(color, op) {
+    const d = this.mk('fxflash', 0, 0); if (!d) return; d.style.background = color;
+    d.animate([{ opacity: 0 }, { opacity: op || .5, offset: .25 }, { opacity: 0 }], { duration: 380, fill: 'forwards' });
+    this.done(d, 380);
+  },
+  shakeScene() {
+    const sc = document.getElementById('battle-scene'); if (!sc) return;
+    sc.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-6px,3px)' }, { transform: 'translate(6px,-3px)' }, { transform: 'translate(-4px,2px)' }, { transform: 'translate(0,0)' }], { duration: 300 });
+  },
+  lunge(id, toId, ratio, dur) {
+    const b = document.getElementById(id), A = this.pos(id), B = this.pos(toId); if (!b || !A || !B) return;
+    const dx = (B.x - A.x) * ratio, dy = (B.y - A.y) * ratio, s = Math.sign(B.x - A.x) || 1;
+    b.animate([
+      { transform: 'translate(0,0) scale(1)' },
+      { transform: `translate(${-12 * s}px,0) scale(.94)`, offset: .25 },
+      { transform: `translate(${dx}px,${dy}px) scale(1.08)`, offset: .5 },
+      { transform: `translate(${dx}px,${dy}px) scale(1.08)`, offset: .6 },
+      { transform: 'translate(0,0) scale(1)' }
+    ], { duration: dur, easing: 'ease-in-out' });
+  },
+  hit(id, big, ice) {
+    const b = document.getElementById(id); if (!b) return;
+    const a = big ? 14 : 9, flash = ice ? 'brightness(1.6) hue-rotate(160deg) saturate(1.6)' : 'brightness(2.4)';
+    b.animate([
+      { transform: 'translate(0,0)', filter: 'brightness(1)' },
+      { transform: `translate(${a}px,0)`, filter: flash, offset: .15 },
+      { transform: `translate(${-a * .8}px,0)`, filter: flash, offset: .35 },
+      { transform: `translate(${a * .6}px,0)`, offset: .55 },
+      { transform: `translate(${-a * .3}px,0)`, offset: .75 },
+      { transform: 'translate(0,0)', filter: 'brightness(1)' }
+    ], { duration: big ? 520 : 380 });
+  },
+  defeat() {
+    const b = document.getElementById('sprite-enemy'); if (!b) return;
+    const a = b.animate([
+      { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+      { opacity: .9, transform: 'scale(1.1) rotate(-6deg)', offset: .2 },
+      { opacity: 0, transform: 'scale(.4) rotate(28deg) translateY(30px)' }
+    ], { duration: 430, fill: 'forwards', easing: 'ease-in' });
+    a.id = 'defeat';
+    const E = this.pos('sprite-enemy');
+    if (E) { this.burst('⭐', E, 52, 460, 180); this.burst('✨', { x: E.x - 32, y: E.y - 20 }, 34, 460); this.burst('✨', { x: E.x + 32, y: E.y + 10 }, 34, 460); }
+  },
+  cancelDefeat() {
+    const b = document.getElementById('sprite-enemy');
+    if (b) b.getAnimations().forEach(a => { if (a.id === 'defeat') a.cancel(); });
+  },
+  enemyAtk() {
+    if (this.reduced()) return null;
+    this.lunge('sprite-enemy', 'sprite-player', .6, 520);
+    return { hit: 260, total: 800, target: 'player' };
+  },
+  reduced() { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); },
+  // 回傳 { hit: 命中時間(ms), total: 整段動畫結束(ms) }
+  cast(sk, cls) {
+    if (this.reduced()) return null;
+    const P = this.pos('sprite-player'), E = this.pos('sprite-enemy');
+    if (!P || !E) return null;
+    const id = sk && sk.cost > 0 ? sk.id : 'basic_' + cls;
+    const H = { x: E.x, y: E.y - E.h * .05 };
+    const L = (r, d) => this.lunge('sprite-player', 'sprite-enemy', r, d);
+    const A = (ms, fn) => this.at(ms, fn);
+    const fx = {
+      basic_warrior: () => { L(.62, 520); this.slash(H, -30, 230); return { hit: 250, total: 700 }; },
+      w_double: () => { L(.62, 640); this.slash(H, -35, 220); this.slash(H, 35, 340); A(340, () => this.burst('✨', H, 50, 300)); return { hit: 260, total: 900 }; },
+      w_spin: () => { L(.55, 700); A(220, () => { this.ring(H, '#9ad7ff', 90); this.burst('🌀', H, 72, 520, 360); }); A(380, () => this.ring(H, '#cfeeff', 120)); return { hit: 300, total: 950 }; },
+      w_charge: () => { L(.9, 780); this.proj('💨', P, { x: P.x + (E.x - P.x) * .5, y: P.y }, { size: 44, dur: 300 }); A(330, () => { this.burst('💥', H, 110, 500); this.flash('#fff', .55); this.ring(H, '#ffd23a', 130); this.shakeScene(); }); return { hit: 340, total: 1000 }; },
+      basic_mage: () => { this.proj('✨', P, H, { size: 38, dur: 300, spin: 360 }); A(300, () => this.burst('✨', H, 60, 350)); return { hit: 300, total: 700 }; },
+      m_fire: () => { this.proj('🔥', P, H, { size: 46, dur: 380, s1: 1.5 }); A(380, () => { this.burst('💥', H, 90, 450); this.ring(H, '#ff8a1a', 90); }); return { hit: 390, total: 900 }; },
+      m_ice: () => { for (let i = 0; i < 6; i++) A(i * 70, () => this.proj('❄️', { x: E.x + (i - 2.5) * 26, y: E.y - E.h * .9 }, { x: E.x + (i - 2.5) * 14, y: E.y }, { size: 34, dur: 300, spin: 180 })); A(420, () => { this.ring(H, '#8fe3ff', 90); this.burst('❄️', H, 80, 500, 120); }); return { hit: 430, total: 950, ice: true }; },
+      m_meteor: () => { this.proj('☄️', { x: E.x + E.w * 1.4, y: E.y - E.h * 1.6 }, H, { size: 80, dur: 520, s0: .8, s1: 1.1 }); A(520, () => { this.burst('💥', H, 140, 600); this.ring(H, '#ff7a1a', 150); this.flash('#ff9a40', .5); this.shakeScene(); }); return { hit: 530, total: 1100 }; },
+      basic_archer: () => { this.proj('', P, H, { cls: 'fxarrow', aim: true, dur: 260, s0: 1 }); A(260, () => this.burst('✨', H, 36, 250)); return { hit: 260, total: 650 }; },
+      a_multi: () => { [-18, 0, 18].forEach((dy, i) => A(i * 110, () => { this.proj('', { x: P.x, y: P.y + dy }, { x: H.x, y: H.y + dy * .5 }, { cls: 'fxarrow', aim: true, dur: 240, s0: 1 }); A(240, () => this.burst('✨', { x: H.x, y: H.y + dy * .5 }, 34, 250)); })); return { hit: 260, total: 900 }; },
+      a_burst: () => { this.proj('', P, H, { cls: 'fxarrow big', aim: true, dur: 280, s0: 1 }); A(280, () => { this.burst('💥', H, 100, 450); this.ring(H, '#ff9a2a', 100); }); return { hit: 290, total: 850 }; },
+      a_snipe: () => { this.burst('🎯', H, 90, 520, 90); A(380, () => this.proj('', P, H, { cls: 'fxarrow big', aim: true, dur: 160, s0: 1, ease: 'linear' })); A(540, () => { this.burst('💥', H, 120, 500); this.flash('#fff', .5); this.shakeScene(); }); return { hit: 550, total: 1100 }; },
+      basic_engineer: () => { this.proj('🔧', P, H, { size: 38, dur: 320, spin: 540 }); A(320, () => this.burst('💥', H, 50, 300)); return { hit: 320, total: 700 }; },
+      e_turret: () => { const G = { x: P.x + P.w * .35, y: P.y }; this.burst('🔫', G, 44, 600); for (let i = 0; i < 4; i++) A(150 + i * 90, () => { this.proj('', G, H, { cls: 'fxdot', dur: 200, s0: 1, ease: 'linear' }); A(200, () => this.burst('✨', H, 34, 200)); }); return { hit: 420, total: 950 }; },
+      e_robot: () => { this.proj('🤖', P, { x: E.x - E.w * .3, y: E.y }, { size: 64, dur: 420, ease: 'ease-in', s0: .9 }); A(430, () => { this.burst('💥', H, 90, 400); this.ring(H, '#9bd0ff', 100); }); return { hit: 440, total: 950 }; },
+      e_fort: () => { this.proj('💣', P, H, { size: 46, dur: 520, spin: 360, arc: 90 }); A(520, () => { this.burst('💥', H, 150, 600); this.ring(H, '#ff7a1a', 150); this.flash('#ffb060', .5); this.shakeScene(); }); return { hit: 530, total: 1150 }; },
+      basic_scholar: () => { this.proj('📖', P, H, { size: 38, dur: 320, spin: 360 }); A(320, () => this.burst('✨', H, 44, 300)); return { hit: 320, total: 700 }; },
+      s_learn: () => { for (let i = 0; i < 5; i++) A(i * 80, () => this.proj('📚', { x: E.x + (i - 2) * 22, y: E.y - E.h * 1.1 }, { x: E.x + (i - 2) * 10, y: E.y - 8 }, { size: 36, dur: 260 })); A(420, () => this.burst('✨', H, 80, 400)); return { hit: 430, total: 950 }; },
+      s_inspire: () => { this.burst('💡', { x: P.x, y: P.y - P.h * .6 }, 48, 500); A(380, () => this.proj('✨', P, H, { size: 56, dur: 260, s1: 1.4 })); A(640, () => { this.burst('💥', H, 90, 400); this.ring(H, '#ffe066', 100); }); return { hit: 650, total: 1100 }; },
+      s_wisdom: () => { this.burst('🌟', { x: E.x, y: E.y - E.h * .9 }, 110, 700); A(300, () => this.proj('🌟', { x: E.x, y: E.y - E.h * 1.2 }, H, { size: 100, dur: 300, s1: 1.3 })); A(600, () => { this.ring(H, '#ffe066', 130); this.ring(H, '#fff', 90); this.flash('#ffe066', .55); this.shakeScene(); }); return { hit: 610, total: 1200 }; }
+    };
+    return (fx[id] || fx['basic_' + cls] || fx.basic_warrior)();
+  }
+};
+
 const Game = {
   state: null,
   battle: null,
@@ -2459,6 +2616,7 @@ const Game = {
   },
 
   showFighters() {
+    try { FX.cancelDefeat(); } catch (_) {}
     const s = this.state, e = this.currentEnemy(), B = this.battle;
     const cls = DB.classes[s.heroClass] || { name: '英雄', icon: '⚔️' };
 
@@ -2627,25 +2785,39 @@ const Game = {
   fx(who, txt, crit) {
     const box = document.getElementById(who === 'enemy' ? 'sprite-enemy' : 'sprite-player');
     if (!box) return;
-    const other = document.getElementById(who === 'enemy' ? 'sprite-player' : 'sprite-enemy');
-    box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
-    if (who === 'enemy' && other) { other.classList.remove('lunge'); void other.offsetWidth; other.classList.add('lunge'); }
-    let cls = 'fl';
+    const sk = this._fxSkill; this._fxSkill = null; this._fxTotal = 0;
     const t = String(txt || '');
-    if (crit || /CRITICAL|💥|暴擊/.test(t)) cls += ' crit';
-    else if (/MISS|未命中/.test(t)) cls += ' miss';
-    else if (/WEAK|弱點/.test(t)) cls += ' weak';
-    else if (/SUPER|效果拔群/.test(t)) cls += ' super';
-    if (who === 'player') cls += ' pl';
-    const f = document.createElement('span');
-    f.className = cls;
-    f.textContent = t;
-    box.appendChild(f);
-    setTimeout(() => f.remove(), 950);
+    const blocked = /擋下/.test(t);
+    let plan = null;
+    try { plan = blocked ? null : (who === 'enemy' ? FX.cast(sk, this.state.heroClass) : FX.enemyAtk()); } catch (e) { plan = null; }
+    const showText = () => {
+      let cls = 'fl';
+      if (crit || /CRITICAL|💥|暴擊/.test(t)) cls += ' crit';
+      else if (/MISS|未命中/.test(t)) cls += ' miss';
+      else if (/WEAK|弱點/.test(t)) cls += ' weak';
+      else if (/SUPER|效果拔群/.test(t)) cls += ' super';
+      if (who === 'player') cls += ' pl';
+      const f = document.createElement('span');
+      f.className = cls; f.textContent = t;
+      box.appendChild(f);
+      setTimeout(() => f.remove(), 950);
+    };
+    if (!plan) {
+      box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+      const other = document.getElementById(who === 'enemy' ? 'sprite-player' : 'sprite-enemy');
+      if (who === 'enemy' && other) { other.classList.remove('lunge'); void other.offsetWidth; other.classList.add('lunge'); }
+      showText();
+      return;
+    }
+    this._fxTotal = plan.total;
+    setTimeout(() => {
+      try { FX.hit(who === 'enemy' ? 'sprite-enemy' : 'sprite-player', !!(crit || (sk && sk.crit)), !!plan.ice); } catch (e) {}
+      showText();
+    }, plan.hit);
   },
-
   
   nextQuestion() {
+    try { FX.cancelDefeat(); } catch (_) {}
     const B = this.battle;
     if (!B || B.over || this.paused) return;
     const e = this.currentEnemy();
@@ -2701,7 +2873,7 @@ const Game = {
     const st = s.subjStats[q.subj] = s.subjStats[q.subj] || { total: 0, correct: 0, wrong: 0 };
     st.total++;
     const m = this.classMult(), sk = this.skillBonus(), pb = this.petBonus();
-    let txt, who;
+    let txt, who; this._fxSkill = null;
     if (ok) {
       st.correct++; s.stats.correct++; B.correct++; B.combo++;
       s.daily.correctToday = (s.daily.correctToday || 0) + 1;
@@ -2715,6 +2887,7 @@ const Game = {
       // 能量不足則退回普通攻擊
       if (skill.cost > 0 && B.energy < skill.cost) { si = 0; skill = slots[0]; B.selectedSkill = 0; }
       if (skill.cost > 0) B.energy -= skill.cost;
+      this._fxSkill = skill;
       let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk) * (skill.atk || 1)
         * (1 + Math.min(0.55, B.combo * 0.05 * (1 + (sk.combo || 0) * 0.5)));
       let crit = Math.random() < m.crit + sk.crit + pb.crit || !!skill.crit;
@@ -2758,7 +2931,7 @@ const Game = {
       if (s.hp <= 0) this.finishStage(false);
       else if (e.hp <= 0) this.onEnemyDown();
       else this.nextQuestion();
-    }, 750);
+    }, Math.max(750, this._fxTotal || 0));
   },
 
   onEnemyDown() {
@@ -2782,6 +2955,7 @@ const Game = {
       B.bossRage = false;
       this.toast('👑 Boss 出現！護盾 ×' + B.bossShield);
     }
+    try { FX.defeat(); } catch (_) {}
     if (B.index >= B.queue.length) this.finishStage(true);
     else this.later(B, () => this.nextQuestion(), 450);
   },
