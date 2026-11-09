@@ -790,6 +790,54 @@ html.zy-on .skill-slot small { max-width: 84px; white-space: normal; overflow: v
 .fxdot { position: absolute; width: 13px; height: 13px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(#fff, #ffd23a 55%, #ff8a1a); box-shadow: 0 0 8px #ffb02a; }
 .fxflash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+
+/* ===== 我的王國（視覺化王國） ===== */
+#bld-modal { display: none; position: fixed; inset: 0; z-index: 300; padding: 28px 16px 16px; background: rgba(20,28,60,.72); backdrop-filter: blur(3px); align-items: center; justify-content: center; }
+#bld-modal.active { display: flex; }
+#bld-box { overflow: visible; }
+.bm-body { max-height: calc(88dvh - 56px); overflow-y: auto; padding: 2px; }
+.k-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 16px; color: #4a3320; }
+.k-res { display: flex; flex-wrap: wrap; gap: 6px; }
+.k-scene { position: relative; width: 100%; aspect-ratio: 5 / 6; border-radius: 18px; overflow: hidden; border: 3px solid #7fbf68;
+  background: radial-gradient(60% 18% at 15% 28%, #93d882 0, transparent 70%), radial-gradient(70% 20% at 85% 40%, #8ad37a 0, transparent 70%),
+    linear-gradient(180deg, #bfe6ff 0%, #d9f2ff 12%, #a6df91 24%, #86cd72 60%, #6fbf62 100%);
+  box-shadow: inset 0 0 30px rgba(255,255,255,.35); }
+.k-scene .ks-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.k-scene .ks-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ks-svg .rv { fill: none; stroke: #7ec8f0; stroke-width: 7; stroke-linecap: round; opacity: .9; }
+.ks-svg .rd { fill: none; stroke: #e6cc96; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.kd { position: absolute; translate: -50% -50%; line-height: 1; pointer-events: none; filter: drop-shadow(0 2px 1px rgba(0,0,0,.25)); }
+.kb { position: absolute; translate: -50% -50%; width: calc(64px * var(--s, 1)); height: calc(64px * var(--s, 1)); display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; padding: 0; cursor: pointer; line-height: 1; filter: drop-shadow(0 3px 2px rgba(0,0,0,.3)); -webkit-tap-highlight-color: transparent; font-family: inherit; }
+.kb > img { width: 100%; height: 100%; object-fit: contain; }
+.kb > span { font-size: calc(42px * var(--s, 1)) !important; }
+.kb-lv { position: absolute; bottom: -5px; left: 50%; translate: -50% 0; font-size: 10px; font-style: normal; font-weight: 900; line-height: 14px; padding: 0 6px; white-space: nowrap;
+  background: #fff7d6; border: 2px solid #d9a85a; border-radius: 99px; color: #7a4a10; }
+.kb-up { position: absolute; top: -8px; right: -6px; font-size: 15px; font-style: normal; animation: upBob 1s ease-in-out infinite; }
+.kb.plot { width: 48px; height: 48px; font-size: 28px; animation: plotPulse 2s ease-in-out infinite; }
+.kb.lock { width: 40px; height: 40px; font-size: 20px; opacity: .4; filter: grayscale(1); }
+.kb.pop { animation: kbPop .8s; }
+@keyframes kbPop { 0% { scale: .3; } 60% { scale: 1.3; } 100% { scale: 1; } }
+@keyframes plotPulse { 0%, 100% { scale: 1; } 50% { scale: 1.12; } }
+@keyframes upBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+.kw { position: absolute; font-size: 22px; line-height: 1; pointer-events: none; animation: kwalk var(--t, 12s) ease-in-out infinite alternate; }
+.kw.sm { font-size: 17px; }
+@keyframes kwalk { from { translate: calc(-50% - var(--dx, 20px)) -50%; } to { translate: calc(-50% + var(--dx, 20px)) -50%; } }
+.kh { position: absolute; translate: -50% -50%; pointer-events: none; animation: khBob 2.4s ease-in-out infinite; }
+@keyframes khBob { 0%, 100% { translate: -50% -50%; } 50% { translate: -50% calc(-50% - 3px); } }
+.k-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.k-grid .codex-item { cursor: pointer; }
+.cc { display: inline-flex; align-items: center; gap: 3px; margin: 2px; padding: 2px 9px; border-radius: 99px; font-size: 12.5px; font-weight: 900; border: 2px solid #c9b48a; background: #fff8e6; color: #4a3320; }
+.cc.ok { border-color: #8cc98a; background: #eefbe9; color: #2d6a2a; }
+.cc.no { border-color: #e08a8a; background: #ffeaea; color: #b13a3a; }
+.bm-art { display: flex; justify-content: center; padding: 6px 0; }
+.bm-lvs { display: flex; gap: 6px; justify-content: center; }
+.bm-lvs span { width: 24px; height: 24px; border-radius: 50%; background: #e7dcc9; border: 2px solid #c9b48a; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; color: #a08a6a; }
+.bm-lvs span.on { background: linear-gradient(180deg, #ffd76a, #ff9a3c); border-color: #d9822f; color: #fff; }
+.bm-lbl { font-weight: 900; font-size: 13px; margin-top: 8px; color: #4a3320; }
+.c-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.ctab { font-family: inherit; border: 2px solid #c9b48a; background: #fff8e6; border-radius: 99px; padding: 4px 10px; font-weight: 900; font-size: 12px; color: #7a5a3a; cursor: pointer; }
+.ctab.on { background: linear-gradient(180deg, #ffd76a, #ff9a3c); border-color: #d9822f; color: #fff; text-shadow: 0 1px 0 #b5560a; }
 </style>
 </head>
 <body>
@@ -884,11 +932,10 @@ html.zy-on .skill-slot small { max-width: 84px; white-space: normal; overflow: v
 
     <!-- CITY -->
     <div class="panel" id="panel-city">
-      <div class="card">
-        <h3>🏘 城市建設</h3>
-        <p class="muted" id="city-summary" style="margin-bottom:10px"></p>
-        <div id="build-list"></div>
-      </div>
+      <div class="card" id="k-head"></div>
+      <div class="card"><div class="k-scene" id="k-scene"></div></div>
+      <div class="card"><h3>🏗️ 建築</h3><p class="muted" style="margin-bottom:8px">點建築看升級條件。升級要靠「答題」和「資源」！</p><div class="k-grid" id="k-build-grid"></div></div>
+      <div class="card"><h3>👥 居民與任務</h3><div id="k-res-list"></div></div>
     </div>
 
     <!-- PETS -->
@@ -911,7 +958,8 @@ html.zy-on .skill-slot small { max-width: 84px; white-space: normal; overflow: v
     <!-- CODEX -->
     <div class="panel" id="panel-codex">
       <div class="card">
-        <h3>📖 怪物圖鑑</h3>
+        <h3>📖 圖鑑</h3>
+        <div class="c-tabs" id="codex-tabs"></div>
         <div class="codex-sum" id="codex-summary"></div>
         <div class="grid4" id="codex-list" style="gap:8px"></div>
       </div>
@@ -956,7 +1004,7 @@ html.zy-on .skill-slot small { max-width: 84px; white-space: normal; overflow: v
     <button class="nav-btn" type="button" data-tab="map" onclick="Game.tab('map',this)"><span class="ico">🗺️</span>地圖</button>
     <button class="nav-btn" type="button" data-tab="codex" onclick="Game.tab('codex',this)"><span class="ico">📖</span>圖鑑</button>
     <button class="nav-btn" type="button" data-tab="pets" onclick="Game.tab('pets',this)"><span class="ico">🐾</span>寵物</button>
-    <button class="nav-btn" type="button" data-tab="city" onclick="Game.tab('city',this)"><span class="ico">🏘</span>城市</button>
+    <button class="nav-btn" type="button" data-tab="city" onclick="Game.tab('city',this)"><span class="ico">🏰</span>王國</button>
     <button class="nav-btn" type="button" data-tab="achieve" onclick="Game.tab('achieve',this)"><span class="ico">🏆</span>成就</button>
     <button class="nav-btn" type="button" data-tab="parent" onclick="Game.tab('parent',this)"><span class="ico">👨‍👩‍👧</span>家長</button>
     <button class="nav-btn" type="button" data-tab="settings" onclick="Game.tab('settings',this)"><span class="ico">⚙️</span>設定</button>
@@ -1034,6 +1082,7 @@ html.zy-on .skill-slot small { max-width: 84px; white-space: normal; overflow: v
 </div>
 
 <!-- Result -->
+<div id="bld-modal" onclick="if(event.target===this)Game.closeBuilding()"><div class="modal-box" id="bld-box"></div></div>
 <div id="result-modal">
   <div class="modal-box">
     <h2 class="center" id="result-title">通關！</h2>
@@ -1181,6 +1230,12 @@ const Art = {
     if (svg) return `<div style="width:${size}px;height:${size}px;margin:0 auto">${svg}</div>`;
     return `<span style="font-size:${Math.round(size * 0.7)}px">${emoji}</span>`;
   }
+};
+
+/* 王國用圖：有 PNG 就顯示，沒有就退回 emoji */
+Art.k = function (png, emoji, size, flat) {
+  size = size || 48; const fs = Math.round(size * (flat ? 0.85 : 0.7));
+  return `<img src="${png}" width="${size}" height="${size}" alt="" style="object-fit:contain;display:inline-block;vertical-align:middle" onerror="this.outerHTML='<span style=font-size:${fs}px;line-height:1>${emoji}</span>'">`;
 };
 
 /* ===== 戰鬥場景背景（內建 SVG：放了 img/bg_battle.png 會自動蓋過它） ===== */
@@ -1375,16 +1430,30 @@ const DB = {
     { id: 'p8', stages: ['小書精靈', '知識精靈', '智慧大賢者'], icons: ['📖', '📘', '📕'], bonusType: 'res', desc: '知識與資源加成' }
   ],
   buildings: [
-    { id: 'b_house', name: '房屋', icon: '🏠', cost: { gold: 40, wood: 10, stone: 5, steel: 0 }, pop: 20, income: 8, desc: '增加人口與穩定收租' },
-    { id: 'b_shop', name: '商店', icon: '🏪', cost: { gold: 60, wood: 15, stone: 10, steel: 2 }, pop: 15, income: 18, desc: '商業繁榮，金幣收入提高' },
-    { id: 'b_school', name: '學校', icon: '🏫', cost: { gold: 80, wood: 20, stone: 15, steel: 5 }, pop: 30, income: 12, desc: '教育中心，經驗小幅提升' },
-    { id: 'b_library', name: '圖書館', icon: '📚', cost: { gold: 100, wood: 25, stone: 20, steel: 8 }, pop: 25, income: 15, desc: '知識寶庫，錯題複習更有效' },
-    { id: 'b_hospital', name: '醫院', icon: '🏥', cost: { gold: 90, wood: 15, stone: 25, steel: 10 }, pop: 20, income: 10, desc: '答對時回復生命' },
-    { id: 'b_park', name: '公園', icon: '🌳', cost: { gold: 50, wood: 30, stone: 10, steel: 0 }, pop: 35, income: 6, desc: '休閒空間，人口快樂成長' },
-    { id: 'b_lab', name: '研究所', icon: '🔬', cost: { gold: 150, wood: 20, stone: 40, steel: 25 }, pop: 40, income: 30, desc: '科技研發，鋼鐵產出提升' },
-    { id: 'b_museum', name: '博物館', icon: '🏛️', cost: { gold: 120, wood: 20, stone: 35, steel: 15 }, pop: 30, income: 22, desc: '展示知識成果' },
-    { id: 'b_amuse', name: '遊樂園', icon: '🎡', cost: { gold: 180, wood: 40, stone: 30, steel: 20 }, pop: 50, income: 28, desc: '快樂學習，連擊加成' },
-    { id: 'b_stadium', name: '體育館', icon: '🏟️', cost: { gold: 200, wood: 30, stone: 50, steel: 30 }, pop: 45, income: 25, desc: '體能與意志訓練' }
+    { id: 'b_house', img: 'house', name: '住宅', icon: '🏠', icons: ['🛖', '🏠', '🏡', '🏘️', '🏩'], names: ['小木屋', '雙層木屋', '漂亮木屋', '豪華住宅', '貴族莊園'],
+      unlock: 1, cat: null, slot: [50, 74], cost: { gold: 30, wood: 10, stone: 5 }, pop: 20, income: 5, eff: '居民的家，每級人口 +20' },
+    { id: 'b_farm', img: 'farm', name: '農場', icon: '🌾', icons: ['🌱', '🥕', '🌾', '🐄', '🏡'], names: ['小菜園', '小農場', '大農場', '牧場莊園', '豐收農莊'],
+      unlock: 2, cat: null, slot: [78, 78], cost: { gold: 40, wood: 15 }, pop: 10, income: 4, eff: '每次通關多得木材 +2／級' },
+    { id: 'b_school', img: 'school', name: '學校', icon: '🏫', icons: ['⛺', '🏠', '🏫', '🏫', '🏛️'], names: ['小教室', '鄉村學校', '明亮學堂', '城鎮學院', '知識學府'],
+      unlock: 3, cat: 'math', slot: [20, 58], cost: { gold: 60, stone: 10, steel: 3 }, pop: 25, income: 8, eff: '經驗 +4%／級；答數學更容易掉落石材與鐵礦' },
+    { id: 'b_library', img: 'library', name: '圖書館', icon: '📚', icons: ['📕', '📚', '🏤', '🏛️', '🏰'], names: ['書架小屋', '社區圖書室', '木造圖書館', '大圖書館', '智慧藏書塔'],
+      unlock: 3, cat: 'chinese', slot: [22, 40], cost: { gold: 70, wood: 15, stone: 6 }, pop: 20, income: 8, eff: '答國語更容易掉落木材（+4%／級）' },
+    { id: 'b_academy', img: 'academy', name: '英語學院', icon: '🔤', icons: ['🔤', '🗣️', '🏤', '🎓', '🏛️'], names: ['語言小站', '英語教室', '英語學院', '國際學院', '環球語言殿'],
+      unlock: 3, cat: 'english', slot: [78, 40], cost: { gold: 70, badge: 2, wood: 8 }, pop: 20, income: 8, eff: '答英文更容易掉落榮譽徽章（+4%／級）' },
+    { id: 'b_workshop', img: 'workshop', name: '工坊', icon: '⚒️', icons: ['🔨', '⚒️', '🛠️', '🏠', '🏘️'], names: ['工作棚', '木工坊', '工匠坊', '魔工坊', '大師工坊'],
+      unlock: 4, cat: null, slot: [24, 78], cost: { gold: 60, stone: 12, steel: 4 }, pop: 15, income: 8, eff: '每次通關多得石材 +1／級，鐵礦 +1／2 級' },
+    { id: 'b_market', img: 'market', name: '市集', icon: '🛒', icons: ['🧺', '🛒', '🏪', '🎪', '🏬'], names: ['小攤位', '熱鬧市集', '商店街', '大市場', '王國商城'],
+      unlock: 4, cat: null, slot: [80, 58], cost: { gold: 60, wood: 12, blueprint: 1 }, pop: 15, income: 14, eff: '通關金幣 +5%／級' },
+    { id: 'b_park', img: 'park', name: '花園公園', icon: '🌳', icons: ['🌱', '🌳', '🌸', '⛲', '🎡'], names: ['小花圃', '花園', '噴水公園', '遊樂花園', '童話樂園'],
+      unlock: 4, cat: null, slot: [50, 52], cost: { gold: 50, wood: 15, stone: 6 }, pop: 25, income: 5, eff: '答對時回復生命 +1／級' },
+    { id: 'b_lab', img: 'lab', name: '研究院', icon: '🔬', icons: ['🧪', '⚗️', '🔬', '🔭', '🏢'], names: ['實驗小屋', '自然教室', '研究所', '天文研究院', '奇蹟研究院'],
+      unlock: 5, cat: 'science', slot: [17, 22], cost: { gold: 90, crystal: 2, stone: 10 }, pop: 30, income: 15, eff: '答自然更容易掉落水晶（+4%／級）' },
+    { id: 'b_tower', img: 'tower', name: '魔法塔', icon: '🗼', icons: ['🕯️', '🔮', '🗼', '🗼', '🌟'], names: ['魔法小帳', '魔法屋', '魔法塔', '星象高塔', '天穹魔塔'],
+      unlock: 5, cat: null, slot: [83, 22], cost: { gold: 110, crystal: 2, blueprint: 1 }, pop: 20, income: 12, eff: '攻擊力 +2%／級' },
+    { id: 'b_hall', img: 'hall', name: '市政廳', icon: '🏛️', icons: ['📜', '🏪', '🏛️', '🏢', '🏰'], names: ['公告亭', '村公所', '市政廳', '王國議事廳', '榮耀殿堂'],
+      unlock: 5, cat: 'social', slot: [50, 35], cost: { gold: 90, blueprint: 2, stone: 8 }, pop: 25, income: 12, eff: '答社會更容易掉落建築藍圖（+4%／級）' },
+    { id: 'b_castle', img: 'castle', name: '城堡', icon: '🏰', icons: ['🏚️', '🏯', '🏰', '🏰', '👑'], names: ['營地', '石砦', '小城堡', '王城', '璀璨王宮'],
+      unlock: 6, cat: null, slot: [50, 15], cost: { gold: 200, stone: 20, steel: 8, crystal: 2, blueprint: 2, badge: 2 }, pop: 40, income: 25, eff: '經驗與金幣 +2%／級' }
   ],
   cityRanks: [
     { minPop: 0, name: '小村莊' }, { minPop: 50, name: '小鎮' }, { minPop: 120, name: '小城市' },
@@ -1406,6 +1475,13 @@ const DB = {
     { id: 'a_pet', name: '寵物夥伴', desc: '獲得 3 隻寵物', check: s => Object.keys(s.pets||{}).length >= 3, reward: 200 },
     { id: 'a_city', name: '城市建設者', desc: '人口達到 100', check: s => (s.pop||0) >= 100, reward: 300 },
     { id: 'a_level', name: '等級十', desc: '角色達到 Lv.10', check: s => (s.level||0) >= 10, reward: 200 },
+    { id: 'a_math', name: '數學小天才', desc: '答對數學 100 題', check: s => ((s.kingdom && s.kingdom.cat.math.c) || 0) >= 100, reward: 300 },
+    { id: 'a_read', name: '閱讀高手', desc: '答對國語 100 題', check: s => ((s.kingdom && s.kingdom.cat.chinese.c) || 0) >= 100, reward: 300 },
+    { id: 'a_eng', name: '英文達人', desc: '答對英文 100 題', check: s => ((s.kingdom && s.kingdom.cat.english.c) || 0) >= 100, reward: 300 },
+    { id: 'a_build', name: '王國建築師', desc: '建築總等級達 20', check: s => Object.values(s.buildings || {}).reduce((a, b) => a + (b | 0), 0) >= 20, reward: 400 },
+    { id: 'a_friend', name: '居民之友', desc: '王國居民達 30 位', check: s => Game.resCount() >= 30, reward: 400 },
+    { id: 'a_explore', name: '探險家', desc: '解鎖全部 8 個地圖', check: s => (s.unlockedZones || []).length >= 8, reward: 500 },
+    { id: 'a_petmaster', name: '寵物大師', desc: '培養全部 8 隻寵物', check: s => Object.keys(s.pets || {}).length >= 8, reward: 500 },
     { id: 'a_weak', name: '錯題剋星', desc: '擊敗錯題大魔王', check: s => !!s.achievements?.a_weak_done, reward: 350 }
   ],
   dailyTasks: [
@@ -2120,6 +2196,59 @@ const SWATCH = { '紅色': '#e8413c', '橘色': '#f58a1f', '黃色': '#ffd21f', 
   '白色': '#ffffff', '黑色': '#2b2b2b', '咖啡色': '#8a5a34', '粉紅色': '#ff9cc2', '灰色': '#9aa0a6' };
 const COLOR_RE = /(紅|橘|黃|綠|藍|紫|粉紅|咖啡|灰|金|銀|黑|白)色|^(red|orange|yellow|green|blue|purple|pink|brown|black|white|gray|grey)$/i;
 
+/* ===== 王國系統資料 ===== */
+const RES = {
+  gold: { icon: '🪙', name: '金幣' }, wood: { icon: '🪵', name: '木材' }, stone: { icon: '🪨', name: '石材' },
+  steel: { icon: '⛓️', name: '鐵礦' }, crystal: { icon: '🔮', name: '水晶' }, blueprint: { icon: '📜', name: '建築藍圖' },
+  badge: { icon: '🎖️', name: '榮譽徽章' }, dia: { icon: '💎', name: '鑽石' }
+};
+const CATN = { math: '數學', chinese: '國語', english: '英文', science: '自然', social: '社會' };
+const KDB = {
+  levels: [0, 2, 5, 9, 14, 20, 26, 33, 41, 50],
+  lvNames: ['森林空地', '小村落', '村莊', '小鎮', '繁榮城鎮', '王國成型', '繁榮王國', '魔法王國', '傳奇王國', '永恆知識王國'],
+  residents: [
+    { id: 'teacher', name: '老師', icon: '👨‍🏫', bld: 'b_school', quests: [
+      { kind: 'cat', key: 'math', n: 20, unit: '題', t: '答對數學', r: { stone: 8, gold: 40 } },
+      { kind: 'cat', key: 'math', n: 50, unit: '題', t: '答對數學', r: { steel: 6, blueprint: 1 } }] },
+    { id: 'farmer', name: '農夫', icon: '👩‍🌾', bld: 'b_farm', quests: [
+      { kind: 'res', key: 'wood', n: 30, unit: '個', t: '蒐集木材', r: { gold: 50, wood: 10 } },
+      { kind: 'res', key: 'wood', n: 60, unit: '個', t: '蒐集木材', r: { gold: 90, blueprint: 1 } }] },
+    { id: 'craftsman', name: '工匠', icon: '👨‍🔧', bld: 'b_workshop', quests: [
+      { kind: 'res', key: 'stone', n: 20, unit: '個', t: '蒐集石材', r: { steel: 3, gold: 40 } },
+      { kind: 'res', key: 'steel', n: 10, unit: '個', t: '蒐集鐵礦', r: { crystal: 1, gold: 60 } }] },
+    { id: 'librarian', name: '圖書館員', icon: '🧑‍💼', bld: 'b_library', quests: [
+      { kind: 'cat', key: 'chinese', n: 20, unit: '題', t: '答對國語', r: { wood: 12, gold: 40 } },
+      { kind: 'cat', key: 'chinese', n: 50, unit: '題', t: '答對國語', r: { blueprint: 1, badge: 1 } }] },
+    { id: 'scientist', name: '科學家', icon: '🧑‍🔬', bld: 'b_lab', quests: [
+      { kind: 'cat', key: 'science', n: 15, unit: '題', t: '完成自然', r: { crystal: 1, gold: 40 } },
+      { kind: 'cat', key: 'science', n: 40, unit: '題', t: '完成自然', r: { crystal: 2, dia: 1 } }] },
+    { id: 'mage', name: '魔法師', icon: '🧙', bld: 'b_tower', quests: [
+      { kind: 'cat', key: 'english', n: 20, unit: '題', t: '答對英文', r: { badge: 2, gold: 40 } },
+      { kind: 'stage', key: 'stages', n: 5, unit: '次', t: '通關冒險', r: { crystal: 1, badge: 1 } }] },
+    { id: 'advisor', name: '王國顧問', icon: '🤴', bld: 'b_castle', quests: [
+      { kind: 'stage', key: 'stages', n: 3, unit: '次', t: '通關冒險', r: { gold: 100, blueprint: 1 } },
+      { kind: 'boss', key: 'boss', n: 1, unit: '隻', t: '擊敗區域 Boss', r: { crystal: 2, badge: 2, dia: 1 } }] }
+  ],
+  decor: [
+    { id: 'tree1', e: '🌲', x: 6, y: 12, m: 1, sz: 30 }, { id: 'tree2', e: '🌲', x: 94, y: 10, m: 1, sz: 30 },
+    { id: 'tree3', e: '🌳', x: 5, y: 47, m: 1, sz: 30 }, { id: 'tree4', e: '🌳', x: 95, y: 47, m: 1, sz: 28 },
+    { id: 'tree5', e: '🌲', x: 7, y: 91, m: 1, sz: 30 }, { id: 'tree6', e: '🌳', x: 93, y: 93, m: 1, sz: 28 },
+    { id: 'flower1', e: '🌼', x: 36, y: 66, m: 2, sz: 20 }, { id: 'flower2', e: '🌷', x: 64, y: 66, m: 2, sz: 20 },
+    { id: 'sheep', e: '🐑', x: 11, y: 70, m: 3, sz: 22 }, { id: 'chicken', e: '🐔', x: 86, y: 90, m: 3, sz: 20 },
+    { id: 'fountain', e: '⛲', x: 36, y: 51, m: 4, sz: 28 }, { id: 'lamp1', e: '🏮', x: 34, y: 27, m: 5, sz: 22 },
+    { id: 'lamp2', e: '🏮', x: 66, y: 27, m: 5, sz: 22 }, { id: 'flag1', e: '🚩', x: 40, y: 8, m: 6, sz: 22 },
+    { id: 'flag2', e: '🚩', x: 60, y: 8, m: 6, sz: 22 }, { id: 'carousel', e: '🎠', x: 18, y: 86, m: 7, sz: 30 },
+    { id: 'balloon', e: '🎈', x: 70, y: 6, m: 8, sz: 24 }, { id: 'rainbow', e: '🌈', x: 30, y: 5, m: 9, sz: 34 },
+    { id: 'fireworks', e: '🎆', x: 80, y: 6, m: 10, sz: 30 }
+  ],
+  landmarks: [
+    null,
+    { z: 1, e: '🌲', x: 8, y: 30, sz: 34 }, { z: 2, e: '🌾', x: 12, y: 82, sz: 30 }, { z: 3, e: '⛰️', x: 92, y: 32, sz: 34 },
+    { z: 4, e: '⚓', x: 92, y: 72, sz: 28 }, { z: 5, e: '🔭', x: 6, y: 62, sz: 28 },
+    { z: 6, e: '🌹', x: 50, y: 96, sz: 26 }, { z: 7, e: '🏛️', x: 50, y: 3, sz: 30 }
+  ]
+};
+
 /* ===== 戰鬥特效引擎：攻擊衝刺、各職業技能、受擊、擊倒 ===== */
 const FX = {
   layer() {
@@ -2274,7 +2403,8 @@ const Game = {
     return {
       grade: 0, heroClass: 'warrior', level: 1, exp: 0, expTo: 30,
       hp: 100, maxHp: 100, atk: 18, gold: 100, dia: 5,
-      wood: 25, stone: 15, steel: 5, pop: 10,
+      wood: 25, stone: 15, steel: 5, pop: 10, crystal: 0, blueprint: 0, badge: 0,
+      kingdom: { cat: { math: { c: 0, t: 0 }, chinese: { c: 0, t: 0 }, english: { c: 0, t: 0 }, science: { c: 0, t: 0 }, social: { c: 0, t: 0 } }, cnt: { wood: 0, stone: 0, steel: 0, crystal: 0, blueprint: 0, badge: 0, stages: 0, boss: 0 }, res: {}, q: {}, favor: {}, migrated: false },
       skills: [], pendingLv: 0, equip: {}, buildings: {},
       pets: {}, codex: {}, stageStars: {}, unlockedZones: [0],
       wrongLog: [], achievements: {},
@@ -2311,6 +2441,7 @@ const Game = {
         } catch (_) {}
       } else this.state = this.defaultState();
     } catch (e) { this.state = this.defaultState(); }
+    try { this.migrateKingdom(); } catch (e) {}
   },
 
   save() {
@@ -2872,12 +3003,14 @@ const Game = {
     if (!ok) btn.classList.add('wrong');
     const st = s.subjStats[q.subj] = s.subjStats[q.subj] || { total: 0, correct: 0, wrong: 0 };
     st.total++;
-    const m = this.classMult(), sk = this.skillBonus(), pb = this.petBonus();
+    const m = this.classMult(), sk = this.skillBonus(), pb = this.petBonus(), kb = this.kBonus();
+    const cat = this.kCount(q, ok);
     let txt, who; this._fxSkill = null;
     if (ok) {
       st.correct++; s.stats.correct++; B.correct++; B.combo++;
       s.daily.correctToday = (s.daily.correctToday || 0) + 1;
       s.stats.comboMax = Math.max(s.stats.comboMax || 0, B.combo);
+      this.kDrop(cat);
       if (q.wrongRef) s.wrongLog = s.wrongLog.filter(w => w !== q.wrongRef);
       // 答對：回能量 + 依選中技能攻擊
       B.energy = Math.min(100, (B.energy | 0) + 20 + Math.min(15, B.combo * 3));
@@ -2888,7 +3021,7 @@ const Game = {
       if (skill.cost > 0 && B.energy < skill.cost) { si = 0; skill = slots[0]; B.selectedSkill = 0; }
       if (skill.cost > 0) B.energy -= skill.cost;
       this._fxSkill = skill;
-      let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk) * (skill.atk || 1)
+      let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk + kb.atk) * (skill.atk || 1)
         * (1 + Math.min(0.55, B.combo * 0.05 * (1 + (sk.combo || 0) * 0.5)));
       let crit = Math.random() < m.crit + sk.crit + pb.crit || !!skill.crit;
       if (crit) dmg *= 1.55;
@@ -2902,7 +3035,7 @@ const Game = {
       if (Object.values(s.pets).some(p => p.active) && Math.random() < 0.35)
         dmg += Math.round(dmg * 0.25 * (1 + sk.pet));
       e.hp = Math.max(0, e.hp - dmg);
-      const heal = Math.round(s.maxHp * sk.heal) + (s.buildings.b_hospital || 0);
+      const heal = Math.round(s.maxHp * sk.heal) + kb.heal;
       if (heal) s.hp = Math.min(s.maxHp, s.hp + heal);
       if (skill.ice) B._iceNext = true;
       txt = (crit ? 'CRITICAL! -' : (skill.cost > 0 ? skill.icon + ' -' : '-')) + dmg;
@@ -2946,6 +3079,11 @@ const Game = {
     r.steel += e.isBoss ? 4 + z : (Math.random() < 0.3 ? 1 : 0);
     if (e.art) s.codex[e.id] = (s.codex[e.id] || 0) + 1;
     this.petGrow();
+    if (e.isBoss) {
+      this.ensureK(); s.kingdom.cnt.boss = (s.kingdom.cnt.boss || 0) + 1;
+      const n = 1 + Math.floor(Math.max(0, B.zoneId) / 3); B.drops = B.drops || {};
+      ['crystal', 'blueprint', 'badge'].forEach(rs => { this.gain(rs, n); B.drops[rs] = (B.drops[rs] || 0) + n; });
+    }
     this.toast(`🎉 打倒 ${e.name}！`);
     B.index++;
     // 下一隻若是 Boss：給護盾 + 可能狂暴
@@ -2986,8 +3124,11 @@ const Game = {
     const acc = B.total ? B.correct / B.total : 0;
     const stars = win ? (acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1) : 0;
     const city = win ? this.cityIncome() : 0;
+    const kb = this.kBonus(); this.ensureK();
+    if (win) { r.wood += kb.wood; r.stone += kb.stone; r.steel += kb.steel; s.kingdom.cnt.stages = (s.kingdom.cnt.stages || 0) + 1; }
+    r.gold = Math.round(r.gold * (1 + kb.gold)); r.exp = Math.round(r.exp * (1 + kb.exp));
     s.gold += Math.round(r.gold * f) + city;
-    s.wood += Math.round(r.wood * f); s.stone += Math.round(r.stone * f); s.steel += Math.round(r.steel * f);
+    this.gain('wood', Math.round(r.wood * f)); this.gain('stone', Math.round(r.stone * f)); this.gain('steel', Math.round(r.steel * f));
     this.gainExp(Math.round(r.exp * f));
     if (win && B.zoneId >= 0) {
       s.stageStars[B.zoneId] = Math.max(s.stageStars[B.zoneId] || 0, stars);
@@ -3016,6 +3157,7 @@ const Game = {
       (win ? `<div class="rw-stars">${'★'.repeat(stars)}<s>${'★'.repeat(3 - stars)}</s></div>` : '<p class="muted" style="margin:6px 0">別灰心，可降低題庫等級或先打錯題魔王複習！</p>') +
       `<p>答對 ${B.correct}/${B.total}</p>
        <div class="rw-row">${chip('🪙', x.r.gold)}${chip('✨', x.r.exp)}${chip('🪵', x.r.wood)}${chip('🪨', x.r.stone)}${chip('⚙️', x.r.steel)}</div>` +
+      (B.drops ? `<p class="muted" style="margin:6px 0 2px">答題與 Boss 掉落</p><div class="rw-row">${Object.entries(B.drops).map(([k, v]) => `<span class="bt-chip">${RES[k].icon} +${v}</span>`).join('')}</div>` : '') +
       (win && x.city ? `<p class="muted">城市收租 🪙${x.city}</p>` : '');
     document.getElementById('result-modal').classList.add('active');
   },
@@ -3089,26 +3231,301 @@ const Game = {
     this.toast('已退出戰鬥'); this.save(); this.renderAll();
   },
 
-  renderCity() {
-    const s = this.state, rank = DB.cityRanks.slice().reverse().find(r => s.pop >= r.minPop) || DB.cityRanks[0];
-    document.getElementById('city-summary').textContent = `${rank.name} · 人口 ${s.pop} · 每次通關收租 🪙${this.cityIncome()}`;
-    const list = document.getElementById('build-list'); list.innerHTML = '';
-    DB.buildings.forEach(b => {
-      const lv = s.buildings[b.id] || 0, k = lv + 1;
-      const c = { gold: b.cost.gold * k, wood: b.cost.wood * k, stone: b.cost.stone * k, steel: b.cost.steel * k };
-      const el = document.createElement('div'); el.className = 'list-item';
-      el.innerHTML = `<div>${b.icon}</div><div class="info"><b>${b.name} Lv.${lv}</b><small>${b.desc}</small>
-        <small>🪙${c.gold} 🪵${c.wood} 🪨${c.stone} ⚙️${c.steel}　+${b.pop}人口 +${b.income}收租</small></div>
-        <button class="btn green sm" type="button">${lv ? '升級' : '建造'}</button>`;
-      el.querySelector('button').onclick = () => {
-        const t = this.state;
-        if (t.gold < c.gold || t.wood < c.wood || t.stone < c.stone || t.steel < c.steel) { this.toast('資源不足'); return; }
-        t.gold -= c.gold; t.wood -= c.wood; t.stone -= c.stone; t.steel -= c.steel;
-        t.buildings[b.id] = k; t.pop += b.pop;
-        this.toast('完成：' + b.name + ' Lv.' + k); this.checkAchievements(); this.save(); this.renderAll();
-      };
-      list.appendChild(el);
+  /* ===================== 王國系統 ===================== */
+  ensureK() {
+    const s = this.state, d = this.defaultState().kingdom;
+    s.kingdom = Object.assign({}, d, s.kingdom || {});
+    ['cat', 'cnt', 'res', 'q', 'favor'].forEach(k => { s.kingdom[k] = Object.assign({}, d[k], s.kingdom[k] || {}); });
+    Object.keys(CATN).forEach(c => { if (!s.kingdom.cat[c]) s.kingdom.cat[c] = { c: 0, t: 0 }; });
+    ['crystal', 'blueprint', 'badge'].forEach(r => { s[r] = s[r] | 0; });
+    s.buildings = s.buildings || {};
+  },
+
+  migrateKingdom() {
+    const s = this.state; this.ensureK();
+    if (s.kingdom.migrated) return;
+    const b = s.buildings, mv = (from, to) => {
+      if (b[from] != null) { b[to] = Math.max(b[to] | 0, b[from] | 0); delete b[from]; }
+    };
+    mv('b_shop', 'b_market'); mv('b_hospital', 'b_park'); mv('b_museum', 'b_hall'); mv('b_amuse', 'b_tower'); mv('b_stadium', 'b_workshop');
+    Object.keys(b).forEach(k => { if (!DB.buildings.find(x => x.id === k)) delete b[k]; else b[k] = Math.min(5, b[k] | 0); });
+    const ss = s.subjStats || {}, g = k => (ss[k] ? ss[k].correct | 0 : 0), t = k => (ss[k] ? ss[k].total | 0 : 0);
+    const kc = s.kingdom.cat;
+    kc.math = { c: g('數學'), t: t('數學') };
+    kc.chinese = { c: g('國語') + g('注音'), t: t('國語') + t('注音') };
+    kc.english = { c: g('英文'), t: t('英文') };
+    kc.science = { c: g('自然') + Math.floor(g('常識') / 2), t: t('自然') + Math.floor(t('常識') / 2) };
+    kc.social = { c: g('社會') + Math.ceil(g('常識') / 2), t: t('社會') + Math.ceil(t('常識') / 2) };
+    s.kingdom.migrated = true;
+  },
+
+  catOf(q) {
+    const sj = q.subj;
+    if (sj === '數學') return 'math';
+    if (sj === '國語' || sj === '注音') return 'chinese';
+    if (sj === '英文') return 'english';
+    if (sj === '自然') return 'science';
+    if (sj === '社會') return 'social';
+    return /規則|應該|怎麼做|要說|可以|禮貌|排隊|公車|老師|同學|讓座|紅燈|馬路|垃圾|還給|借|幫助/.test(q.q || '') ? 'social' : 'science';
+  },
+
+  gain(res, n) {
+    n = Math.round(n || 0); if (!n) return;
+    const s = this.state; this.ensureK();
+    s[res] = (s[res] | 0) + n;
+    s.kingdom.cnt[res] = (s.kingdom.cnt[res] || 0) + n;
+  },
+
+  kCount(q, ok) {
+    const cat = this.catOf(q), c = this.state.kingdom.cat[cat];
+    c.t++; if (ok) c.c++;
+    return cat;
+  },
+
+  kDrop(cat) {
+    const B = this.battle, kb = this.kBonus(); if (!B) return;
+    if (Math.random() > 0.4 + (kb.boost[cat] || 0)) return;
+    const res = cat === 'math' ? (Math.random() < 0.6 ? 'stone' : 'steel') : cat === 'chinese' ? 'wood' : cat === 'english' ? 'badge' : cat === 'science' ? 'crystal' : 'blueprint';
+    this.gain(res, 1);
+    B.drops = B.drops || {}; B.drops[res] = (B.drops[res] || 0) + 1;
+    try { const E = FX.pos('sprite-enemy'); if (E) FX.burst(RES[res].icon, { x: E.x, y: E.y - E.h * .45 }, 30, 800); } catch (_) {}
+  },
+
+  kSum() { return Object.values(this.state.buildings || {}).reduce((a, b) => a + (b | 0), 0); },
+  kLevel() { const sum = this.kSum(); let l = 1; KDB.levels.forEach((t, i) => { if (sum >= t) l = i + 1; }); return l; },
+  resCount() {
+    const s = this.state; this.ensureK();
+    return KDB.residents.filter(r => s.kingdom.res[r.id]).length + Math.floor((s.pop | 0) / 12);
+  },
+
+  kBonus() {
+    const b = this.state.buildings || {}, L = id => b[id] | 0;
+    return {
+      exp: .04 * L('b_school') + .02 * L('b_castle'), gold: .05 * L('b_market') + .02 * L('b_castle'), atk: .02 * L('b_tower'),
+      wood: 2 * L('b_farm'), stone: L('b_workshop'), steel: Math.floor(L('b_workshop') / 2), heal: L('b_park'),
+      boost: { math: .04 * L('b_school'), chinese: .04 * L('b_library'), english: .04 * L('b_academy'), science: .04 * L('b_lab'), social: .04 * L('b_hall') }
+    };
+  },
+
+  bInfo(b) {
+    const s = this.state; this.ensureK();
+    const lv = s.buildings[b.id] | 0, k = lv + 1, KL = this.kLevel();
+    const cost = {}; Object.entries(b.cost).forEach(([r, v]) => { cost[r] = Math.round(v * k); });
+    const step = b.cat ? 50 : 30, needN = (k - 1) * step;
+    const have = b.cat ? s.kingdom.cat[b.cat].c : (s.stats.correct | 0);
+    const label = b.cat ? CATN[b.cat] + '答對' : '累計答對';
+    const lockedKL = lv === 0 && b.unlock > KL, maxed = lv >= 5;
+    const resOk = Object.entries(cost).every(([r, v]) => (s[r] | 0) >= v);
+    const learnOk = have >= needN;
+    return { lv, k, cost, needN, have, label, lockedKL, maxed, resOk, learnOk, ok: !maxed && !lockedKL && resOk && learnOk };
+  },
+
+  bArt(b, lv, size) {
+    const l = Math.max(1, Math.min(5, lv || 1));
+    return Art.k(`img/bld_${b.img}_${l}.png`, b.icons[l - 1], size);
+  },
+
+  upgradeBuilding(id) {
+    const b = DB.buildings.find(x => x.id === id); if (!b) return;
+    const i = this.bInfo(b), s = this.state;
+    if (i.maxed) { this.toast('已經是最高等級！'); return; }
+    if (i.lockedKL) { this.toast('王國 Lv.' + b.unlock + ' 才能解鎖'); return; }
+    if (!i.learnOk) { this.toast(`還需要${i.label} ${i.needN} 題（目前 ${i.have}）`); return; }
+    if (!i.resOk) { this.toast('資源不足'); return; }
+    const beforeKL = this.kLevel();
+    Object.entries(i.cost).forEach(([r, v]) => { s[r] = (s[r] | 0) - v; });
+    s.buildings[id] = i.k; s.pop = (s.pop | 0) + b.pop;
+    this._kPop = id;
+    this.toast((i.lv ? '⬆️ 升級完成：' : '🏗️ 建造完成：') + b.names[i.k - 1] + ' Lv.' + i.k);
+    this.syncKingdom();
+    const KL = this.kLevel();
+    if (KL > beforeKL) this.toast('👑 王國升級！Lv.' + KL + '「' + KDB.lvNames[KL - 1] + '」');
+    this.checkAchievements(); this.save(); this.renderAll();
+    if (document.getElementById('bld-modal').classList.contains('active')) this.renderBldModal(id);
+  },
+
+  openBuilding(id) {
+    const b = DB.buildings.find(x => x.id === id); if (!b) return;
+    const i = this.bInfo(b);
+    if (i.lockedKL) { this.toast('🔒 王國 Lv.' + b.unlock + ' 才能解鎖「' + b.name + '」'); return; }
+    this.renderBldModal(id);
+    document.getElementById('bld-modal').classList.add('active');
+  },
+  closeBuilding() { document.getElementById('bld-modal').classList.remove('active'); },
+
+  effNow(b, lv) {
+    const v = lv | 0;
+    switch (b.id) {
+      case 'b_house': return `人口 +${20 * v}`;
+      case 'b_farm': return `通關木材 +${2 * v}`;
+      case 'b_school': return `經驗 +${4 * v}%`;
+      case 'b_library': case 'b_academy': case 'b_lab': case 'b_hall': return `掉落機率 +${4 * v}%`;
+      case 'b_workshop': return `通關石材 +${v}、鐵礦 +${Math.floor(v / 2)}`;
+      case 'b_market': return `通關金幣 +${5 * v}%`;
+      case 'b_park': return `答對回血 +${v}`;
+      case 'b_tower': return `攻擊力 +${2 * v}%`;
+      case 'b_castle': return `經驗與金幣 +${2 * v}%`;
+    }
+    return '';
+  },
+
+  renderBldModal(id) {
+    const b = DB.buildings.find(x => x.id === id), i = this.bInfo(b), s = this.state, box = document.getElementById('bld-box');
+    const lvShow = Math.max(1, i.lv), nextIdx = Math.min(5, i.k);
+    const chips = Object.entries(i.cost).map(([r, v]) => {
+      const have = s[r] | 0, ok = have >= v;
+      return `<span class="cc ${ok ? 'ok' : 'no'}">${RES[r].icon} ${have}/${v}</span>`;
+    }).join('');
+    const pct = i.needN ? Math.min(100, i.have / i.needN * 100) : 100;
+    const learn = i.maxed ? '' : `<div class="bm-learn"><div class="bm-lbl">📐 ${i.needN ? i.label + ' ' + Math.min(i.have, i.needN) + '/' + i.needN + ' 題' : '無學習門檻'}${i.learnOk ? ' ✅' : ''}</div><div class="progress"><i style="width:${pct}%"></i></div></div>`;
+    let btn;
+    if (i.maxed) btn = '<button class="btn green block" type="button" disabled>🌟 已達最高等級</button>';
+    else btn = `<button class="btn ${i.ok ? 'green' : 'purple'} block" type="button" onclick="Game.upgradeBuilding('${b.id}')" ${i.ok ? '' : 'style="opacity:.6"'}>${i.lv ? '⬆️ 升級' : '🏗️ 建造'}為「${b.names[nextIdx - 1]}」</button>`;
+    const art = this.bArt(b, lvShow, 96);
+    box.innerHTML = `<h2>${b.icon} ${b.name}</h2><div class="bm-body">
+      <div class="bm-art" style="${i.lv ? '' : 'filter:grayscale(1) opacity(.5)'}">${art}</div>
+      <p class="center" style="margin:6px 0 2px;font-weight:900;font-size:16px;color:#4a3320">${i.lv ? b.names[i.lv - 1] + '　Lv.' + i.lv : '尚未建造'}</p>
+      <div class="bm-lvs">${[1, 2, 3, 4, 5].map(n => `<span class="${n <= i.lv ? 'on' : ''}">${n}</span>`).join('')}</div>
+      <p class="muted center" style="margin:4px 0 8px">${b.eff}${i.lv ? '<br>目前效果：' + this.effNow(b, i.lv) : ''}</p>
+      ${i.maxed ? '' : `<p style="font-weight:900;margin:6px 0 2px;color:#4a3320">所需資源</p><div>${chips}</div>${learn}`}
+      <div style="margin-top:12px">${btn}</div>
+      <button class="btn blue block" type="button" style="margin-top:8px" onclick="Game.closeBuilding()">關閉</button></div>`;
+  },
+
+  syncKingdom() {
+    const s = this.state; this.ensureK();
+    KDB.residents.forEach(r => {
+      if ((s.buildings[r.bld] | 0) >= 1 && !s.kingdom.res[r.id]) {
+        s.kingdom.res[r.id] = true;
+        s.kingdom.q[r.id] = { i: 0, base: this.qCount(r.quests[0]), done: 0 };
+        s.kingdom.favor[r.id] = s.kingdom.favor[r.id] || 0;
+        if (this._kReady) this.toast(r.icon + ' ' + r.name + ' 搬進王國了！');
+      }
     });
+    this._kReady = true;
+  },
+
+  qCount(q) {
+    const s = this.state, k = s.kingdom;
+    if (q.kind === 'cat') return k.cat[q.key].c;
+    if (q.kind === 'res') return k.cnt[q.key] || 0;
+    return k.cnt[q.key] || 0;
+  },
+  qNow(r) {
+    const st = this.state.kingdom.q[r.id]; if (!st) return null;
+    const def = r.quests[st.i % r.quests.length];
+    const n = Math.round(def.n * (1 + 0.5 * Math.floor((st.done || 0) / r.quests.length)));
+    const prog = Math.max(0, this.qCount(def) - st.base);
+    return { def, n, prog, done: prog >= n, st };
+  },
+  claimQuest(rid) {
+    const r = KDB.residents.find(x => x.id === rid), q = r && this.qNow(r); if (!q || !q.done) return;
+    const s = this.state, parts = [];
+    Object.entries(q.def.r).forEach(([k, v]) => {
+      if (k === 'gold' || k === 'dia') s[k] = (s[k] | 0) + v; else this.gain(k, v);
+      parts.push(RES[k].icon + v);
+    });
+    s.kingdom.favor[rid] = (s.kingdom.favor[rid] || 0) + 1;
+    q.st.done = (q.st.done || 0) + 1; q.st.i = (q.st.i + 1) % r.quests.length;
+    q.st.base = this.qCount(r.quests[q.st.i]);
+    this.toast(r.icon + ' ' + r.name + '：謝謝你！ ' + parts.join(' '));
+    this.checkAchievements(); this.save(); this.renderAll();
+  },
+
+  renderCity() {
+    this.syncKingdom();
+    const s = this.state, KL = this.kLevel(), sum = this.kSum();
+    const cur = KDB.levels[KL - 1], nxt = KDB.levels[KL];
+    const pct = nxt == null ? 100 : Math.round((sum - cur) / (nxt - cur) * 100);
+    const hint = nxt == null ? '王國已達最高等級！' : `再提升 ${nxt - sum} 級建築，就能升為「${KDB.lvNames[KL]}」`;
+    const soon = DB.buildings.filter(b => b.unlock === KL + 1).map(b => b.icon + b.name).join('、');
+    const resChips = ['gold', 'wood', 'stone', 'steel', 'crystal', 'blueprint', 'badge'].map(r => `<span class="bt-chip">${RES[r].icon} ${(s[r] | 0).toLocaleString()}</span>`).join('');
+    document.getElementById('k-head').innerHTML =
+      `<h3>👑 我的王國</h3>
+       <div class="k-title"><b>Lv.${KL}　${KDB.lvNames[KL - 1]}</b><span class="tag ok">居民 ${this.resCount()}</span></div>
+       <div class="progress"><i style="width:${pct}%"></i></div>
+       <p class="muted" style="margin:6px 0">${hint}${soon ? '<br>下一級將解鎖：' + soon : ''}</p>
+       <div class="k-res">${resChips}</div>
+       <p class="muted" style="margin-top:6px">人口 ${s.pop | 0}　·　每次通關收租 🪙${this.cityIncome()}</p>`;
+    this.renderScene(KL);
+    // 建築格
+    const grid = document.getElementById('k-build-grid'); grid.innerHTML = '';
+    DB.buildings.forEach(b => {
+      const i = this.bInfo(b), el = document.createElement('div');
+      el.className = 'codex-item' + (i.lv ? '' : ' locked');
+      const st = i.lockedKL ? `🔒 王國Lv.${b.unlock}` : i.maxed ? '⭐ 滿級' : i.lv ? (i.ok ? '⬆️ 可升級' : 'Lv.' + i.lv) : (i.ok ? '🏗️ 可建造' : '尚未建造');
+      el.innerHTML = `<div class="c-icon">${this.bArt(b, Math.max(1, i.lv), 52)}</div>
+        <div class="c-name">${b.name}</div><div class="muted" style="font-size:10px;font-weight:800;${i.ok ? 'color:#2d9a2d' : ''}">${st}</div>`;
+      el.onclick = () => this.openBuilding(b.id);
+      grid.appendChild(el);
+    });
+    // 居民
+    const rl = document.getElementById('k-res-list'); rl.innerHTML = '';
+    KDB.residents.forEach(r => {
+      const el = document.createElement('div'); el.className = 'list-item';
+      if (!s.kingdom.res[r.id]) {
+        const bd = DB.buildings.find(x => x.id === r.bld);
+        el.innerHTML = `<div style="opacity:.35;filter:grayscale(1)">${Art.k('img/res_' + r.id + '.png', r.icon, 44)}</div>
+          <div class="info"><b>？？？</b><small>建造「${bd.name}」後會搬進王國</small></div>`;
+      } else {
+        const q = this.qNow(r), fv = Math.min(5, s.kingdom.favor[r.id] || 0);
+        const pr = Math.min(100, q.prog / q.n * 100);
+        el.innerHTML = `<div>${Art.k('img/res_' + r.id + '.png', r.icon, 44)}</div>
+          <div class="info"><b>${r.name}　<span style="font-size:11px">${'❤️'.repeat(fv)}${'🤍'.repeat(5 - fv)}</span></b>
+          <small>任務：${q.def.t} ${q.n} ${q.def.unit}（${Math.min(q.prog, q.n)}/${q.n}）</small>
+          <small>獎勵：${Object.entries(q.def.r).map(([k, v]) => RES[k].icon + v).join(' ')}</small>
+          <div class="progress"><i style="width:${pr}%"></i></div></div>
+          <button class="btn ${q.done ? 'green' : 'purple'} sm" type="button" ${q.done ? '' : 'disabled style="opacity:.5"'}>${q.done ? '領取' : '進行中'}</button>`;
+        el.querySelector('button').onclick = () => this.claimQuest(r.id);
+      }
+      rl.appendChild(el);
+    });
+  },
+
+  renderScene(KL) {
+    const el = document.getElementById('k-scene'); if (!el) return;
+    const s = this.state, B = s.buildings, built = id => (B[id] | 0) >= 1, bg = KL >= 6 ? 'c' : KL >= 4 ? 'b' : 'a';
+    const slot = id => DB.buildings.find(b => b.id === id).slot;
+    const seg = (a, b, d) => (built(a) && built(b)) ? `<path d="${d}" class="rd"/>` : '';
+    let svg = `<svg class="ks-svg" viewBox="0 0 100 120" preserveAspectRatio="none">
+      <path d="M100,66 C88,74 98,84 88,96 S98,112 100,120" class="rv"/>
+      ${KL >= 2 && built('b_house') ? '<path d="M50,89 L50,110" class="rd"/>' : ''}
+      ${seg('b_house', 'b_park', 'M50,89 L50,62')}${seg('b_park', 'b_hall', 'M50,62 L50,42')}${seg('b_hall', 'b_castle', 'M50,42 L50,18')}
+      ${seg('b_school', 'b_park', 'M24,70 Q36,66 50,62')}${seg('b_market', 'b_park', 'M76,70 Q64,66 50,62')}
+      ${seg('b_library', 'b_hall', 'M26,48 Q38,46 50,42')}${seg('b_academy', 'b_hall', 'M74,48 Q62,46 50,42')}
+      ${seg('b_workshop', 'b_house', 'M28,93 Q40,94 50,89')}${seg('b_farm', 'b_house', 'M74,94 Q62,94 50,89')}
+      ${seg('b_lab', 'b_library', 'M17,26 Q18,40 22,48')}${seg('b_tower', 'b_academy', 'M83,26 Q82,40 78,48')}
+    </svg>`;
+    let h = `<img class="ks-bg" src="img/bg_kingdom_${bg}.png" alt="" onerror="this.remove()">${svg}`;
+    // 景觀
+    KDB.decor.forEach(d => { if (KL >= d.m) h += `<span class="kd" style="left:${d.x}%;top:${d.y}%;font-size:${d.sz}px">${Art.k('img/deco_' + d.id + '.png', d.e, d.sz, true)}</span>`; });
+    (s.unlockedZones || []).forEach(z => { const l = KDB.landmarks[z]; if (l) h += `<span class="kd" style="left:${l.x}%;top:${l.y}%;font-size:${l.sz}px">${Art.k('img/lm_' + z + '.png', l.e, l.sz, true)}</span>`; });
+    // 建築
+    DB.buildings.forEach(b => {
+      const i = this.bInfo(b), [x, y] = b.slot;
+      if (i.lv > 0) {
+        const sc = (.8 + .08 * i.lv).toFixed(2);
+        h += `<button type="button" class="kb${this._kPop === b.id ? ' pop' : ''}" style="left:${x}%;top:${y}%;--s:${sc}" onclick="Game.openBuilding('${b.id}')">
+          ${this.bArt(b, i.lv, 64)}<i class="kb-lv">Lv${i.lv}</i>${i.ok ? '<i class="kb-up">⬆️</i>' : ''}</button>`;
+      } else if (!i.lockedKL) {
+        h += `<button type="button" class="kb plot" style="left:${x}%;top:${y}%" onclick="Game.openBuilding('${b.id}')">🪧${i.ok ? '<i class="kb-up">🏗️</i>' : ''}</button>`;
+      } else if (b.unlock === KL + 1) {
+        h += `<button type="button" class="kb lock" style="left:${x}%;top:${y}%" onclick="Game.openBuilding('${b.id}')">🔒</button>`;
+      }
+    });
+    this._kPop = null;
+    // 居民、村民、英雄與寵物
+    KDB.residents.forEach((r, n) => {
+      if (!s.kingdom.res[r.id]) return;
+      h += `<span class="kw" style="left:${20 + n * 9}%;top:${88 + (n % 3) * 3}%;--dx:${26 + n * 4}px;--t:${11 + n * 2}s;animation-delay:-${n * 2.3}s">${Art.k('img/res_' + r.id + '.png', r.icon, 26, true)}</span>`;
+    });
+    const vill = ['🧒', '👧', '👦', '👵', '👴', '🧑‍🌾', '👩‍🍳', '🧑‍🎨'], vn = Math.min(8, Math.floor((s.pop | 0) / 25));
+    for (let n = 0; n < vn; n++) h += `<span class="kw sm" style="left:${12 + (n * 37) % 78}%;top:${87 + (n * 5) % 10}%;--dx:${14 + (n % 4) * 6}px;--t:${9 + n}s;animation-delay:-${n * 1.7}s">${vill[n]}</span>`;
+    const cls = DB.classes[s.heroClass] || { icon: '⚔️' };
+    h += `<span class="kh" style="left:40%;top:95%">${Art.html('hero:' + s.heroClass, 44, cls.icon)}</span>`;
+    const ap = Object.entries(s.pets || {}).find(([, p]) => p.active), pd = ap && DB.pets.find(x => x.id === ap[0]);
+    if (pd) h += `<span class="kh" style="left:52%;top:96%">${Art.html('pet:' + pd.id + ':' + (ap[1].stage || 0), 34, pd.icons[ap[1].stage || 0])}</span>`;
+    el.innerHTML = h;
   },
 
   renderPets() {
@@ -3156,23 +3573,41 @@ const Game = {
     });
   },
 
+  setCodexTab(t) { this.ui = this.ui || {}; this.ui.codexTab = t; this.renderCodex(); },
+
   renderCodex() {
-    const s = this.state, got = Object.keys(s.codex || {}).length;
-    const pct = Math.round(got / 52 * 100);
-    document.getElementById('codex-summary').innerHTML =
-      `<span>已收集 <b>${got}/52</b></span><div class="progress"><i style="width:${pct}%"></i></div><b>${pct}%</b>`;
+    const s = this.state; this.ensureK(); this.ui = this.ui || {};
+    const view = this.ui.codexTab || 'mon';
+    const tabs = [['mon', '👾 怪物'], ['boss', '👑 Boss'], ['pet', '🐾 寵物'], ['bld', '🏗️ 建築'], ['res', '👥 居民'], ['zone', '🗺️ 區域'], ['ach', '🏆 成就']];
+    document.getElementById('codex-tabs').innerHTML = tabs.map(([k, n]) => `<button type="button" class="ctab${k === view ? ' on' : ''}" onclick="Game.setCodexTab('${k}')">${n}</button>`).join('');
     const list = document.getElementById('codex-list'); list.innerHTML = '';
-    DB.monsters.forEach(m => {
-      const owned = !!s.codex[m.id];
-      const cnt = s.codex[m.id] || 0;
-      const el = document.createElement('div');
-      el.className = 'codex-item' + (owned ? '' : ' locked');
-      el.innerHTML = `
-        <div class="c-icon">${Art.html('mon:' + m.id, 56, m.icon)}</div>
-        <div class="c-name">${owned ? m.name : '???'}</div>
-        <div class="muted" style="font-size:9px">${owned ? `擊敗 ${cnt} 次` : '未發現'}</div>`;
+    list.className = view === 'ach' ? '' : 'grid4';
+    let got = 0, total = 0;
+    const add = (owned, art, name, sub) => {
+      total++; if (owned) got++;
+      const el = document.createElement('div'); el.className = 'codex-item' + (owned ? '' : ' locked');
+      el.innerHTML = `<div class="c-icon">${art}</div><div class="c-name">${owned ? name : '???'}</div><div class="muted" style="font-size:9px">${sub}</div>`;
       list.appendChild(el);
-    });
+    };
+    if (view === 'mon') {
+      DB.monsters.forEach(m => { const c = s.codex[m.id] || 0; add(!!c, Art.html('mon:' + m.id, 56, m.icon), m.name, c ? `擊敗 ${c} 次` : '未發現'); });
+    } else if (view === 'boss') {
+      DB.zones.forEach((z, i) => { const d = (s.stageStars[i] || 0) > 0; add(d, Art.html('boss:' + i, 56, z.boss.icon), z.boss.name, d ? '已擊敗' : '未擊敗'); });
+      const w = !!(s.achievements && s.achievements.a_weak_done); add(w, Art.html('boss:weak', 56, '👾'), '錯題大魔王', w ? '已擊敗' : '未擊敗');
+    } else if (view === 'pet') {
+      DB.pets.forEach(p => { const st = s.pets[p.id]; add(!!st, Art.html('pet:' + p.id + ':' + (st ? st.stage : 0), 56, p.icons[st ? st.stage : 0]), st ? p.stages[st.stage] : p.stages[0], st ? ['幼年', '成長', '完全體'][st.stage] : '未獲得'); });
+    } else if (view === 'bld') {
+      DB.buildings.forEach(b => { const lv = s.buildings[b.id] | 0; add(lv > 0, this.bArt(b, Math.max(1, lv), 56), b.names[Math.max(0, lv - 1)], lv ? 'Lv.' + lv + '／5' : '未建造'); });
+    } else if (view === 'res') {
+      KDB.residents.forEach(r => { const o = !!s.kingdom.res[r.id]; add(o, Art.k('img/res_' + r.id + '.png', r.icon, 56), r.name, o ? '好感 ' + Math.min(5, s.kingdom.favor[r.id] || 0) + '／5' : '未入住'); });
+    } else if (view === 'zone') {
+      DB.zones.forEach((z, i) => { const u = (s.unlockedZones || []).includes(i); add(u, Art.k('img/lm_' + i + '.png', (KDB.landmarks[i] || { e: '🌱' }).e, 56), z.name, u ? '★'.repeat(s.stageStars[i] || 0) + '☆'.repeat(3 - (s.stageStars[i] || 0)) : '未解鎖'); });
+    } else {
+      DB.achievements.forEach(a => { total++; const d = !!s.achievements[a.id]; if (d) got++;
+        list.insertAdjacentHTML('beforeend', `<div class="list-item"><div>${d ? '🏅' : '🔒'}</div><div class="info"><b>${a.name}</b><small>${a.desc}　獎勵 🪙${a.reward}</small></div><span class="tag${d ? ' ok' : ''}">${d ? '已達成' : '未完成'}</span></div>`); });
+    }
+    const pct = total ? Math.round(got / total * 100) : 0;
+    document.getElementById('codex-summary').innerHTML = `<span>已收集 <b>${got}/${total}</b></span><div class="progress"><i style="width:${pct}%"></i></div><b>${pct}%</b>`;
   },
 
   renderAchieve() {
@@ -3202,6 +3637,16 @@ const Game = {
       const p = v.total ? Math.round(v.correct / v.total * 100) : 0;
       return `<div class="subj-row"><span>${k}</span><div class="progress"><i style="width:${p}%"></i></div><b>${v.correct}/${v.total} · ${p}%</b></div>`;
     }).join('') || '<p class="muted center" style="margin-top:8px">尚無資料，先去冒險吧！</p>';
+    this.ensureK();
+    const KL = this.kLevel();
+    const catRows = Object.keys(CATN).map(c => { const v = s.kingdom.cat[c], p = v.t ? Math.round(v.c / v.t * 100) : 0;
+      return `<div class="subj-row"><span>${CATN[c]}</span><div class="progress"><i style="width:${p}%"></i></div><b>${v.c}/${v.t} · ${p}%</b></div>`; }).join('');
+    const cands = DB.buildings.map(b => ({ b, i: this.bInfo(b) })).filter(x => !x.i.maxed && !x.i.lockedKL && !x.i.learnOk).sort((a, b) => (a.i.needN - a.i.have) - (b.i.needN - b.i.have));
+    const sug = cands[0] ? `再${cands[0].i.label} ${cands[0].i.needN - cands[0].i.have} 題，就能升級「${cands[0].b.name}」` : '';
+    const kingdomBlock = `<p style="margin:14px 0 6px;font-weight:900;color:#4a3320">🏰 王國成長</p>
+      <div class="stat-tiles">${tile('Lv.' + KL, '王國等級')}${tile(this.kSum(), '建築總等級')}${tile(this.resCount(), '居民')}
+      ${tile((s.unlockedZones || []).length + '/8', '已解鎖區域')}${tile(Object.keys(s.codex || {}).length + '/52', '怪物圖鑑')}${tile(Object.keys(s.pets || {}).length + '/8', '寵物')}</div>
+      <p style="margin:10px 0 2px;font-weight:900;color:#4a3320">各科學習（對應王國建築）</p>${catRows}${sug ? `<div class="tip-box">🎯 ${sug}</div>` : ''}`;
     document.getElementById('parent-body').innerHTML =
       `<p class="muted" style="margin-bottom:8px">目前題庫：<b style="color:#6a35a8">${LV[s.grade][0]} · ${LV[s.grade][1]}</b></p>
        <div class="stat-tiles">
@@ -3209,6 +3654,7 @@ const Game = {
          ${tile(s.level, '等級')}${tile(Math.round(t.playMinutes || 0) + '分', '遊玩時間')}${tile(s.wrongLog.length, '錯題')}
        </div>
        <p style="margin:14px 0 2px;font-weight:900;color:#4a3320">📚 科目表現</p>${rows}
+        ${kingdomBlock}
        <div class="tip-box">💡 建議：正確率穩定超過 85% 就升一級題庫，每天打一次錯題魔王。</div>
        <button class="btn purple block" type="button" style="margin-top:12px" onclick="Game.startWeakBoss()">👾 開始錯題複習戰</button>`;
   },
