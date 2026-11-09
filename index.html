@@ -737,6 +737,107 @@ select {
 /* 設定頁按鈕間距 */
 .off { font-style: normal; color: #d9ccb0 !important; text-shadow: 0 1px 0 #b9a883 !important; -webkit-text-stroke: 0 !important; }
 .stack { display: flex; flex-direction: column; gap: 10px; }
+
+/* ===== 注音標示（直式、標在字的右側；開關於「設定」） ===== */
+@property --zfv { syntax: '<length>'; inherits: true; initial-value: 7.5px; }
+.zyw { display: inline; }
+html.zy-on .zy {
+  --zfv: max(.42em, 7.5px);
+  position: relative; display: inline-block; line-height: inherit;
+  margin-right: calc(var(--zfv) * 1.55);
+}
+html.zy-on.zy-big .zy { --zfv: max(.5em, 9px); }
+html.zy-on .zy.t0 { margin-right: calc(var(--zfv) * 1.1); }
+html.zy-on .zy::after {
+  content: attr(data-b); position: absolute; left: 100%; top: 0; bottom: 0;
+  margin-left: calc(var(--zfv) * .1);
+  display: flex; justify-content: center; align-items: center;
+  font-family: "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
+  font-size: var(--zfv); line-height: 1; font-weight: 700; font-style: normal;
+  writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -.08em;
+  white-space: nowrap; pointer-events: none; text-shadow: none; -webkit-text-stroke: 0; opacity: .95;
+}
+html.zy-on .zy[data-t]::before {
+  content: attr(data-t); position: absolute; left: 100%;
+  margin-left: calc(var(--zfv) * 1.0);
+  top: calc(50% + (var(--n, 1) * .44 - .5) * var(--zfv) - .2 * var(--zfv));
+  transform: translateY(-50%);
+  font-family: "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
+  font-size: var(--zfv); line-height: 1; font-weight: 700; font-style: normal;
+  pointer-events: none; text-shadow: none; -webkit-text-stroke: 0; opacity: .95;
+}
+html.zy-on .zy[data-t="˙"]::before {
+  margin-left: calc(var(--zfv) * .22);
+  top: calc(50% - (var(--n, 1) * .44 + .5) * var(--zfv));
+}
+.zy.n1 { --n: 1; } .zy.n2 { --n: 2; } .zy.n3 { --n: 3; } .zy.n4 { --n: 4; }
+
+/* 注音開啟時：避免窄欄位被省略號截斷 */
+html.zy-on .hs-chap b { font-size: .94em; letter-spacing: 0; }
+html.zy-on .sc-name { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; }
+html.zy-on .skill-slot small { max-width: 84px; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; font-size: 9px; }
+
+/* ===== 戰鬥動作與技能特效（純程式繪製，不需圖片） ===== */
+#fx-layer { position: absolute; inset: 0; pointer-events: none; z-index: 9; overflow: hidden; }
+.fxe { position: absolute; transform: translate(-50%, -50%); line-height: 1; pointer-events: none; will-change: transform, opacity; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.fxring { position: absolute; border-radius: 50%; border: 5px solid #fff; transform: translate(-50%, -50%); pointer-events: none; }
+.fxslash { position: absolute; height: 9px; width: 120px; border-radius: 9px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, #fff 30%, #fff 70%, transparent); box-shadow: 0 0 12px #bfe3ff; }
+.fxarrow { position: absolute; width: 54px; height: 5px; border-radius: 3px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, #8a5a2b 30%, #8a5a2b); }
+.fxarrow::after { content: ''; position: absolute; right: -9px; top: -5px; border-left: 13px solid #dfe5ea; border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
+.fxarrow.big { width: 90px; height: 7px; }
+.fxdot { position: absolute; width: 13px; height: 13px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(#fff, #ffd23a 55%, #ff8a1a); box-shadow: 0 0 8px #ffb02a; }
+.fxflash { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+
+/* ===== 我的王國（視覺化王國） ===== */
+#bld-modal { display: none; position: fixed; inset: 0; z-index: 300; padding: 28px 16px 16px; background: rgba(20,28,60,.72); backdrop-filter: blur(3px); align-items: center; justify-content: center; }
+#bld-modal.active { display: flex; }
+#bld-box { overflow: visible; }
+.bm-body { max-height: calc(88dvh - 56px); overflow-y: auto; padding: 2px; }
+.k-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 16px; color: #4a3320; }
+.k-res { display: flex; flex-wrap: wrap; gap: 6px; }
+.k-scene { position: relative; width: 100%; aspect-ratio: 5 / 6; border-radius: 18px; overflow: hidden; border: 3px solid #7fbf68;
+  background: radial-gradient(60% 18% at 15% 28%, #93d882 0, transparent 70%), radial-gradient(70% 20% at 85% 40%, #8ad37a 0, transparent 70%),
+    linear-gradient(180deg, #bfe6ff 0%, #d9f2ff 12%, #a6df91 24%, #86cd72 60%, #6fbf62 100%);
+  box-shadow: inset 0 0 30px rgba(255,255,255,.35); }
+.k-scene .ks-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.k-scene .ks-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.ks-svg .rv { fill: none; stroke: #7ec8f0; stroke-width: 7; stroke-linecap: round; opacity: .9; }
+.ks-svg .rd { fill: none; stroke: #e6cc96; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.kd { position: absolute; translate: -50% -50%; line-height: 1; pointer-events: none; filter: drop-shadow(0 2px 1px rgba(0,0,0,.25)); }
+.kb { position: absolute; translate: -50% -50%; width: calc(64px * var(--s, 1)); height: calc(64px * var(--s, 1)); display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; padding: 0; cursor: pointer; line-height: 1; filter: drop-shadow(0 3px 2px rgba(0,0,0,.3)); -webkit-tap-highlight-color: transparent; font-family: inherit; }
+.kb > img { width: 100%; height: 100%; object-fit: contain; }
+.kb > span { font-size: calc(42px * var(--s, 1)) !important; }
+.kb-lv { position: absolute; bottom: -5px; left: 50%; translate: -50% 0; font-size: 10px; font-style: normal; font-weight: 900; line-height: 14px; padding: 0 6px; white-space: nowrap;
+  background: #fff7d6; border: 2px solid #d9a85a; border-radius: 99px; color: #7a4a10; }
+.kb-up { position: absolute; top: -8px; right: -6px; font-size: 15px; font-style: normal; animation: upBob 1s ease-in-out infinite; }
+.kb.plot { width: 48px; height: 48px; font-size: 28px; animation: plotPulse 2s ease-in-out infinite; }
+.kb.lock { width: 40px; height: 40px; font-size: 20px; opacity: .4; filter: grayscale(1); }
+.kb.pop { animation: kbPop .8s; }
+@keyframes kbPop { 0% { scale: .3; } 60% { scale: 1.3; } 100% { scale: 1; } }
+@keyframes plotPulse { 0%, 100% { scale: 1; } 50% { scale: 1.12; } }
+@keyframes upBob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+.kw { position: absolute; font-size: 22px; line-height: 1; pointer-events: none; animation: kwalk var(--t, 12s) ease-in-out infinite alternate; }
+.kw.sm { font-size: 17px; }
+@keyframes kwalk { from { translate: calc(-50% - var(--dx, 20px)) -50%; } to { translate: calc(-50% + var(--dx, 20px)) -50%; } }
+.kh { position: absolute; translate: -50% -50%; pointer-events: none; animation: khBob 2.4s ease-in-out infinite; }
+@keyframes khBob { 0%, 100% { translate: -50% -50%; } 50% { translate: -50% calc(-50% - 3px); } }
+.k-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.k-grid .codex-item { cursor: pointer; }
+.cc { display: inline-flex; align-items: center; gap: 3px; margin: 2px; padding: 2px 9px; border-radius: 99px; font-size: 12.5px; font-weight: 900; border: 2px solid #c9b48a; background: #fff8e6; color: #4a3320; }
+.cc.ok { border-color: #8cc98a; background: #eefbe9; color: #2d6a2a; }
+.cc.no { border-color: #e08a8a; background: #ffeaea; color: #b13a3a; }
+.bm-art { display: flex; justify-content: center; padding: 6px 0; }
+.bm-lvs { display: flex; gap: 6px; justify-content: center; }
+.bm-lvs span { width: 24px; height: 24px; border-radius: 50%; background: #e7dcc9; border: 2px solid #c9b48a; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; color: #a08a6a; }
+.bm-lvs span.on { background: linear-gradient(180deg, #ffd76a, #ff9a3c); border-color: #d9822f; color: #fff; }
+.bm-lbl { font-weight: 900; font-size: 13px; margin-top: 8px; color: #4a3320; }
+.c-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.ctab { font-family: inherit; border: 2px solid #c9b48a; background: #fff8e6; border-radius: 99px; padding: 4px 10px; font-weight: 900; font-size: 12px; color: #7a5a3a; cursor: pointer; }
+.ctab.on { background: linear-gradient(180deg, #ffd76a, #ff9a3c); border-color: #d9822f; color: #fff; text-shadow: 0 1px 0 #b5560a; }
 </style>
 </head>
 <body>
@@ -831,11 +932,10 @@ select {
 
     <!-- CITY -->
     <div class="panel" id="panel-city">
-      <div class="card">
-        <h3>🏘 城市建設</h3>
-        <p class="muted" id="city-summary" style="margin-bottom:10px"></p>
-        <div id="build-list"></div>
-      </div>
+      <div class="card" id="k-head"></div>
+      <div class="card"><div class="k-scene" id="k-scene"></div></div>
+      <div class="card"><h3>🏗️ 建築</h3><p class="muted" style="margin-bottom:8px">點建築看升級條件。升級要靠「答題」和「資源」！</p><div class="k-grid" id="k-build-grid"></div></div>
+      <div class="card"><h3>👥 居民與任務</h3><div id="k-res-list"></div></div>
     </div>
 
     <!-- PETS -->
@@ -858,7 +958,8 @@ select {
     <!-- CODEX -->
     <div class="panel" id="panel-codex">
       <div class="card">
-        <h3>📖 怪物圖鑑</h3>
+        <h3>📖 圖鑑</h3>
+        <div class="c-tabs" id="codex-tabs"></div>
         <div class="codex-sum" id="codex-summary"></div>
         <div class="grid4" id="codex-list" style="gap:8px"></div>
       </div>
@@ -886,6 +987,7 @@ select {
         <h3>⚙️ 設定</h3>
         <div class="stack">
           <button class="btn purple block" type="button" onclick="Game.toggleSound()">🔊 音效：<span id="sound-label">開</span></button>
+          <button class="btn green block" type="button" onclick="ZY.cycle()">ㄅㄆㄇ 注音：<span id="zy-label">標準</span></button>
           <button class="btn amber block" type="button" onclick="Game.exportSave()">📤 匯出存檔（複製）</button>
           <button class="btn block" type="button" onclick="Game.importSave()">📥 匯入存檔</button>
           <button class="btn red block" type="button" onclick="Game.resetSave()">🗑️ 清除存檔</button>
@@ -902,7 +1004,7 @@ select {
     <button class="nav-btn" type="button" data-tab="map" onclick="Game.tab('map',this)"><span class="ico">🗺️</span>地圖</button>
     <button class="nav-btn" type="button" data-tab="codex" onclick="Game.tab('codex',this)"><span class="ico">📖</span>圖鑑</button>
     <button class="nav-btn" type="button" data-tab="pets" onclick="Game.tab('pets',this)"><span class="ico">🐾</span>寵物</button>
-    <button class="nav-btn" type="button" data-tab="city" onclick="Game.tab('city',this)"><span class="ico">🏘</span>城市</button>
+    <button class="nav-btn" type="button" data-tab="city" onclick="Game.tab('city',this)"><span class="ico">🏰</span>王國</button>
     <button class="nav-btn" type="button" data-tab="achieve" onclick="Game.tab('achieve',this)"><span class="ico">🏆</span>成就</button>
     <button class="nav-btn" type="button" data-tab="parent" onclick="Game.tab('parent',this)"><span class="ico">👨‍👩‍👧</span>家長</button>
     <button class="nav-btn" type="button" data-tab="settings" onclick="Game.tab('settings',this)"><span class="ico">⚙️</span>設定</button>
@@ -980,6 +1082,7 @@ select {
 </div>
 
 <!-- Result -->
+<div id="bld-modal" onclick="if(event.target===this)Game.closeBuilding()"><div class="modal-box" id="bld-box"></div></div>
 <div id="result-modal">
   <div class="modal-box">
     <h2 class="center" id="result-title">通關！</h2>
@@ -1127,6 +1230,12 @@ const Art = {
     if (svg) return `<div style="width:${size}px;height:${size}px;margin:0 auto">${svg}</div>`;
     return `<span style="font-size:${Math.round(size * 0.7)}px">${emoji}</span>`;
   }
+};
+
+/* 王國用圖：有 PNG 就顯示，沒有就退回 emoji */
+Art.k = function (png, emoji, size, flat) {
+  size = size || 48; const fs = Math.round(size * (flat ? 0.85 : 0.7));
+  return `<img src="${png}" width="${size}" height="${size}" alt="" style="object-fit:contain;display:inline-block;vertical-align:middle" onerror="this.outerHTML='<span style=font-size:${fs}px;line-height:1>${emoji}</span>'">`;
 };
 
 /* ===== 戰鬥場景背景（內建 SVG：放了 img/bg_battle.png 會自動蓋過它） ===== */
@@ -1321,16 +1430,30 @@ const DB = {
     { id: 'p8', stages: ['小書精靈', '知識精靈', '智慧大賢者'], icons: ['📖', '📘', '📕'], bonusType: 'res', desc: '知識與資源加成' }
   ],
   buildings: [
-    { id: 'b_house', name: '房屋', icon: '🏠', cost: { gold: 40, wood: 10, stone: 5, steel: 0 }, pop: 20, income: 8, desc: '增加人口與穩定收租' },
-    { id: 'b_shop', name: '商店', icon: '🏪', cost: { gold: 60, wood: 15, stone: 10, steel: 2 }, pop: 15, income: 18, desc: '商業繁榮，金幣收入提高' },
-    { id: 'b_school', name: '學校', icon: '🏫', cost: { gold: 80, wood: 20, stone: 15, steel: 5 }, pop: 30, income: 12, desc: '教育中心，經驗小幅提升' },
-    { id: 'b_library', name: '圖書館', icon: '📚', cost: { gold: 100, wood: 25, stone: 20, steel: 8 }, pop: 25, income: 15, desc: '知識寶庫，錯題複習更有效' },
-    { id: 'b_hospital', name: '醫院', icon: '🏥', cost: { gold: 90, wood: 15, stone: 25, steel: 10 }, pop: 20, income: 10, desc: '答對時回復生命' },
-    { id: 'b_park', name: '公園', icon: '🌳', cost: { gold: 50, wood: 30, stone: 10, steel: 0 }, pop: 35, income: 6, desc: '休閒空間，人口快樂成長' },
-    { id: 'b_lab', name: '研究所', icon: '🔬', cost: { gold: 150, wood: 20, stone: 40, steel: 25 }, pop: 40, income: 30, desc: '科技研發，鋼鐵產出提升' },
-    { id: 'b_museum', name: '博物館', icon: '🏛️', cost: { gold: 120, wood: 20, stone: 35, steel: 15 }, pop: 30, income: 22, desc: '展示知識成果' },
-    { id: 'b_amuse', name: '遊樂園', icon: '🎡', cost: { gold: 180, wood: 40, stone: 30, steel: 20 }, pop: 50, income: 28, desc: '快樂學習，連擊加成' },
-    { id: 'b_stadium', name: '體育館', icon: '🏟️', cost: { gold: 200, wood: 30, stone: 50, steel: 30 }, pop: 45, income: 25, desc: '體能與意志訓練' }
+    { id: 'b_house', img: 'house', name: '住宅', icon: '🏠', icons: ['🛖', '🏠', '🏡', '🏘️', '🏩'], names: ['小木屋', '雙層木屋', '漂亮木屋', '豪華住宅', '貴族莊園'],
+      unlock: 1, cat: null, slot: [50, 74], cost: { gold: 30, wood: 10, stone: 5 }, pop: 20, income: 5, eff: '居民的家，每級人口 +20' },
+    { id: 'b_farm', img: 'farm', name: '農場', icon: '🌾', icons: ['🌱', '🥕', '🌾', '🐄', '🏡'], names: ['小菜園', '小農場', '大農場', '牧場莊園', '豐收農莊'],
+      unlock: 2, cat: null, slot: [78, 78], cost: { gold: 40, wood: 15 }, pop: 10, income: 4, eff: '每次通關多得木材 +2／級' },
+    { id: 'b_school', img: 'school', name: '學校', icon: '🏫', icons: ['⛺', '🏠', '🏫', '🏫', '🏛️'], names: ['小教室', '鄉村學校', '明亮學堂', '城鎮學院', '知識學府'],
+      unlock: 3, cat: 'math', slot: [20, 58], cost: { gold: 60, stone: 10, steel: 3 }, pop: 25, income: 8, eff: '經驗 +4%／級；答數學更容易掉落石材與鐵礦' },
+    { id: 'b_library', img: 'library', name: '圖書館', icon: '📚', icons: ['📕', '📚', '🏤', '🏛️', '🏰'], names: ['書架小屋', '社區圖書室', '木造圖書館', '大圖書館', '智慧藏書塔'],
+      unlock: 3, cat: 'chinese', slot: [22, 40], cost: { gold: 70, wood: 15, stone: 6 }, pop: 20, income: 8, eff: '答國語更容易掉落木材（+4%／級）' },
+    { id: 'b_academy', img: 'academy', name: '英語學院', icon: '🔤', icons: ['🔤', '🗣️', '🏤', '🎓', '🏛️'], names: ['語言小站', '英語教室', '英語學院', '國際學院', '環球語言殿'],
+      unlock: 3, cat: 'english', slot: [78, 40], cost: { gold: 70, badge: 2, wood: 8 }, pop: 20, income: 8, eff: '答英文更容易掉落榮譽徽章（+4%／級）' },
+    { id: 'b_workshop', img: 'workshop', name: '工坊', icon: '⚒️', icons: ['🔨', '⚒️', '🛠️', '🏠', '🏘️'], names: ['工作棚', '木工坊', '工匠坊', '魔工坊', '大師工坊'],
+      unlock: 4, cat: null, slot: [24, 78], cost: { gold: 60, stone: 12, steel: 4 }, pop: 15, income: 8, eff: '每次通關多得石材 +1／級，鐵礦 +1／2 級' },
+    { id: 'b_market', img: 'market', name: '市集', icon: '🛒', icons: ['🧺', '🛒', '🏪', '🎪', '🏬'], names: ['小攤位', '熱鬧市集', '商店街', '大市場', '王國商城'],
+      unlock: 4, cat: null, slot: [80, 58], cost: { gold: 60, wood: 12, blueprint: 1 }, pop: 15, income: 14, eff: '通關金幣 +5%／級' },
+    { id: 'b_park', img: 'park', name: '花園公園', icon: '🌳', icons: ['🌱', '🌳', '🌸', '⛲', '🎡'], names: ['小花圃', '花園', '噴水公園', '遊樂花園', '童話樂園'],
+      unlock: 4, cat: null, slot: [50, 52], cost: { gold: 50, wood: 15, stone: 6 }, pop: 25, income: 5, eff: '答對時回復生命 +1／級' },
+    { id: 'b_lab', img: 'lab', name: '研究院', icon: '🔬', icons: ['🧪', '⚗️', '🔬', '🔭', '🏢'], names: ['實驗小屋', '自然教室', '研究所', '天文研究院', '奇蹟研究院'],
+      unlock: 5, cat: 'science', slot: [17, 22], cost: { gold: 90, crystal: 2, stone: 10 }, pop: 30, income: 15, eff: '答自然更容易掉落水晶（+4%／級）' },
+    { id: 'b_tower', img: 'tower', name: '魔法塔', icon: '🗼', icons: ['🕯️', '🔮', '🗼', '🗼', '🌟'], names: ['魔法小帳', '魔法屋', '魔法塔', '星象高塔', '天穹魔塔'],
+      unlock: 5, cat: null, slot: [83, 22], cost: { gold: 110, crystal: 2, blueprint: 1 }, pop: 20, income: 12, eff: '攻擊力 +2%／級' },
+    { id: 'b_hall', img: 'hall', name: '市政廳', icon: '🏛️', icons: ['📜', '🏪', '🏛️', '🏢', '🏰'], names: ['公告亭', '村公所', '市政廳', '王國議事廳', '榮耀殿堂'],
+      unlock: 5, cat: 'social', slot: [50, 35], cost: { gold: 90, blueprint: 2, stone: 8 }, pop: 25, income: 12, eff: '答社會更容易掉落建築藍圖（+4%／級）' },
+    { id: 'b_castle', img: 'castle', name: '城堡', icon: '🏰', icons: ['🏚️', '🏯', '🏰', '🏰', '👑'], names: ['營地', '石砦', '小城堡', '王城', '璀璨王宮'],
+      unlock: 6, cat: null, slot: [50, 15], cost: { gold: 200, stone: 20, steel: 8, crystal: 2, blueprint: 2, badge: 2 }, pop: 40, income: 25, eff: '經驗與金幣 +2%／級' }
   ],
   cityRanks: [
     { minPop: 0, name: '小村莊' }, { minPop: 50, name: '小鎮' }, { minPop: 120, name: '小城市' },
@@ -1352,6 +1475,13 @@ const DB = {
     { id: 'a_pet', name: '寵物夥伴', desc: '獲得 3 隻寵物', check: s => Object.keys(s.pets||{}).length >= 3, reward: 200 },
     { id: 'a_city', name: '城市建設者', desc: '人口達到 100', check: s => (s.pop||0) >= 100, reward: 300 },
     { id: 'a_level', name: '等級十', desc: '角色達到 Lv.10', check: s => (s.level||0) >= 10, reward: 200 },
+    { id: 'a_math', name: '數學小天才', desc: '答對數學 100 題', check: s => ((s.kingdom && s.kingdom.cat.math.c) || 0) >= 100, reward: 300 },
+    { id: 'a_read', name: '閱讀高手', desc: '答對國語 100 題', check: s => ((s.kingdom && s.kingdom.cat.chinese.c) || 0) >= 100, reward: 300 },
+    { id: 'a_eng', name: '英文達人', desc: '答對英文 100 題', check: s => ((s.kingdom && s.kingdom.cat.english.c) || 0) >= 100, reward: 300 },
+    { id: 'a_build', name: '王國建築師', desc: '建築總等級達 20', check: s => Object.values(s.buildings || {}).reduce((a, b) => a + (b | 0), 0) >= 20, reward: 400 },
+    { id: 'a_friend', name: '居民之友', desc: '王國居民達 30 位', check: s => Game.resCount() >= 30, reward: 400 },
+    { id: 'a_explore', name: '探險家', desc: '解鎖全部 8 個地圖', check: s => (s.unlockedZones || []).length >= 8, reward: 500 },
+    { id: 'a_petmaster', name: '寵物大師', desc: '培養全部 8 隻寵物', check: s => Object.keys(s.pets || {}).length >= 8, reward: 500 },
     { id: 'a_weak', name: '錯題剋星', desc: '擊敗錯題大魔王', check: s => !!s.achievements?.a_weak_done, reward: 350 }
   ],
   dailyTasks: [
@@ -2066,6 +2196,202 @@ const SWATCH = { '紅色': '#e8413c', '橘色': '#f58a1f', '黃色': '#ffd21f', 
   '白色': '#ffffff', '黑色': '#2b2b2b', '咖啡色': '#8a5a34', '粉紅色': '#ff9cc2', '灰色': '#9aa0a6' };
 const COLOR_RE = /(紅|橘|黃|綠|藍|紫|粉紅|咖啡|灰|金|銀|黑|白)色|^(red|orange|yellow|green|blue|purple|pink|brown|black|white|gray|grey)$/i;
 
+/* ===== 王國系統資料 ===== */
+const RES = {
+  gold: { icon: '🪙', name: '金幣' }, wood: { icon: '🪵', name: '木材' }, stone: { icon: '🪨', name: '石材' },
+  steel: { icon: '⛓️', name: '鐵礦' }, crystal: { icon: '🔮', name: '水晶' }, blueprint: { icon: '📜', name: '建築藍圖' },
+  badge: { icon: '🎖️', name: '榮譽徽章' }, dia: { icon: '💎', name: '鑽石' }
+};
+const CATN = { math: '數學', chinese: '國語', english: '英文', science: '自然', social: '社會' };
+const KDB = {
+  levels: [0, 2, 5, 9, 14, 20, 26, 33, 41, 50],
+  lvNames: ['森林空地', '小村落', '村莊', '小鎮', '繁榮城鎮', '王國成型', '繁榮王國', '魔法王國', '傳奇王國', '永恆知識王國'],
+  residents: [
+    { id: 'teacher', name: '老師', icon: '👨‍🏫', bld: 'b_school', quests: [
+      { kind: 'cat', key: 'math', n: 20, unit: '題', t: '答對數學', r: { stone: 8, gold: 40 } },
+      { kind: 'cat', key: 'math', n: 50, unit: '題', t: '答對數學', r: { steel: 6, blueprint: 1 } }] },
+    { id: 'farmer', name: '農夫', icon: '👩‍🌾', bld: 'b_farm', quests: [
+      { kind: 'res', key: 'wood', n: 30, unit: '個', t: '蒐集木材', r: { gold: 50, wood: 10 } },
+      { kind: 'res', key: 'wood', n: 60, unit: '個', t: '蒐集木材', r: { gold: 90, blueprint: 1 } }] },
+    { id: 'craftsman', name: '工匠', icon: '👨‍🔧', bld: 'b_workshop', quests: [
+      { kind: 'res', key: 'stone', n: 20, unit: '個', t: '蒐集石材', r: { steel: 3, gold: 40 } },
+      { kind: 'res', key: 'steel', n: 10, unit: '個', t: '蒐集鐵礦', r: { crystal: 1, gold: 60 } }] },
+    { id: 'librarian', name: '圖書館員', icon: '🧑‍💼', bld: 'b_library', quests: [
+      { kind: 'cat', key: 'chinese', n: 20, unit: '題', t: '答對國語', r: { wood: 12, gold: 40 } },
+      { kind: 'cat', key: 'chinese', n: 50, unit: '題', t: '答對國語', r: { blueprint: 1, badge: 1 } }] },
+    { id: 'scientist', name: '科學家', icon: '🧑‍🔬', bld: 'b_lab', quests: [
+      { kind: 'cat', key: 'science', n: 15, unit: '題', t: '完成自然', r: { crystal: 1, gold: 40 } },
+      { kind: 'cat', key: 'science', n: 40, unit: '題', t: '完成自然', r: { crystal: 2, dia: 1 } }] },
+    { id: 'mage', name: '魔法師', icon: '🧙', bld: 'b_tower', quests: [
+      { kind: 'cat', key: 'english', n: 20, unit: '題', t: '答對英文', r: { badge: 2, gold: 40 } },
+      { kind: 'stage', key: 'stages', n: 5, unit: '次', t: '通關冒險', r: { crystal: 1, badge: 1 } }] },
+    { id: 'advisor', name: '王國顧問', icon: '🤴', bld: 'b_castle', quests: [
+      { kind: 'stage', key: 'stages', n: 3, unit: '次', t: '通關冒險', r: { gold: 100, blueprint: 1 } },
+      { kind: 'boss', key: 'boss', n: 1, unit: '隻', t: '擊敗區域 Boss', r: { crystal: 2, badge: 2, dia: 1 } }] }
+  ],
+  decor: [
+    { id: 'tree1', e: '🌲', x: 6, y: 12, m: 1, sz: 30 }, { id: 'tree2', e: '🌲', x: 94, y: 10, m: 1, sz: 30 },
+    { id: 'tree3', e: '🌳', x: 5, y: 47, m: 1, sz: 30 }, { id: 'tree4', e: '🌳', x: 95, y: 47, m: 1, sz: 28 },
+    { id: 'tree5', e: '🌲', x: 7, y: 91, m: 1, sz: 30 }, { id: 'tree6', e: '🌳', x: 93, y: 93, m: 1, sz: 28 },
+    { id: 'flower1', e: '🌼', x: 36, y: 66, m: 2, sz: 20 }, { id: 'flower2', e: '🌷', x: 64, y: 66, m: 2, sz: 20 },
+    { id: 'sheep', e: '🐑', x: 11, y: 70, m: 3, sz: 22 }, { id: 'chicken', e: '🐔', x: 86, y: 90, m: 3, sz: 20 },
+    { id: 'fountain', e: '⛲', x: 36, y: 51, m: 4, sz: 28 }, { id: 'lamp1', e: '🏮', x: 34, y: 27, m: 5, sz: 22 },
+    { id: 'lamp2', e: '🏮', x: 66, y: 27, m: 5, sz: 22 }, { id: 'flag1', e: '🚩', x: 40, y: 8, m: 6, sz: 22 },
+    { id: 'flag2', e: '🚩', x: 60, y: 8, m: 6, sz: 22 }, { id: 'carousel', e: '🎠', x: 18, y: 86, m: 7, sz: 30 },
+    { id: 'balloon', e: '🎈', x: 70, y: 6, m: 8, sz: 24 }, { id: 'rainbow', e: '🌈', x: 30, y: 5, m: 9, sz: 34 },
+    { id: 'fireworks', e: '🎆', x: 80, y: 6, m: 10, sz: 30 }
+  ],
+  landmarks: [
+    null,
+    { z: 1, e: '🌲', x: 8, y: 30, sz: 34 }, { z: 2, e: '🌾', x: 12, y: 82, sz: 30 }, { z: 3, e: '⛰️', x: 92, y: 32, sz: 34 },
+    { z: 4, e: '⚓', x: 92, y: 72, sz: 28 }, { z: 5, e: '🔭', x: 6, y: 62, sz: 28 },
+    { z: 6, e: '🌹', x: 50, y: 96, sz: 26 }, { z: 7, e: '🏛️', x: 50, y: 3, sz: 30 }
+  ]
+};
+
+/* ===== 戰鬥特效引擎：攻擊衝刺、各職業技能、受擊、擊倒 ===== */
+const FX = {
+  layer() {
+    const sc = document.getElementById('battle-scene'); if (!sc) return null;
+    let l = document.getElementById('fx-layer');
+    if (!l || l.parentNode !== sc) { if (l) l.remove(); l = document.createElement('div'); l.id = 'fx-layer'; sc.appendChild(l); }
+    return l;
+  },
+  pos(id) {
+    const l = this.layer(), el = document.getElementById(id); if (!l || !el) return null;
+    const a = l.getBoundingClientRect(), b = el.getBoundingClientRect();
+    return { x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2, w: b.width, h: b.height };
+  },
+  mk(cls, x, y, txt, size) {
+    const l = this.layer(); if (!l) return null;
+    const d = document.createElement('div'); d.className = cls;
+    if (txt) d.textContent = txt;
+    d.style.left = x + 'px'; d.style.top = y + 'px';
+    if (size) d.style.fontSize = size + 'px';
+    l.appendChild(d); return d;
+  },
+  done(d, ms) { setTimeout(() => d && d.remove(), ms + 40); },
+  at(ms, fn) { setTimeout(() => { try { fn(); } catch (e) {} }, ms); },
+  proj(txt, a, b, o) {
+    o = o || {};
+    const d = this.mk('fxe' + (o.cls ? ' ' + o.cls : ''), a.x, a.y, txt, o.size || 40); if (!d) return;
+    const dx = b.x - a.x, dy = b.y - a.y, dur = o.dur || 320;
+    const ang = o.aim ? Math.atan2(dy, dx) * 180 / Math.PI : 0;
+    const T = (x, y, r, s) => `translate(-50%,-50%) translate(${x}px,${y}px) rotate(${r}deg) scale(${s})`;
+    const f = [{ transform: T(0, 0, ang, o.s0 || .7), opacity: 0 }, { transform: T(dx * .12, dy * .12, ang, o.s0 || .7), opacity: 1, offset: .12 }];
+    if (o.arc) f.push({ transform: T(dx / 2, dy / 2 - o.arc, ang + (o.spin || 0) / 2, 1), opacity: 1, offset: .5 });
+    f.push({ transform: T(dx, dy, ang + (o.spin || 0), o.s1 || 1), opacity: 1 });
+    d.animate(f, { duration: dur, easing: o.ease || 'cubic-bezier(.35,0,.8,.55)', fill: 'forwards' });
+    this.done(d, dur);
+  },
+  burst(txt, p, size, dur, spin) {
+    const d = this.mk('fxe', p.x, p.y, txt, size); if (!d) return; dur = dur || 450;
+    const T = (s, r) => `translate(-50%,-50%) scale(${s}) rotate(${r}deg)`;
+    d.animate([{ transform: T(.3, 0), opacity: 1 }, { transform: T(1.25, (spin || 0) * .6), opacity: 1, offset: .45 }, { transform: T(1.5, spin || 0), opacity: 0 }], { duration: dur, fill: 'forwards' });
+    this.done(d, dur);
+  },
+  ring(p, color, size) {
+    const d = this.mk('fxring', p.x, p.y); if (!d) return;
+    d.style.width = d.style.height = (size || 90) + 'px'; d.style.borderColor = color || '#fff'; d.style.boxShadow = '0 0 14px ' + (color || '#fff');
+    d.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: .95 }, { transform: 'translate(-50%,-50%) scale(1.5)', opacity: 0 }], { duration: 460, fill: 'forwards', easing: 'ease-out' });
+    this.done(d, 460);
+  },
+  slash(p, ang, delay) {
+    this.at(delay || 0, () => {
+      const d = this.mk('fxslash', p.x, p.y); if (!d) return;
+      const T = s => `translate(-50%,-50%) rotate(${ang}deg) scaleX(${s})`;
+      d.animate([{ transform: T(0), opacity: 1 }, { transform: T(1.1), opacity: 1, offset: .4 }, { transform: T(1.25), opacity: 0 }], { duration: 330, fill: 'forwards' });
+      this.done(d, 330);
+    });
+  },
+  flash(color, op) {
+    const d = this.mk('fxflash', 0, 0); if (!d) return; d.style.background = color;
+    d.animate([{ opacity: 0 }, { opacity: op || .5, offset: .25 }, { opacity: 0 }], { duration: 380, fill: 'forwards' });
+    this.done(d, 380);
+  },
+  shakeScene() {
+    const sc = document.getElementById('battle-scene'); if (!sc) return;
+    sc.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-6px,3px)' }, { transform: 'translate(6px,-3px)' }, { transform: 'translate(-4px,2px)' }, { transform: 'translate(0,0)' }], { duration: 300 });
+  },
+  lunge(id, toId, ratio, dur) {
+    const b = document.getElementById(id), A = this.pos(id), B = this.pos(toId); if (!b || !A || !B) return;
+    const dx = (B.x - A.x) * ratio, dy = (B.y - A.y) * ratio, s = Math.sign(B.x - A.x) || 1;
+    b.animate([
+      { transform: 'translate(0,0) scale(1)' },
+      { transform: `translate(${-12 * s}px,0) scale(.94)`, offset: .25 },
+      { transform: `translate(${dx}px,${dy}px) scale(1.08)`, offset: .5 },
+      { transform: `translate(${dx}px,${dy}px) scale(1.08)`, offset: .6 },
+      { transform: 'translate(0,0) scale(1)' }
+    ], { duration: dur, easing: 'ease-in-out' });
+  },
+  hit(id, big, ice) {
+    const b = document.getElementById(id); if (!b) return;
+    const a = big ? 14 : 9, flash = ice ? 'brightness(1.6) hue-rotate(160deg) saturate(1.6)' : 'brightness(2.4)';
+    b.animate([
+      { transform: 'translate(0,0)', filter: 'brightness(1)' },
+      { transform: `translate(${a}px,0)`, filter: flash, offset: .15 },
+      { transform: `translate(${-a * .8}px,0)`, filter: flash, offset: .35 },
+      { transform: `translate(${a * .6}px,0)`, offset: .55 },
+      { transform: `translate(${-a * .3}px,0)`, offset: .75 },
+      { transform: 'translate(0,0)', filter: 'brightness(1)' }
+    ], { duration: big ? 520 : 380 });
+  },
+  defeat() {
+    const b = document.getElementById('sprite-enemy'); if (!b) return;
+    const a = b.animate([
+      { opacity: 1, transform: 'scale(1) rotate(0deg)' },
+      { opacity: .9, transform: 'scale(1.1) rotate(-6deg)', offset: .2 },
+      { opacity: 0, transform: 'scale(.4) rotate(28deg) translateY(30px)' }
+    ], { duration: 430, fill: 'forwards', easing: 'ease-in' });
+    a.id = 'defeat';
+    const E = this.pos('sprite-enemy');
+    if (E) { this.burst('⭐', E, 52, 460, 180); this.burst('✨', { x: E.x - 32, y: E.y - 20 }, 34, 460); this.burst('✨', { x: E.x + 32, y: E.y + 10 }, 34, 460); }
+  },
+  cancelDefeat() {
+    const b = document.getElementById('sprite-enemy');
+    if (b) b.getAnimations().forEach(a => { if (a.id === 'defeat') a.cancel(); });
+  },
+  enemyAtk() {
+    if (this.reduced()) return null;
+    this.lunge('sprite-enemy', 'sprite-player', .6, 520);
+    return { hit: 260, total: 800, target: 'player' };
+  },
+  reduced() { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); },
+  // 回傳 { hit: 命中時間(ms), total: 整段動畫結束(ms) }
+  cast(sk, cls) {
+    if (this.reduced()) return null;
+    const P = this.pos('sprite-player'), E = this.pos('sprite-enemy');
+    if (!P || !E) return null;
+    const id = sk && sk.cost > 0 ? sk.id : 'basic_' + cls;
+    const H = { x: E.x, y: E.y - E.h * .05 };
+    const L = (r, d) => this.lunge('sprite-player', 'sprite-enemy', r, d);
+    const A = (ms, fn) => this.at(ms, fn);
+    const fx = {
+      basic_warrior: () => { L(.62, 520); this.slash(H, -30, 230); return { hit: 250, total: 700 }; },
+      w_double: () => { L(.62, 640); this.slash(H, -35, 220); this.slash(H, 35, 340); A(340, () => this.burst('✨', H, 50, 300)); return { hit: 260, total: 900 }; },
+      w_spin: () => { L(.55, 700); A(220, () => { this.ring(H, '#9ad7ff', 90); this.burst('🌀', H, 72, 520, 360); }); A(380, () => this.ring(H, '#cfeeff', 120)); return { hit: 300, total: 950 }; },
+      w_charge: () => { L(.9, 780); this.proj('💨', P, { x: P.x + (E.x - P.x) * .5, y: P.y }, { size: 44, dur: 300 }); A(330, () => { this.burst('💥', H, 110, 500); this.flash('#fff', .55); this.ring(H, '#ffd23a', 130); this.shakeScene(); }); return { hit: 340, total: 1000 }; },
+      basic_mage: () => { this.proj('✨', P, H, { size: 38, dur: 300, spin: 360 }); A(300, () => this.burst('✨', H, 60, 350)); return { hit: 300, total: 700 }; },
+      m_fire: () => { this.proj('🔥', P, H, { size: 46, dur: 380, s1: 1.5 }); A(380, () => { this.burst('💥', H, 90, 450); this.ring(H, '#ff8a1a', 90); }); return { hit: 390, total: 900 }; },
+      m_ice: () => { for (let i = 0; i < 6; i++) A(i * 70, () => this.proj('❄️', { x: E.x + (i - 2.5) * 26, y: E.y - E.h * .9 }, { x: E.x + (i - 2.5) * 14, y: E.y }, { size: 34, dur: 300, spin: 180 })); A(420, () => { this.ring(H, '#8fe3ff', 90); this.burst('❄️', H, 80, 500, 120); }); return { hit: 430, total: 950, ice: true }; },
+      m_meteor: () => { this.proj('☄️', { x: E.x + E.w * 1.4, y: E.y - E.h * 1.6 }, H, { size: 80, dur: 520, s0: .8, s1: 1.1 }); A(520, () => { this.burst('💥', H, 140, 600); this.ring(H, '#ff7a1a', 150); this.flash('#ff9a40', .5); this.shakeScene(); }); return { hit: 530, total: 1100 }; },
+      basic_archer: () => { this.proj('', P, H, { cls: 'fxarrow', aim: true, dur: 260, s0: 1 }); A(260, () => this.burst('✨', H, 36, 250)); return { hit: 260, total: 650 }; },
+      a_multi: () => { [-18, 0, 18].forEach((dy, i) => A(i * 110, () => { this.proj('', { x: P.x, y: P.y + dy }, { x: H.x, y: H.y + dy * .5 }, { cls: 'fxarrow', aim: true, dur: 240, s0: 1 }); A(240, () => this.burst('✨', { x: H.x, y: H.y + dy * .5 }, 34, 250)); })); return { hit: 260, total: 900 }; },
+      a_burst: () => { this.proj('', P, H, { cls: 'fxarrow big', aim: true, dur: 280, s0: 1 }); A(280, () => { this.burst('💥', H, 100, 450); this.ring(H, '#ff9a2a', 100); }); return { hit: 290, total: 850 }; },
+      a_snipe: () => { this.burst('🎯', H, 90, 520, 90); A(380, () => this.proj('', P, H, { cls: 'fxarrow big', aim: true, dur: 160, s0: 1, ease: 'linear' })); A(540, () => { this.burst('💥', H, 120, 500); this.flash('#fff', .5); this.shakeScene(); }); return { hit: 550, total: 1100 }; },
+      basic_engineer: () => { this.proj('🔧', P, H, { size: 38, dur: 320, spin: 540 }); A(320, () => this.burst('💥', H, 50, 300)); return { hit: 320, total: 700 }; },
+      e_turret: () => { const G = { x: P.x + P.w * .35, y: P.y }; this.burst('🔫', G, 44, 600); for (let i = 0; i < 4; i++) A(150 + i * 90, () => { this.proj('', G, H, { cls: 'fxdot', dur: 200, s0: 1, ease: 'linear' }); A(200, () => this.burst('✨', H, 34, 200)); }); return { hit: 420, total: 950 }; },
+      e_robot: () => { this.proj('🤖', P, { x: E.x - E.w * .3, y: E.y }, { size: 64, dur: 420, ease: 'ease-in', s0: .9 }); A(430, () => { this.burst('💥', H, 90, 400); this.ring(H, '#9bd0ff', 100); }); return { hit: 440, total: 950 }; },
+      e_fort: () => { this.proj('💣', P, H, { size: 46, dur: 520, spin: 360, arc: 90 }); A(520, () => { this.burst('💥', H, 150, 600); this.ring(H, '#ff7a1a', 150); this.flash('#ffb060', .5); this.shakeScene(); }); return { hit: 530, total: 1150 }; },
+      basic_scholar: () => { this.proj('📖', P, H, { size: 38, dur: 320, spin: 360 }); A(320, () => this.burst('✨', H, 44, 300)); return { hit: 320, total: 700 }; },
+      s_learn: () => { for (let i = 0; i < 5; i++) A(i * 80, () => this.proj('📚', { x: E.x + (i - 2) * 22, y: E.y - E.h * 1.1 }, { x: E.x + (i - 2) * 10, y: E.y - 8 }, { size: 36, dur: 260 })); A(420, () => this.burst('✨', H, 80, 400)); return { hit: 430, total: 950 }; },
+      s_inspire: () => { this.burst('💡', { x: P.x, y: P.y - P.h * .6 }, 48, 500); A(380, () => this.proj('✨', P, H, { size: 56, dur: 260, s1: 1.4 })); A(640, () => { this.burst('💥', H, 90, 400); this.ring(H, '#ffe066', 100); }); return { hit: 650, total: 1100 }; },
+      s_wisdom: () => { this.burst('🌟', { x: E.x, y: E.y - E.h * .9 }, 110, 700); A(300, () => this.proj('🌟', { x: E.x, y: E.y - E.h * 1.2 }, H, { size: 100, dur: 300, s1: 1.3 })); A(600, () => { this.ring(H, '#ffe066', 130); this.ring(H, '#fff', 90); this.flash('#ffe066', .55); this.shakeScene(); }); return { hit: 610, total: 1200 }; }
+    };
+    return (fx[id] || fx['basic_' + cls] || fx.basic_warrior)();
+  }
+};
+
 const Game = {
   state: null,
   battle: null,
@@ -2077,7 +2403,8 @@ const Game = {
     return {
       grade: 0, heroClass: 'warrior', level: 1, exp: 0, expTo: 30,
       hp: 100, maxHp: 100, atk: 18, gold: 100, dia: 5,
-      wood: 25, stone: 15, steel: 5, pop: 10,
+      wood: 25, stone: 15, steel: 5, pop: 10, crystal: 0, blueprint: 0, badge: 0,
+      kingdom: { cat: { math: { c: 0, t: 0 }, chinese: { c: 0, t: 0 }, english: { c: 0, t: 0 }, science: { c: 0, t: 0 }, social: { c: 0, t: 0 } }, cnt: { wood: 0, stone: 0, steel: 0, crystal: 0, blueprint: 0, badge: 0, stages: 0, boss: 0 }, res: {}, q: {}, favor: {}, migrated: false },
       skills: [], pendingLv: 0, equip: {}, buildings: {},
       pets: {}, codex: {}, stageStars: {}, unlockedZones: [0],
       wrongLog: [], achievements: {},
@@ -2114,6 +2441,7 @@ const Game = {
         } catch (_) {}
       } else this.state = this.defaultState();
     } catch (e) { this.state = this.defaultState(); }
+    try { this.migrateKingdom(); } catch (e) {}
   },
 
   save() {
@@ -2419,6 +2747,7 @@ const Game = {
   },
 
   showFighters() {
+    try { FX.cancelDefeat(); } catch (_) {}
     const s = this.state, e = this.currentEnemy(), B = this.battle;
     const cls = DB.classes[s.heroClass] || { name: '英雄', icon: '⚔️' };
 
@@ -2587,25 +2916,39 @@ const Game = {
   fx(who, txt, crit) {
     const box = document.getElementById(who === 'enemy' ? 'sprite-enemy' : 'sprite-player');
     if (!box) return;
-    const other = document.getElementById(who === 'enemy' ? 'sprite-player' : 'sprite-enemy');
-    box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
-    if (who === 'enemy' && other) { other.classList.remove('lunge'); void other.offsetWidth; other.classList.add('lunge'); }
-    let cls = 'fl';
+    const sk = this._fxSkill; this._fxSkill = null; this._fxTotal = 0;
     const t = String(txt || '');
-    if (crit || /CRITICAL|💥|暴擊/.test(t)) cls += ' crit';
-    else if (/MISS|未命中/.test(t)) cls += ' miss';
-    else if (/WEAK|弱點/.test(t)) cls += ' weak';
-    else if (/SUPER|效果拔群/.test(t)) cls += ' super';
-    if (who === 'player') cls += ' pl';
-    const f = document.createElement('span');
-    f.className = cls;
-    f.textContent = t;
-    box.appendChild(f);
-    setTimeout(() => f.remove(), 950);
+    const blocked = /擋下/.test(t);
+    let plan = null;
+    try { plan = blocked ? null : (who === 'enemy' ? FX.cast(sk, this.state.heroClass) : FX.enemyAtk()); } catch (e) { plan = null; }
+    const showText = () => {
+      let cls = 'fl';
+      if (crit || /CRITICAL|💥|暴擊/.test(t)) cls += ' crit';
+      else if (/MISS|未命中/.test(t)) cls += ' miss';
+      else if (/WEAK|弱點/.test(t)) cls += ' weak';
+      else if (/SUPER|效果拔群/.test(t)) cls += ' super';
+      if (who === 'player') cls += ' pl';
+      const f = document.createElement('span');
+      f.className = cls; f.textContent = t;
+      box.appendChild(f);
+      setTimeout(() => f.remove(), 950);
+    };
+    if (!plan) {
+      box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+      const other = document.getElementById(who === 'enemy' ? 'sprite-player' : 'sprite-enemy');
+      if (who === 'enemy' && other) { other.classList.remove('lunge'); void other.offsetWidth; other.classList.add('lunge'); }
+      showText();
+      return;
+    }
+    this._fxTotal = plan.total;
+    setTimeout(() => {
+      try { FX.hit(who === 'enemy' ? 'sprite-enemy' : 'sprite-player', !!(crit || (sk && sk.crit)), !!plan.ice); } catch (e) {}
+      showText();
+    }, plan.hit);
   },
-
   
   nextQuestion() {
+    try { FX.cancelDefeat(); } catch (_) {}
     const B = this.battle;
     if (!B || B.over || this.paused) return;
     const e = this.currentEnemy();
@@ -2618,14 +2961,14 @@ const Game = {
     } else q = QG.make(s.grade, B.recent, !!e.isBoss);
     B.recent.push(q.q); if (B.recent.length > 15) B.recent.shift();
     B.curQ = q; B.waiting = true;
-    const qb = document.getElementById('q-box'); qb.textContent = q.q; qb.classList.toggle('long', String(q.q).length > 26);
+    const qb = document.getElementById('q-box'); qb.toggleAttribute('data-zyq', q.subj === '注音'); qb.textContent = q.q; qb.classList.toggle('long', String(q.q).length > 26);
     const opts = document.getElementById('opts'); opts.innerHTML = '';
     opts.className = 'opts' + (q.opts.some(o => COLOR_RE.test(o)) ? ' neutral' : '');
     q.opts.forEach((o, oi) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'opt-btn o' + (oi % 4); b.dataset.v = o;
       const ol = document.createElement('span'); ol.className = 'ol'; ol.textContent = String.fromCharCode(65 + oi);
-      const ot = document.createElement('span'); ot.className = 'ot'; ot.textContent = o;
+      const ot = document.createElement('span'); ot.className = 'ot'; ot.textContent = o; if (q.subj === '注音') ot.setAttribute('data-nozy', '');
       const mk = document.createElement('span'); mk.className = 'mark';
       if (q.swatch && SWATCH[o]) { const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = SWATCH[o]; b.append(ol, sw, ot, mk); }
       else b.append(ol, ot, mk);
@@ -2660,12 +3003,14 @@ const Game = {
     if (!ok) btn.classList.add('wrong');
     const st = s.subjStats[q.subj] = s.subjStats[q.subj] || { total: 0, correct: 0, wrong: 0 };
     st.total++;
-    const m = this.classMult(), sk = this.skillBonus(), pb = this.petBonus();
-    let txt, who;
+    const m = this.classMult(), sk = this.skillBonus(), pb = this.petBonus(), kb = this.kBonus();
+    const cat = this.kCount(q, ok);
+    let txt, who; this._fxSkill = null;
     if (ok) {
       st.correct++; s.stats.correct++; B.correct++; B.combo++;
       s.daily.correctToday = (s.daily.correctToday || 0) + 1;
       s.stats.comboMax = Math.max(s.stats.comboMax || 0, B.combo);
+      this.kDrop(cat);
       if (q.wrongRef) s.wrongLog = s.wrongLog.filter(w => w !== q.wrongRef);
       // 答對：回能量 + 依選中技能攻擊
       B.energy = Math.min(100, (B.energy | 0) + 20 + Math.min(15, B.combo * 3));
@@ -2675,7 +3020,8 @@ const Game = {
       // 能量不足則退回普通攻擊
       if (skill.cost > 0 && B.energy < skill.cost) { si = 0; skill = slots[0]; B.selectedSkill = 0; }
       if (skill.cost > 0) B.energy -= skill.cost;
-      let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk) * (skill.atk || 1)
+      this._fxSkill = skill;
+      let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk + kb.atk) * (skill.atk || 1)
         * (1 + Math.min(0.55, B.combo * 0.05 * (1 + (sk.combo || 0) * 0.5)));
       let crit = Math.random() < m.crit + sk.crit + pb.crit || !!skill.crit;
       if (crit) dmg *= 1.55;
@@ -2689,7 +3035,7 @@ const Game = {
       if (Object.values(s.pets).some(p => p.active) && Math.random() < 0.35)
         dmg += Math.round(dmg * 0.25 * (1 + sk.pet));
       e.hp = Math.max(0, e.hp - dmg);
-      const heal = Math.round(s.maxHp * sk.heal) + (s.buildings.b_hospital || 0);
+      const heal = Math.round(s.maxHp * sk.heal) + kb.heal;
       if (heal) s.hp = Math.min(s.maxHp, s.hp + heal);
       if (skill.ice) B._iceNext = true;
       txt = (crit ? 'CRITICAL! -' : (skill.cost > 0 ? skill.icon + ' -' : '-')) + dmg;
@@ -2718,7 +3064,7 @@ const Game = {
       if (s.hp <= 0) this.finishStage(false);
       else if (e.hp <= 0) this.onEnemyDown();
       else this.nextQuestion();
-    }, 750);
+    }, Math.max(750, this._fxTotal || 0));
   },
 
   onEnemyDown() {
@@ -2733,6 +3079,11 @@ const Game = {
     r.steel += e.isBoss ? 4 + z : (Math.random() < 0.3 ? 1 : 0);
     if (e.art) s.codex[e.id] = (s.codex[e.id] || 0) + 1;
     this.petGrow();
+    if (e.isBoss) {
+      this.ensureK(); s.kingdom.cnt.boss = (s.kingdom.cnt.boss || 0) + 1;
+      const n = 1 + Math.floor(Math.max(0, B.zoneId) / 3); B.drops = B.drops || {};
+      ['crystal', 'blueprint', 'badge'].forEach(rs => { this.gain(rs, n); B.drops[rs] = (B.drops[rs] || 0) + n; });
+    }
     this.toast(`🎉 打倒 ${e.name}！`);
     B.index++;
     // 下一隻若是 Boss：給護盾 + 可能狂暴
@@ -2742,6 +3093,7 @@ const Game = {
       B.bossRage = false;
       this.toast('👑 Boss 出現！護盾 ×' + B.bossShield);
     }
+    try { FX.defeat(); } catch (_) {}
     if (B.index >= B.queue.length) this.finishStage(true);
     else this.later(B, () => this.nextQuestion(), 450);
   },
@@ -2772,8 +3124,11 @@ const Game = {
     const acc = B.total ? B.correct / B.total : 0;
     const stars = win ? (acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1) : 0;
     const city = win ? this.cityIncome() : 0;
+    const kb = this.kBonus(); this.ensureK();
+    if (win) { r.wood += kb.wood; r.stone += kb.stone; r.steel += kb.steel; s.kingdom.cnt.stages = (s.kingdom.cnt.stages || 0) + 1; }
+    r.gold = Math.round(r.gold * (1 + kb.gold)); r.exp = Math.round(r.exp * (1 + kb.exp));
     s.gold += Math.round(r.gold * f) + city;
-    s.wood += Math.round(r.wood * f); s.stone += Math.round(r.stone * f); s.steel += Math.round(r.steel * f);
+    this.gain('wood', Math.round(r.wood * f)); this.gain('stone', Math.round(r.stone * f)); this.gain('steel', Math.round(r.steel * f));
     this.gainExp(Math.round(r.exp * f));
     if (win && B.zoneId >= 0) {
       s.stageStars[B.zoneId] = Math.max(s.stageStars[B.zoneId] || 0, stars);
@@ -2802,6 +3157,7 @@ const Game = {
       (win ? `<div class="rw-stars">${'★'.repeat(stars)}<s>${'★'.repeat(3 - stars)}</s></div>` : '<p class="muted" style="margin:6px 0">別灰心，可降低題庫等級或先打錯題魔王複習！</p>') +
       `<p>答對 ${B.correct}/${B.total}</p>
        <div class="rw-row">${chip('🪙', x.r.gold)}${chip('✨', x.r.exp)}${chip('🪵', x.r.wood)}${chip('🪨', x.r.stone)}${chip('⚙️', x.r.steel)}</div>` +
+      (B.drops ? `<p class="muted" style="margin:6px 0 2px">答題與 Boss 掉落</p><div class="rw-row">${Object.entries(B.drops).map(([k, v]) => `<span class="bt-chip">${RES[k].icon} +${v}</span>`).join('')}</div>` : '') +
       (win && x.city ? `<p class="muted">城市收租 🪙${x.city}</p>` : '');
     document.getElementById('result-modal').classList.add('active');
   },
@@ -2875,26 +3231,301 @@ const Game = {
     this.toast('已退出戰鬥'); this.save(); this.renderAll();
   },
 
-  renderCity() {
-    const s = this.state, rank = DB.cityRanks.slice().reverse().find(r => s.pop >= r.minPop) || DB.cityRanks[0];
-    document.getElementById('city-summary').textContent = `${rank.name} · 人口 ${s.pop} · 每次通關收租 🪙${this.cityIncome()}`;
-    const list = document.getElementById('build-list'); list.innerHTML = '';
-    DB.buildings.forEach(b => {
-      const lv = s.buildings[b.id] || 0, k = lv + 1;
-      const c = { gold: b.cost.gold * k, wood: b.cost.wood * k, stone: b.cost.stone * k, steel: b.cost.steel * k };
-      const el = document.createElement('div'); el.className = 'list-item';
-      el.innerHTML = `<div>${b.icon}</div><div class="info"><b>${b.name} Lv.${lv}</b><small>${b.desc}</small>
-        <small>🪙${c.gold} 🪵${c.wood} 🪨${c.stone} ⚙️${c.steel}　+${b.pop}人口 +${b.income}收租</small></div>
-        <button class="btn green sm" type="button">${lv ? '升級' : '建造'}</button>`;
-      el.querySelector('button').onclick = () => {
-        const t = this.state;
-        if (t.gold < c.gold || t.wood < c.wood || t.stone < c.stone || t.steel < c.steel) { this.toast('資源不足'); return; }
-        t.gold -= c.gold; t.wood -= c.wood; t.stone -= c.stone; t.steel -= c.steel;
-        t.buildings[b.id] = k; t.pop += b.pop;
-        this.toast('完成：' + b.name + ' Lv.' + k); this.checkAchievements(); this.save(); this.renderAll();
-      };
-      list.appendChild(el);
+  /* ===================== 王國系統 ===================== */
+  ensureK() {
+    const s = this.state, d = this.defaultState().kingdom;
+    s.kingdom = Object.assign({}, d, s.kingdom || {});
+    ['cat', 'cnt', 'res', 'q', 'favor'].forEach(k => { s.kingdom[k] = Object.assign({}, d[k], s.kingdom[k] || {}); });
+    Object.keys(CATN).forEach(c => { if (!s.kingdom.cat[c]) s.kingdom.cat[c] = { c: 0, t: 0 }; });
+    ['crystal', 'blueprint', 'badge'].forEach(r => { s[r] = s[r] | 0; });
+    s.buildings = s.buildings || {};
+  },
+
+  migrateKingdom() {
+    const s = this.state; this.ensureK();
+    if (s.kingdom.migrated) return;
+    const b = s.buildings, mv = (from, to) => {
+      if (b[from] != null) { b[to] = Math.max(b[to] | 0, b[from] | 0); delete b[from]; }
+    };
+    mv('b_shop', 'b_market'); mv('b_hospital', 'b_park'); mv('b_museum', 'b_hall'); mv('b_amuse', 'b_tower'); mv('b_stadium', 'b_workshop');
+    Object.keys(b).forEach(k => { if (!DB.buildings.find(x => x.id === k)) delete b[k]; else b[k] = Math.min(5, b[k] | 0); });
+    const ss = s.subjStats || {}, g = k => (ss[k] ? ss[k].correct | 0 : 0), t = k => (ss[k] ? ss[k].total | 0 : 0);
+    const kc = s.kingdom.cat;
+    kc.math = { c: g('數學'), t: t('數學') };
+    kc.chinese = { c: g('國語') + g('注音'), t: t('國語') + t('注音') };
+    kc.english = { c: g('英文'), t: t('英文') };
+    kc.science = { c: g('自然') + Math.floor(g('常識') / 2), t: t('自然') + Math.floor(t('常識') / 2) };
+    kc.social = { c: g('社會') + Math.ceil(g('常識') / 2), t: t('社會') + Math.ceil(t('常識') / 2) };
+    s.kingdom.migrated = true;
+  },
+
+  catOf(q) {
+    const sj = q.subj;
+    if (sj === '數學') return 'math';
+    if (sj === '國語' || sj === '注音') return 'chinese';
+    if (sj === '英文') return 'english';
+    if (sj === '自然') return 'science';
+    if (sj === '社會') return 'social';
+    return /規則|應該|怎麼做|要說|可以|禮貌|排隊|公車|老師|同學|讓座|紅燈|馬路|垃圾|還給|借|幫助/.test(q.q || '') ? 'social' : 'science';
+  },
+
+  gain(res, n) {
+    n = Math.round(n || 0); if (!n) return;
+    const s = this.state; this.ensureK();
+    s[res] = (s[res] | 0) + n;
+    s.kingdom.cnt[res] = (s.kingdom.cnt[res] || 0) + n;
+  },
+
+  kCount(q, ok) {
+    const cat = this.catOf(q), c = this.state.kingdom.cat[cat];
+    c.t++; if (ok) c.c++;
+    return cat;
+  },
+
+  kDrop(cat) {
+    const B = this.battle, kb = this.kBonus(); if (!B) return;
+    if (Math.random() > 0.4 + (kb.boost[cat] || 0)) return;
+    const res = cat === 'math' ? (Math.random() < 0.6 ? 'stone' : 'steel') : cat === 'chinese' ? 'wood' : cat === 'english' ? 'badge' : cat === 'science' ? 'crystal' : 'blueprint';
+    this.gain(res, 1);
+    B.drops = B.drops || {}; B.drops[res] = (B.drops[res] || 0) + 1;
+    try { const E = FX.pos('sprite-enemy'); if (E) FX.burst(RES[res].icon, { x: E.x, y: E.y - E.h * .45 }, 30, 800); } catch (_) {}
+  },
+
+  kSum() { return Object.values(this.state.buildings || {}).reduce((a, b) => a + (b | 0), 0); },
+  kLevel() { const sum = this.kSum(); let l = 1; KDB.levels.forEach((t, i) => { if (sum >= t) l = i + 1; }); return l; },
+  resCount() {
+    const s = this.state; this.ensureK();
+    return KDB.residents.filter(r => s.kingdom.res[r.id]).length + Math.floor((s.pop | 0) / 12);
+  },
+
+  kBonus() {
+    const b = this.state.buildings || {}, L = id => b[id] | 0;
+    return {
+      exp: .04 * L('b_school') + .02 * L('b_castle'), gold: .05 * L('b_market') + .02 * L('b_castle'), atk: .02 * L('b_tower'),
+      wood: 2 * L('b_farm'), stone: L('b_workshop'), steel: Math.floor(L('b_workshop') / 2), heal: L('b_park'),
+      boost: { math: .04 * L('b_school'), chinese: .04 * L('b_library'), english: .04 * L('b_academy'), science: .04 * L('b_lab'), social: .04 * L('b_hall') }
+    };
+  },
+
+  bInfo(b) {
+    const s = this.state; this.ensureK();
+    const lv = s.buildings[b.id] | 0, k = lv + 1, KL = this.kLevel();
+    const cost = {}; Object.entries(b.cost).forEach(([r, v]) => { cost[r] = Math.round(v * k); });
+    const step = b.cat ? 50 : 30, needN = (k - 1) * step;
+    const have = b.cat ? s.kingdom.cat[b.cat].c : (s.stats.correct | 0);
+    const label = b.cat ? CATN[b.cat] + '答對' : '累計答對';
+    const lockedKL = lv === 0 && b.unlock > KL, maxed = lv >= 5;
+    const resOk = Object.entries(cost).every(([r, v]) => (s[r] | 0) >= v);
+    const learnOk = have >= needN;
+    return { lv, k, cost, needN, have, label, lockedKL, maxed, resOk, learnOk, ok: !maxed && !lockedKL && resOk && learnOk };
+  },
+
+  bArt(b, lv, size) {
+    const l = Math.max(1, Math.min(5, lv || 1));
+    return Art.k(`img/bld_${b.img}_${l}.png`, b.icons[l - 1], size);
+  },
+
+  upgradeBuilding(id) {
+    const b = DB.buildings.find(x => x.id === id); if (!b) return;
+    const i = this.bInfo(b), s = this.state;
+    if (i.maxed) { this.toast('已經是最高等級！'); return; }
+    if (i.lockedKL) { this.toast('王國 Lv.' + b.unlock + ' 才能解鎖'); return; }
+    if (!i.learnOk) { this.toast(`還需要${i.label} ${i.needN} 題（目前 ${i.have}）`); return; }
+    if (!i.resOk) { this.toast('資源不足'); return; }
+    const beforeKL = this.kLevel();
+    Object.entries(i.cost).forEach(([r, v]) => { s[r] = (s[r] | 0) - v; });
+    s.buildings[id] = i.k; s.pop = (s.pop | 0) + b.pop;
+    this._kPop = id;
+    this.toast((i.lv ? '⬆️ 升級完成：' : '🏗️ 建造完成：') + b.names[i.k - 1] + ' Lv.' + i.k);
+    this.syncKingdom();
+    const KL = this.kLevel();
+    if (KL > beforeKL) this.toast('👑 王國升級！Lv.' + KL + '「' + KDB.lvNames[KL - 1] + '」');
+    this.checkAchievements(); this.save(); this.renderAll();
+    if (document.getElementById('bld-modal').classList.contains('active')) this.renderBldModal(id);
+  },
+
+  openBuilding(id) {
+    const b = DB.buildings.find(x => x.id === id); if (!b) return;
+    const i = this.bInfo(b);
+    if (i.lockedKL) { this.toast('🔒 王國 Lv.' + b.unlock + ' 才能解鎖「' + b.name + '」'); return; }
+    this.renderBldModal(id);
+    document.getElementById('bld-modal').classList.add('active');
+  },
+  closeBuilding() { document.getElementById('bld-modal').classList.remove('active'); },
+
+  effNow(b, lv) {
+    const v = lv | 0;
+    switch (b.id) {
+      case 'b_house': return `人口 +${20 * v}`;
+      case 'b_farm': return `通關木材 +${2 * v}`;
+      case 'b_school': return `經驗 +${4 * v}%`;
+      case 'b_library': case 'b_academy': case 'b_lab': case 'b_hall': return `掉落機率 +${4 * v}%`;
+      case 'b_workshop': return `通關石材 +${v}、鐵礦 +${Math.floor(v / 2)}`;
+      case 'b_market': return `通關金幣 +${5 * v}%`;
+      case 'b_park': return `答對回血 +${v}`;
+      case 'b_tower': return `攻擊力 +${2 * v}%`;
+      case 'b_castle': return `經驗與金幣 +${2 * v}%`;
+    }
+    return '';
+  },
+
+  renderBldModal(id) {
+    const b = DB.buildings.find(x => x.id === id), i = this.bInfo(b), s = this.state, box = document.getElementById('bld-box');
+    const lvShow = Math.max(1, i.lv), nextIdx = Math.min(5, i.k);
+    const chips = Object.entries(i.cost).map(([r, v]) => {
+      const have = s[r] | 0, ok = have >= v;
+      return `<span class="cc ${ok ? 'ok' : 'no'}">${RES[r].icon} ${have}/${v}</span>`;
+    }).join('');
+    const pct = i.needN ? Math.min(100, i.have / i.needN * 100) : 100;
+    const learn = i.maxed ? '' : `<div class="bm-learn"><div class="bm-lbl">📐 ${i.needN ? i.label + ' ' + Math.min(i.have, i.needN) + '/' + i.needN + ' 題' : '無學習門檻'}${i.learnOk ? ' ✅' : ''}</div><div class="progress"><i style="width:${pct}%"></i></div></div>`;
+    let btn;
+    if (i.maxed) btn = '<button class="btn green block" type="button" disabled>🌟 已達最高等級</button>';
+    else btn = `<button class="btn ${i.ok ? 'green' : 'purple'} block" type="button" onclick="Game.upgradeBuilding('${b.id}')" ${i.ok ? '' : 'style="opacity:.6"'}>${i.lv ? '⬆️ 升級' : '🏗️ 建造'}為「${b.names[nextIdx - 1]}」</button>`;
+    const art = this.bArt(b, lvShow, 96);
+    box.innerHTML = `<h2>${b.icon} ${b.name}</h2><div class="bm-body">
+      <div class="bm-art" style="${i.lv ? '' : 'filter:grayscale(1) opacity(.5)'}">${art}</div>
+      <p class="center" style="margin:6px 0 2px;font-weight:900;font-size:16px;color:#4a3320">${i.lv ? b.names[i.lv - 1] + '　Lv.' + i.lv : '尚未建造'}</p>
+      <div class="bm-lvs">${[1, 2, 3, 4, 5].map(n => `<span class="${n <= i.lv ? 'on' : ''}">${n}</span>`).join('')}</div>
+      <p class="muted center" style="margin:4px 0 8px">${b.eff}${i.lv ? '<br>目前效果：' + this.effNow(b, i.lv) : ''}</p>
+      ${i.maxed ? '' : `<p style="font-weight:900;margin:6px 0 2px;color:#4a3320">所需資源</p><div>${chips}</div>${learn}`}
+      <div style="margin-top:12px">${btn}</div>
+      <button class="btn blue block" type="button" style="margin-top:8px" onclick="Game.closeBuilding()">關閉</button></div>`;
+  },
+
+  syncKingdom() {
+    const s = this.state; this.ensureK();
+    KDB.residents.forEach(r => {
+      if ((s.buildings[r.bld] | 0) >= 1 && !s.kingdom.res[r.id]) {
+        s.kingdom.res[r.id] = true;
+        s.kingdom.q[r.id] = { i: 0, base: this.qCount(r.quests[0]), done: 0 };
+        s.kingdom.favor[r.id] = s.kingdom.favor[r.id] || 0;
+        if (this._kReady) this.toast(r.icon + ' ' + r.name + ' 搬進王國了！');
+      }
     });
+    this._kReady = true;
+  },
+
+  qCount(q) {
+    const s = this.state, k = s.kingdom;
+    if (q.kind === 'cat') return k.cat[q.key].c;
+    if (q.kind === 'res') return k.cnt[q.key] || 0;
+    return k.cnt[q.key] || 0;
+  },
+  qNow(r) {
+    const st = this.state.kingdom.q[r.id]; if (!st) return null;
+    const def = r.quests[st.i % r.quests.length];
+    const n = Math.round(def.n * (1 + 0.5 * Math.floor((st.done || 0) / r.quests.length)));
+    const prog = Math.max(0, this.qCount(def) - st.base);
+    return { def, n, prog, done: prog >= n, st };
+  },
+  claimQuest(rid) {
+    const r = KDB.residents.find(x => x.id === rid), q = r && this.qNow(r); if (!q || !q.done) return;
+    const s = this.state, parts = [];
+    Object.entries(q.def.r).forEach(([k, v]) => {
+      if (k === 'gold' || k === 'dia') s[k] = (s[k] | 0) + v; else this.gain(k, v);
+      parts.push(RES[k].icon + v);
+    });
+    s.kingdom.favor[rid] = (s.kingdom.favor[rid] || 0) + 1;
+    q.st.done = (q.st.done || 0) + 1; q.st.i = (q.st.i + 1) % r.quests.length;
+    q.st.base = this.qCount(r.quests[q.st.i]);
+    this.toast(r.icon + ' ' + r.name + '：謝謝你！ ' + parts.join(' '));
+    this.checkAchievements(); this.save(); this.renderAll();
+  },
+
+  renderCity() {
+    this.syncKingdom();
+    const s = this.state, KL = this.kLevel(), sum = this.kSum();
+    const cur = KDB.levels[KL - 1], nxt = KDB.levels[KL];
+    const pct = nxt == null ? 100 : Math.round((sum - cur) / (nxt - cur) * 100);
+    const hint = nxt == null ? '王國已達最高等級！' : `再提升 ${nxt - sum} 級建築，就能升為「${KDB.lvNames[KL]}」`;
+    const soon = DB.buildings.filter(b => b.unlock === KL + 1).map(b => b.icon + b.name).join('、');
+    const resChips = ['gold', 'wood', 'stone', 'steel', 'crystal', 'blueprint', 'badge'].map(r => `<span class="bt-chip">${RES[r].icon} ${(s[r] | 0).toLocaleString()}</span>`).join('');
+    document.getElementById('k-head').innerHTML =
+      `<h3>👑 我的王國</h3>
+       <div class="k-title"><b>Lv.${KL}　${KDB.lvNames[KL - 1]}</b><span class="tag ok">居民 ${this.resCount()}</span></div>
+       <div class="progress"><i style="width:${pct}%"></i></div>
+       <p class="muted" style="margin:6px 0">${hint}${soon ? '<br>下一級將解鎖：' + soon : ''}</p>
+       <div class="k-res">${resChips}</div>
+       <p class="muted" style="margin-top:6px">人口 ${s.pop | 0}　·　每次通關收租 🪙${this.cityIncome()}</p>`;
+    this.renderScene(KL);
+    // 建築格
+    const grid = document.getElementById('k-build-grid'); grid.innerHTML = '';
+    DB.buildings.forEach(b => {
+      const i = this.bInfo(b), el = document.createElement('div');
+      el.className = 'codex-item' + (i.lv ? '' : ' locked');
+      const st = i.lockedKL ? `🔒 王國Lv.${b.unlock}` : i.maxed ? '⭐ 滿級' : i.lv ? (i.ok ? '⬆️ 可升級' : 'Lv.' + i.lv) : (i.ok ? '🏗️ 可建造' : '尚未建造');
+      el.innerHTML = `<div class="c-icon">${this.bArt(b, Math.max(1, i.lv), 52)}</div>
+        <div class="c-name">${b.name}</div><div class="muted" style="font-size:10px;font-weight:800;${i.ok ? 'color:#2d9a2d' : ''}">${st}</div>`;
+      el.onclick = () => this.openBuilding(b.id);
+      grid.appendChild(el);
+    });
+    // 居民
+    const rl = document.getElementById('k-res-list'); rl.innerHTML = '';
+    KDB.residents.forEach(r => {
+      const el = document.createElement('div'); el.className = 'list-item';
+      if (!s.kingdom.res[r.id]) {
+        const bd = DB.buildings.find(x => x.id === r.bld);
+        el.innerHTML = `<div style="opacity:.35;filter:grayscale(1)">${Art.k('img/res_' + r.id + '.png', r.icon, 44)}</div>
+          <div class="info"><b>？？？</b><small>建造「${bd.name}」後會搬進王國</small></div>`;
+      } else {
+        const q = this.qNow(r), fv = Math.min(5, s.kingdom.favor[r.id] || 0);
+        const pr = Math.min(100, q.prog / q.n * 100);
+        el.innerHTML = `<div>${Art.k('img/res_' + r.id + '.png', r.icon, 44)}</div>
+          <div class="info"><b>${r.name}　<span style="font-size:11px">${'❤️'.repeat(fv)}${'🤍'.repeat(5 - fv)}</span></b>
+          <small>任務：${q.def.t} ${q.n} ${q.def.unit}（${Math.min(q.prog, q.n)}/${q.n}）</small>
+          <small>獎勵：${Object.entries(q.def.r).map(([k, v]) => RES[k].icon + v).join(' ')}</small>
+          <div class="progress"><i style="width:${pr}%"></i></div></div>
+          <button class="btn ${q.done ? 'green' : 'purple'} sm" type="button" ${q.done ? '' : 'disabled style="opacity:.5"'}>${q.done ? '領取' : '進行中'}</button>`;
+        el.querySelector('button').onclick = () => this.claimQuest(r.id);
+      }
+      rl.appendChild(el);
+    });
+  },
+
+  renderScene(KL) {
+    const el = document.getElementById('k-scene'); if (!el) return;
+    const s = this.state, B = s.buildings, built = id => (B[id] | 0) >= 1, bg = KL >= 6 ? 'c' : KL >= 4 ? 'b' : 'a';
+    const slot = id => DB.buildings.find(b => b.id === id).slot;
+    const seg = (a, b, d) => (built(a) && built(b)) ? `<path d="${d}" class="rd"/>` : '';
+    let svg = `<svg class="ks-svg" viewBox="0 0 100 120" preserveAspectRatio="none">
+      <path d="M100,66 C88,74 98,84 88,96 S98,112 100,120" class="rv"/>
+      ${KL >= 2 && built('b_house') ? '<path d="M50,89 L50,110" class="rd"/>' : ''}
+      ${seg('b_house', 'b_park', 'M50,89 L50,62')}${seg('b_park', 'b_hall', 'M50,62 L50,42')}${seg('b_hall', 'b_castle', 'M50,42 L50,18')}
+      ${seg('b_school', 'b_park', 'M24,70 Q36,66 50,62')}${seg('b_market', 'b_park', 'M76,70 Q64,66 50,62')}
+      ${seg('b_library', 'b_hall', 'M26,48 Q38,46 50,42')}${seg('b_academy', 'b_hall', 'M74,48 Q62,46 50,42')}
+      ${seg('b_workshop', 'b_house', 'M28,93 Q40,94 50,89')}${seg('b_farm', 'b_house', 'M74,94 Q62,94 50,89')}
+      ${seg('b_lab', 'b_library', 'M17,26 Q18,40 22,48')}${seg('b_tower', 'b_academy', 'M83,26 Q82,40 78,48')}
+    </svg>`;
+    let h = `<img class="ks-bg" src="img/bg_kingdom_${bg}.png" alt="" onerror="this.remove()">${svg}`;
+    // 景觀
+    KDB.decor.forEach(d => { if (KL >= d.m) h += `<span class="kd" style="left:${d.x}%;top:${d.y}%;font-size:${d.sz}px">${Art.k('img/deco_' + d.id + '.png', d.e, d.sz, true)}</span>`; });
+    (s.unlockedZones || []).forEach(z => { const l = KDB.landmarks[z]; if (l) h += `<span class="kd" style="left:${l.x}%;top:${l.y}%;font-size:${l.sz}px">${Art.k('img/lm_' + z + '.png', l.e, l.sz, true)}</span>`; });
+    // 建築
+    DB.buildings.forEach(b => {
+      const i = this.bInfo(b), [x, y] = b.slot;
+      if (i.lv > 0) {
+        const sc = (.8 + .08 * i.lv).toFixed(2);
+        h += `<button type="button" class="kb${this._kPop === b.id ? ' pop' : ''}" style="left:${x}%;top:${y}%;--s:${sc}" onclick="Game.openBuilding('${b.id}')">
+          ${this.bArt(b, i.lv, 64)}<i class="kb-lv">Lv${i.lv}</i>${i.ok ? '<i class="kb-up">⬆️</i>' : ''}</button>`;
+      } else if (!i.lockedKL) {
+        h += `<button type="button" class="kb plot" style="left:${x}%;top:${y}%" onclick="Game.openBuilding('${b.id}')">🪧${i.ok ? '<i class="kb-up">🏗️</i>' : ''}</button>`;
+      } else if (b.unlock === KL + 1) {
+        h += `<button type="button" class="kb lock" style="left:${x}%;top:${y}%" onclick="Game.openBuilding('${b.id}')">🔒</button>`;
+      }
+    });
+    this._kPop = null;
+    // 居民、村民、英雄與寵物
+    KDB.residents.forEach((r, n) => {
+      if (!s.kingdom.res[r.id]) return;
+      h += `<span class="kw" style="left:${20 + n * 9}%;top:${88 + (n % 3) * 3}%;--dx:${26 + n * 4}px;--t:${11 + n * 2}s;animation-delay:-${n * 2.3}s">${Art.k('img/res_' + r.id + '.png', r.icon, 26, true)}</span>`;
+    });
+    const vill = ['🧒', '👧', '👦', '👵', '👴', '🧑‍🌾', '👩‍🍳', '🧑‍🎨'], vn = Math.min(8, Math.floor((s.pop | 0) / 25));
+    for (let n = 0; n < vn; n++) h += `<span class="kw sm" style="left:${12 + (n * 37) % 78}%;top:${87 + (n * 5) % 10}%;--dx:${14 + (n % 4) * 6}px;--t:${9 + n}s;animation-delay:-${n * 1.7}s">${vill[n]}</span>`;
+    const cls = DB.classes[s.heroClass] || { icon: '⚔️' };
+    h += `<span class="kh" style="left:40%;top:95%">${Art.html('hero:' + s.heroClass, 44, cls.icon)}</span>`;
+    const ap = Object.entries(s.pets || {}).find(([, p]) => p.active), pd = ap && DB.pets.find(x => x.id === ap[0]);
+    if (pd) h += `<span class="kh" style="left:52%;top:96%">${Art.html('pet:' + pd.id + ':' + (ap[1].stage || 0), 34, pd.icons[ap[1].stage || 0])}</span>`;
+    el.innerHTML = h;
   },
 
   renderPets() {
@@ -2942,23 +3573,41 @@ const Game = {
     });
   },
 
+  setCodexTab(t) { this.ui = this.ui || {}; this.ui.codexTab = t; this.renderCodex(); },
+
   renderCodex() {
-    const s = this.state, got = Object.keys(s.codex || {}).length;
-    const pct = Math.round(got / 52 * 100);
-    document.getElementById('codex-summary').innerHTML =
-      `<span>已收集 <b>${got}/52</b></span><div class="progress"><i style="width:${pct}%"></i></div><b>${pct}%</b>`;
+    const s = this.state; this.ensureK(); this.ui = this.ui || {};
+    const view = this.ui.codexTab || 'mon';
+    const tabs = [['mon', '👾 怪物'], ['boss', '👑 Boss'], ['pet', '🐾 寵物'], ['bld', '🏗️ 建築'], ['res', '👥 居民'], ['zone', '🗺️ 區域'], ['ach', '🏆 成就']];
+    document.getElementById('codex-tabs').innerHTML = tabs.map(([k, n]) => `<button type="button" class="ctab${k === view ? ' on' : ''}" onclick="Game.setCodexTab('${k}')">${n}</button>`).join('');
     const list = document.getElementById('codex-list'); list.innerHTML = '';
-    DB.monsters.forEach(m => {
-      const owned = !!s.codex[m.id];
-      const cnt = s.codex[m.id] || 0;
-      const el = document.createElement('div');
-      el.className = 'codex-item' + (owned ? '' : ' locked');
-      el.innerHTML = `
-        <div class="c-icon">${Art.html('mon:' + m.id, 56, m.icon)}</div>
-        <div class="c-name">${owned ? m.name : '???'}</div>
-        <div class="muted" style="font-size:9px">${owned ? `擊敗 ${cnt} 次` : '未發現'}</div>`;
+    list.className = view === 'ach' ? '' : 'grid4';
+    let got = 0, total = 0;
+    const add = (owned, art, name, sub) => {
+      total++; if (owned) got++;
+      const el = document.createElement('div'); el.className = 'codex-item' + (owned ? '' : ' locked');
+      el.innerHTML = `<div class="c-icon">${art}</div><div class="c-name">${owned ? name : '???'}</div><div class="muted" style="font-size:9px">${sub}</div>`;
       list.appendChild(el);
-    });
+    };
+    if (view === 'mon') {
+      DB.monsters.forEach(m => { const c = s.codex[m.id] || 0; add(!!c, Art.html('mon:' + m.id, 56, m.icon), m.name, c ? `擊敗 ${c} 次` : '未發現'); });
+    } else if (view === 'boss') {
+      DB.zones.forEach((z, i) => { const d = (s.stageStars[i] || 0) > 0; add(d, Art.html('boss:' + i, 56, z.boss.icon), z.boss.name, d ? '已擊敗' : '未擊敗'); });
+      const w = !!(s.achievements && s.achievements.a_weak_done); add(w, Art.html('boss:weak', 56, '👾'), '錯題大魔王', w ? '已擊敗' : '未擊敗');
+    } else if (view === 'pet') {
+      DB.pets.forEach(p => { const st = s.pets[p.id]; add(!!st, Art.html('pet:' + p.id + ':' + (st ? st.stage : 0), 56, p.icons[st ? st.stage : 0]), st ? p.stages[st.stage] : p.stages[0], st ? ['幼年', '成長', '完全體'][st.stage] : '未獲得'); });
+    } else if (view === 'bld') {
+      DB.buildings.forEach(b => { const lv = s.buildings[b.id] | 0; add(lv > 0, this.bArt(b, Math.max(1, lv), 56), b.names[Math.max(0, lv - 1)], lv ? 'Lv.' + lv + '／5' : '未建造'); });
+    } else if (view === 'res') {
+      KDB.residents.forEach(r => { const o = !!s.kingdom.res[r.id]; add(o, Art.k('img/res_' + r.id + '.png', r.icon, 56), r.name, o ? '好感 ' + Math.min(5, s.kingdom.favor[r.id] || 0) + '／5' : '未入住'); });
+    } else if (view === 'zone') {
+      DB.zones.forEach((z, i) => { const u = (s.unlockedZones || []).includes(i); add(u, Art.k('img/lm_' + i + '.png', (KDB.landmarks[i] || { e: '🌱' }).e, 56), z.name, u ? '★'.repeat(s.stageStars[i] || 0) + '☆'.repeat(3 - (s.stageStars[i] || 0)) : '未解鎖'); });
+    } else {
+      DB.achievements.forEach(a => { total++; const d = !!s.achievements[a.id]; if (d) got++;
+        list.insertAdjacentHTML('beforeend', `<div class="list-item"><div>${d ? '🏅' : '🔒'}</div><div class="info"><b>${a.name}</b><small>${a.desc}　獎勵 🪙${a.reward}</small></div><span class="tag${d ? ' ok' : ''}">${d ? '已達成' : '未完成'}</span></div>`); });
+    }
+    const pct = total ? Math.round(got / total * 100) : 0;
+    document.getElementById('codex-summary').innerHTML = `<span>已收集 <b>${got}/${total}</b></span><div class="progress"><i style="width:${pct}%"></i></div><b>${pct}%</b>`;
   },
 
   renderAchieve() {
@@ -2988,6 +3637,16 @@ const Game = {
       const p = v.total ? Math.round(v.correct / v.total * 100) : 0;
       return `<div class="subj-row"><span>${k}</span><div class="progress"><i style="width:${p}%"></i></div><b>${v.correct}/${v.total} · ${p}%</b></div>`;
     }).join('') || '<p class="muted center" style="margin-top:8px">尚無資料，先去冒險吧！</p>';
+    this.ensureK();
+    const KL = this.kLevel();
+    const catRows = Object.keys(CATN).map(c => { const v = s.kingdom.cat[c], p = v.t ? Math.round(v.c / v.t * 100) : 0;
+      return `<div class="subj-row"><span>${CATN[c]}</span><div class="progress"><i style="width:${p}%"></i></div><b>${v.c}/${v.t} · ${p}%</b></div>`; }).join('');
+    const cands = DB.buildings.map(b => ({ b, i: this.bInfo(b) })).filter(x => !x.i.maxed && !x.i.lockedKL && !x.i.learnOk).sort((a, b) => (a.i.needN - a.i.have) - (b.i.needN - b.i.have));
+    const sug = cands[0] ? `再${cands[0].i.label} ${cands[0].i.needN - cands[0].i.have} 題，就能升級「${cands[0].b.name}」` : '';
+    const kingdomBlock = `<p style="margin:14px 0 6px;font-weight:900;color:#4a3320">🏰 王國成長</p>
+      <div class="stat-tiles">${tile('Lv.' + KL, '王國等級')}${tile(this.kSum(), '建築總等級')}${tile(this.resCount(), '居民')}
+      ${tile((s.unlockedZones || []).length + '/8', '已解鎖區域')}${tile(Object.keys(s.codex || {}).length + '/52', '怪物圖鑑')}${tile(Object.keys(s.pets || {}).length + '/8', '寵物')}</div>
+      <p style="margin:10px 0 2px;font-weight:900;color:#4a3320">各科學習（對應王國建築）</p>${catRows}${sug ? `<div class="tip-box">🎯 ${sug}</div>` : ''}`;
     document.getElementById('parent-body').innerHTML =
       `<p class="muted" style="margin-bottom:8px">目前題庫：<b style="color:#6a35a8">${LV[s.grade][0]} · ${LV[s.grade][1]}</b></p>
        <div class="stat-tiles">
@@ -2995,6 +3654,7 @@ const Game = {
          ${tile(s.level, '等級')}${tile(Math.round(t.playMinutes || 0) + '分', '遊玩時間')}${tile(s.wrongLog.length, '錯題')}
        </div>
        <p style="margin:14px 0 2px;font-weight:900;color:#4a3320">📚 科目表現</p>${rows}
+        ${kingdomBlock}
        <div class="tip-box">💡 建議：正確率穩定超過 85% 就升一級題庫，每天打一次錯題魔王。</div>
        <button class="btn purple block" type="button" style="margin-top:12px" onclick="Game.startWeakBoss()">👾 開始錯題複習戰</button>`;
   },
@@ -3031,7 +3691,140 @@ const Game = {
   }
 };
 
-window.addEventListener('DOMContentLoaded', () => Game.init());
+
+/* ===== 注音引擎：把所有國字自動標上注音（不改動遊戲邏輯／題目文字） ===== */
+const ZY_DATA = {"c":"一丁七丈三上下不丐丑且丕世丘丙丞丟並丫中丰串丸丹主乃久么之乍乎乏乒乓乖乘乙九乞也乩乳乾亂了予事二于云互五井亙些亞亟亡亢交亥亦亨享京亭亮亳人什仁仃仄仆仇今介仍仔仕他仗付仙仞仟代令以仰仲仳件任份仿企伉伊伋伍伏伐休伕伙伯估伴伶伸伺似伽佃但佇佈位低住佐佑佔何佗余佚佛作佝佞你佣佩佬佯佰佳併佺佻佾使侃來侈例侍侏侑侖供依侮侯侵侶侷便係促俄俊俎俏俐俑俗俘俚保俞俟俠信修俯俱俳俸俺俾倀倆倉個倌倍倏們倒倔倖倘候倚借倡倣倥倦倨倩倪倫倭值偃假偉偌偎偏偕做停健偭偯側偵偶偷偺偽傀傅傍傑傖傘備傚傢催傭傯傲傳債傷傻傾僅僇僎像僑僕僖僚僥僧僩僭僮僱僵價僻儀儂億儅儈儉儐儒儔儕儘償儡優儲儳儷儸儻儼儿兀允元兄充兆兇先光克兌免兒兔兕兗兜兢入內全兩八公六兮共兵其具典兼冀冉冊再冑冒冕冗冠冢冤冥冪冬冰冶冷冽准凋凌凍凜凝几凡凰凱凳凶凸凹出函刀刁刃分切刈刊刎刑划刖列初判別刨利刪刮到制刷券刺刻剁剃則削剋剌前剎剔剖剛剜剝剩剪副割剴創剷剽剿劂劃劇劈劉劊劍劑劓力功加劣助努劫劬劻劾勁勃勇勉勒動勗勘務勛勝勞募勢勣勤勦勰勳勵勸勺勻勾勿包匆匈匍匏匐匕化北匙匝匠匡匣匪匯匱匹匾匿區十千卅升午卉半卑卒卓協南博卜卞占卡卦卮卯印危即卵卷卸卹卻卿厄厚厝原厥厭厲去參又叉及友反叔取受叛叟叢口古句另叨叩只叫召叭叮可台叱史右叵司叻叼吁吃各吆合吉吊吋同名后吏吐向吒君吝吞吟吠否吧吩含听吭吮吱吳吵吶吸吹吻吼吾呀呂呃呆呈告呎呢周呱味呵呶呷呸呻呼命咀咄咆咋和咎咐咒咕咖咚咦咧咨咩咪咫咬咯咱咳咸咻咽咿哀品哂哄哇哈哉哎哞員哥哦哨哩哪哭哮哲哺哼哽唁唆唇唉唏唐唔唧唬售唯唱唳唷唸唾啁啃啄商啊問啕啖啗啜啞啟啡啣啤啦啪啻啼啾喀喂喃善喇喉喊喋喔喘喙喚喜喝喟喧喪喫喬單喱喲喳喵喻嗅嗆嗇嗉嗎嗑嗓嗚嗜嗟嗡嗣嗤嗥嗦嗨嗯嗶嗷嗽嗾嘀嘆嘈嘉嘍嘎嘐嘔嘖嘗嘛嘟嘩嘮嘯嘰嘲嘴嘶嘹嘻嘿噎噓噗噙噢噤噥器噩噪噫噬噯噱噴噶噸噹嚀嚅嚇嚎嚏嚐嚕嚥嚨嚮嚴嚶嚷嚼囀囁囂囈囉囊囌囑囚四囝回因囤囪囫困固囿圃圄圈圉國圍園圓圖團土在圩圬圭圯地圳圻圾址均坊坍坎坏坐坑坡坤坦坩坪坷坼垂垃型垓垠垢垣垮埂埃埋城埔域埠埤執培基堂堅堆堉堊堝堠堡堤堪堯堰報場堵塊塋塌塑塒塔塗塘塚塞塢填塭塵塹塽塾墀境墅墊墓墜增墟墦墨墩墮墳墾壁壅壇壎壑壓壕壘壙壞壟壢壤壩士壬壯壹壺壽夏夔夕外夙多夜夠夢夤夥大天太夫夭央失夷夸夾奄奇奈奉奎奏奐契奔奕套奘奚奠奢奧奩奪奭奮女奴奶奸她好妁如妃妄妊妍妒妓妖妙妝妞妣妤妥妨妮妯妳妹妻妾姅姆姊始姍姐姑姒姓委姘姚姜姣姥姦姨姪姬姻姿威娃娉娌娑娓娘娛娜娟娠娣娥娩娶娼婀婁婆婉婊婚婢婦婪婷婿媒媚媛媧媲媳媼媽媾嫁嫂嫉嫌嫖嫗嫘嫡嫣嫦嫩嫵嫻嬈嬉嬋嬌嬝嬤嬪嬰嬴嬸孀孃子孑孓孔孕字存孚孛孜孝孟季孤孩孫孰孱孳孵學孺孽孿它宅宇守安宋完宏宗官宙定宛宜客宣室宥宦宮宰害宴宵家宸容宿寂寄寅密寇富寐寒寓寞察寡寢寤寥實寧寨審寫寬寮寰寵寶寸寺封射將專尉尊尋對導小少尖尚尢尤尬就尷尸尹尺尼尾尿局屁居屆屈屋屍屎屏屐屑展屘屜屝屠屢層履屨屬屯山屹岌岐岑岔岡岩岫岱岳岷岸峒峙峨峪峭峰峴島峻峽崁崆崇崎崑崔崖崗崙崛崢崤崧崩崴嵇嵌嵐嵩嵯嶄嶇嶔嶝嶸嶺嶼嶽巉巍巒巔巖川州巡巢工左巧巨巫差己已巳巴巷巽巾市布帆希帑帕帖帘帚帛帝帟帥師席帳帶帷常帽幀幃幅幌幔幕幗幛幟幡幢幣幫干平年并幸幹幻幼幽幾庇床序底庖店庚府庠度座庫庭庵庶康庸庾廁廂廄廈廉廊廓廖廚廝廟廠廢廣廬廳延廷建廾廿弁弄弈弊弋式弒弓弔引弗弘弛弟弦弧弩弭弱張強弼彆彈彊彌彎彗彙彝形彤彥彩彪彫彬彭彰影彷役彼彿往征待徇很徉徊律後徐徑徒得徘徙徜從徠御徨復循徬微徵德徹徽心必忌忍忖志忘忙忝忠忪快忱念忸忽忿怎怏怒怔怕怖怛思怠怡急性怨怩怪怫怯怵恃恆恍恐恕恙恢恣恤恥恨恩恪恫恬恭息恰恿悄悅悉悌悍悔悖悚悟悠患您悲悴悵悶悸悻悼悽情惆惇惋惑惕惘惚惜惟惠惡惦惰惱想惴惶惹惺惻愀愁愆愈愉愍愎意愒愕愚愛愜感愣愧愴愷愾愿慄慇慈態慌慍慎慕慘慚慝慟慢慣慧慨慫慮慰慵慶慷慼慾憂憊憋憎憐憑憔憚憤憧憩憫憬憮憲憶憾懂懇懈應懊懋懍懣懦懲懵懶懷懸懺懼懾懿戀戈戊戌戍戎成我戒戕或戚戛戟戡戢截戮戰戲戳戴戶戾房所扁扇扈扉手扌才扎扑扒打扔托扛扣扭扮扯扳扶批扼找承技抄抆抉把抑抒抓投抖抗折抨披抬抱抵抹押抽抿拂拄拆拇拈拉拋拌拍拎拐拒拓拔拖拗拘拙拚招拜括拭拮拯拱拳拴拷拼拽拾拿持挂指挈按挑挖挨挪挫振挺挽挾捂捆捉捌捍捎捏捐捕捧捨捩捫捱捲捶捷捺捻掀掃掄授掉掌掏排掖掘掙掛掠採探掣接控推掩措掬揀揆揉揍描提插揖揚換握揣揩揪揭揮援揹搆損搏搓搔搖搗搜搞搪搬搭搴搶搽搾摀摑摒摔摘摟摧摩摭摯摸摹摺摻撇撈撐撒撓撕撙撚撞撢撤撥撩撫撬播撮撰撲撳撻撼撾撿擁擂擄擅擇擊擋操擎擒擔擘據擠擢擦擬擭擰擱擲擴擷擺擻擾攀攆攏攔攘攙攜攝攣攤攪攫攬支收攸改攻放政故效敉敏救敔敕敖敗敘教敝敞敢散敦敬敲整敵敷數斂斃文斐斑斕斗料斛斜斟斡斤斥斧斫斬斯新斷方於施旁旅旋旌旎族旖旗既日旦旨早旬旭旱旺昀昂昆昇昊昌明昏易昔昕星映昤春昧昨昭是昱晁時晃晅晉晌晏晒晚晝晞晤晦晨普景晰晴晶晷智晾暄暇暈暉暍暑暖暗暘暝暢暨暫暮暱暴暸暹曄曆曇曉曖曙曜曝曠曦曩曬曰曲曳更曷書曹曼曾替最會月有朋服朔朕朗望朝期朦朧木未末本札朮朱朴朵朽杆杉李杏材村杓杖杗杜杞束杠杪杭杯杰東杲杳杵杷杼松板枇枉枋析枓枕林枚果枝枯枰枴架枸柄柏某柑柒染柔柙柚柝柞柢查柩柬柯柱柳柴柵柿栓栗栘校栩株核根格栽桀桁桂桃桅框案桌桐桑桓桔桶桿梁梂梃梅梆梓梔梗條梟梡梢梧梨梭梯械梱梳梵棄棉棋棍棒棕棗棘棚棟棠棣棧森棲棵棹棺棻椅植椎椒椰楊楓楔楚楛楝楞楠楣楨楫業楮極楷楹概榆榔榕榛榜榣榦榨榫榭榮榴榷榻槁槃構槌槍槐槓槨槭槳槽樁樂樅樊樑樓標樞樟模樣樵樸樹樺樽橄橇橈橋橘橙機橡橢橫橾檀檄檐檔檗檜檠檢檣檬檮檯檳檸檻櫂櫃櫓櫚櫛櫝櫥櫬櫺櫻欄權欐欖欠次欣欲欺欽款歇歉歌歎歐歙歜歟歡止正此步武歧歪歲歷歸歹死歿殃殆殉殊殖殘殤殮殯殲段殷殺殼殿毀毅毆毋母每毒毓比毗毚毛毫毬毯毽氅氈氏氐民氓氖氛氟氣氤氦氧氨氫氬氮氯氳水氵永氾汀汁求汍汎汐汕汗汙汛汝汞江池污汨汪汰汲汴汶決汽汾沁沂沃沅沆沈沉沌沍沐沒沔沖沘沙沛沫沬沮沱河沸油治沼沽沾沿況泄泅泉泊泌泓法泖泗泛泜泠泡波泣泥注泯泰泱泳泵洋洌洎洗洛洞津洧洩洪洫洮洱洲洵洶洸洹活洽派流浙浚浥浦浩浪浬浮浴海浸浹涅涇消涉涊涌涎涓涔涕涪涮涯液涵涸涼涿淄淅淆淇淋淌淑淒淘淙淚淞淡淤淦淨淪淫淬淮深淳淵混淹淺添清渙渚減渝渠渡渣渤渥渦測渭港渲渴游渺渾湃湄湊湍湎湔湖湘湛湟湣湧湩湮湯湲溉源準溘溜溝溢溥溧溪溫溯溴溶溺溼滂滄滅滇滋滌滑滓滔滕滬滯滲滴滷滾滿漁漂漆漏漓演漕漠漢漣漩漪漫漬漯漱漲漳漸漾漿潑潔潘潛潟潠潤潦潭潮潯潰潸潺潼澀澄澆澈澎澗澠澡澤澦澧澱澳澴澶澹激濁濂濃濕濘濛濟濠濡濤濩濫濬濮濯濰濱濺濾瀆瀉瀋瀏瀑瀕瀘瀚瀛瀝瀟瀨瀰瀲瀾灌灑灘灞灣灤火灰灶灸灼災炊炎炒炕炙炤炫炬炭炮炯炳炸為烈烊烏烘烙烤烯烹烽焉焊焙焚焜無焦焰然煆煉煌煎煖煙煜煞煤煥煦照煨煩煬煮煽熄熊熒熔熙熟熨熬熱熹熾燃燄燈燉燎燐燒燕燙燜營燠燥燦燧燬燭燮燴燸燻燼燾爆爍爐爛爨爪爬爭爰爵父爸爹爺爻爽爾牆片版牌牒牖牘牙牛牝牟牠牡牢牧物牯牲牴特牽犀犁犄犒犖犛犢犧犬犯狀狂狄狎狐狗狙狠狡狩狷狸狹狼狽猓猖猙猛猜猥猩猴猶猷猾猿獄獅獎獐獗獨獰獲獵獷獸獺獻玀玄玆率玉王玖玟玥玨玩玫玲玳玷玻珀珊珍珞珠珪班珮現球琅理琉琊琍琛琢琥琦琨琪琯琳琴琵琶琺琿瑁瑕瑙瑚瑛瑜瑞瑟瑣瑤瑩瑪瑭瑯瑰瑾璀璃璋璘璜璞璟璣璦璧璨璩環璽璿瓊瓏瓔瓖瓚瓜瓠瓢瓣瓤瓦瓶瓷甄甌甍甕甘甚甜生產甥甦用甩甫甬甭田由甲申男甸甽畋界畎畏畔留畚畜畝畢略畦番畫異當畸畿疆疇疊疋疏疑疙疚疝疢疣疤疥疫疲疳疵疸疹疼疽疾痂病症痊痍痔痕痘痙痛痞痠痢痣痰痱痲痳痴痺痿瘀瘁瘉瘋瘍瘓瘟瘠瘡瘢瘤瘦瘧瘩瘴瘸瘺療癆癌癒癖癘癟癡癢癥癩癬癮癱癲癸登發白百皂的皆皇皈皋皎皓皖皚皮皰皴皺皿盂盃盅盆盈益盍盎盒盔盛盜盞盟盡監盤盥盧盪目盯盲直相盹盼盾省眇眉看真眠眨眩眶眷眸眺眼眾睏睛睜睞睡睢督睥睦睨睪睫睬睹睽睿瞄瞇瞋瞌瞎瞑瞞瞟瞠瞥瞧瞪瞬瞭瞰瞳瞻瞼瞽瞿矇矓矗矚矛矜矢矣知矩短矮矯石矽砂砌砍研砝砟砠砥砧砭砰砲破砷砸硃硎硝硫硬硯硼硿碉碌碎碑碓碗碘碟碣碧碩碰碳確碼碾磁磅磊磋磐磕磚磧磨磬磯磴磷磺礁礎礙礦礪礫礬示社祀祁祆祇祈祉祐祕祖祗祚祝神祟祠祥票祭祺祿禁禍禎福禦禧禪禮禱禳禹禺禽禾禿秀私秈秉秋科秒秘租秣秤秦秧秩移稀稅稈程稍稔稚稜稞稟稠種稱稷稻稼稽稿穀穆穋穌積穎穗穠穡穢穩穫穴究穹空穿突窄窈窒窕窖窗窘窟窠窩窪窮窯窺窿竄竅竇竊立站竟章竣童竭端競竹竺竽竿笆笑笙笛笞笠符笨第笮筆等筋筍筏筐筑筒答策筠筧筮筵筷箄箇箋箏箔箕算箝箠管箭箱箴箸節篁範篆篇築篌篙篛篠篡篤篦篩篷篾簇簌簍簑簞簡簣簧簪簫簷簸簽簾簿籀籃籌籍籐籟籠籣籤籥籬籮籲米籽粉粒粕粗粟粥粱粳粵粹粽精糊糕糖糙糜糝糞糟糠糢糧糯糰糸系糾紀紂約紅紆紇紉紊紋納紐純紕紗紙級紛紜素紡索紫紮累細紱紲紳紹紼絀終絃組絆結絕絛絞絡絢給絨絮絰統絲絳絹綁綏綑經綜綞綠綢綬維綰綱網綴綵綸綺綻綽綾綿緇緊緒緘緙線緝緞締緣編緩緬緯緲練緹緻縈縉縊縐縑縛縝縞縣縫縮縯縱縲縴縵縷縹總績縿繁繃繅繆繈繒織繕繙繚繞繡繩繪繫繭繳繹繼繽纂續纏纓纔纖纜缶缸缺缽罄罈罌罐罔罕罟罩罪置罰署罵罷罹羅羈羊羋羌美羔羚羞群羨義羯羲羶羸羹羼羽羿翁翅翌翎習翔翕翟翠翡翩翮翰翱翳翹翻翼耀老考耄者耆耋而耍耐耑耒耕耗耘耙耜耦耨耳耶耽耿聆聊聒聖聘聚聞聯聰聱聲聳聶職聽聾聿肄肅肆肇肉肋肌肓肖肘肚肛肝股肢肥肩肪肫肯肱育肴肺胃胄背胎胖胚胛胝胞胡胤胥胭胯胰胱胳胴胸胼能脂脅脆脈脊脖脣脤脩脫脯脰脹脾腆腋腌腎腐腑腓腔腕腥腦腫腮腰腱腳腴腸腹腺腿膀膂膈膊膏膘膚膛膜膝膠膨膩膳膺膽膾膿臀臂臃臆臉臍臏臘臚臟臢臣臥臧臨自臬臭至致臺臻臼臾舀舂舅與興舉舊舌舍舐舒舔舛舜舞舟舢舨航舫般舵舶舷船艇艋艘艙艦艮良艱色艷艸艹艾芋芍芒芙芝芟芣芥芬芭芯芰花芳芷芸芹芻芽芾苑苒苓苔苗苛苜苞苟苣若苦苧苯英茁茂范茄茅茆茉茗茨茫茱茲茴茵茶茸茹荀荃草荊荏荐荒荔荷荸荻荼莆莉莊莎莒莓莖莘莞莠莢莧莫莽菁菅菇菊菌菔菜菟菠菩華菰菱菲菴菸菽萃萄萇萊萋萌萍萎萬萱萵萸萼落葆葉著葛葡董葦葩葫葬葭葵葷蒂蒐蒙蒜蒞蒲蒸蒼蒿蓀蓄蓆蓉蓊蓋蓑蓓蓬蓮蓿蔆蔑蔓蔔蔗蔚蔡蔣蔥蔬蔭蔽蕃蕈蕉蕊蕙蕞蕨蕩蕪蕭蕾薄薇薊薑薔薛薜薦薨薩薪薯薰薹薺藉藍藏藐藕藝藤藥藩藪藷藹藺藻蘆蘇蘊蘋蘑蘗蘚蘭蘸蘿虎虐虔處虛虜虞號虧虫虱虹虺虻蚊蚌蚓蚜蚣蚤蚩蚪蚯蚱蚵蚶蛀蛄蛆蛇蛉蛋蛐蛔蛙蛛蛞蛟蛤蛭蛹蛻蛾蜀蜂蜃蜆蜇蜈蜊蜓蜘蜜蜢蜥蜩蜴蜷蜻蜿蝌蝓蝕蝗蝙蝟蝠蝦蝨蝴蝶蝸螂螃融螞螟螢螫螳螺螻蟀蟆蟈蟋蟑蟒蟠蟬蟯蟲蟹蟻蟾蠅蠍蠔蠕蠟蠡蠢蠣蠱蠶蠹蠻血行衍術街衙衛衝衡衢衣表衫衰衷衹衽袁袂袈袋袍袒袖袞被袱裁裂裊裒裔裕裘裙補裝裟裡裨裯裳裴裸裹製褂複褊褐褒褓褕褚褡褥褪褫褲褶褸褻褽襄襖襞襟襠襤襪襬襯襲西要覃覆見規覓視覜覦親覬覲覺覽觀角觔解觴觸觼言訁訂訃計訊訌討訏訐訑訓訕訖託記訛訝訟訢訣訥訪設許訴訶診註証訾詁詆詐詔評詖詛詞詠詢詣試詨詩詫詬詭詮詰話該詳詹詻詼誅誇誌認誑誓誕誘誚語誠誡誣誤誥誦誧誨說誰課誶誹誼調諂諄談諉請諍諒論諛諜諦諧諫諭諮諱諳諶諷諸諺諼諾謀謁謂謄謊謎謐謗謙講謝謠謨謫謬謹譁譆證譎譏識譙譚譜譟警譫譬譯議譴護譽讀變讒讓讖讚讜谷谿豁豆豈豉豌豎豐豔豕豚象豢豪豫豬豭豳豹豺貂貉貊貌貍貓貝貞負財貢貧貨販貪貫責貯貲貳貴貶買貸費貼貽貿賀賁賂賃賄賅資賈賊賑賒賓賜賞賠賡賢賣賤賦質賬賭賴賸賺賻購賽贅贈贊贍贏贓贖贗贛赤赦赧赫赭走赳赴起趁超越趕趙趟趣趨足趴趺趾跆跋跌跎跑跚跛距跟跡跤跦跨跪路跳跺跼踏踐踝踞踟踡踢踩踫踱踴踵踹蹂蹄蹈蹉蹊蹋蹕蹙蹟蹣蹤蹦蹬蹲蹴蹶蹺蹼躁躂躅躇躉躊躋躍躑躓躡躪身躬躲躺軀車軋軌軍軏軒軔軛軟軸軻軼軾較載輊輒輓輔輕輛輜輝輞輟輥輦輩輪輯輳輸輻輾輿轂轄轅轉轍轎轔轟轡辛辜辟辣辦辨辭辮辯辰辱農迂迄迅迆迎近返迢迤迥迦迨迪迫迭述迴迷迸迺追退送逃逅逆逍透逐途逕逖逗這通逛逝逞速造逢連逮週進逵逶逸逼逾遁遂遇遊運遍過遏遐遑道達違遘遙遛遜遝遞遠遢遣遨適遭遮遲遴遵遷選遺遼遽避邀邁邂邃還邇邈邊邋邏邐邑邕邢那邦邪邱邵邶邸郁郃郊郎郝郡郢部郭郵都郾鄂鄉鄒鄗鄘鄙鄞鄧鄭鄰鄱鄴鄹酈酉酊酋酌配酒酗酣酥酩酪酬酴酵酷酸醃醇醉醋醒醜醞醣醫醬醮醱醴醺釀釁釅釆采釉釋里重野量釐金釒釗釘釙釜針釣釦釧釩釭釵鈇鈉鈍鈐鈑鈔鈕鈞鈣鈴鈷鈸鈹鈽鈾鈿鉀鉅鉉鉋鉍鉑鉗鉚鉛鉤鉸鉻鉼銀銅銑銓銖銘銜銨銬銲銳銷銻銼鋁鋅鋇鋒鋤鋪鋰鋸鋼錄錐錕錘錙錚錠錡錢錦錨錫錮錯錳錶鍊鍋鍍鍔鍚鍛鍥鍬鍰鍵鍾鎂鎊鎔鎖鎗鎘鎚鎢鎧鎬鎮鎰鎳鏃鏈鏍鏑鏖鏗鏘鏜鏝鏟鏡鏢鏤鏨鏽鐃鐘鐫鐮鐲鐳鐵鐸鐺鑄鑑鑒鑠鑣鑤鑪鑰鑲鑷鑼鑽鑾鑿長門閂閃閉開閎閏閑閒間閔閘閡閣閤閥閨閩閭閱閻闆闈闊闋闌闐闔闕闖關闡闢阜阡阪阬阮阱防阻阿陀陂附陋陌降限陘陛陝陞陡院陣除陪陬陰陲陳陴陵陶陷陸陽隄隅隆隊隋隍階隔隕隘隙際障隧隨險隱隴隸隹隻雀雁雄雅集雇雉雊雋雌雍雒雕雖雙雛雜雞離難雨雩雪雯雲零雷雹電需霄霆震霉霍霎霏霑霓霖霜霞霤霧霪霰露霸霹霽霾靂靄靈青靖靛靜非靠靡面靦靨革靴靶靼鞅鞋鞍鞏鞘鞠鞣鞦鞭韁韃韆韉韋韌韓韜韭音韶韹韻響頁頂頃項順須頊頌預頑頒頓頗領頜頡頤頫頭頰頷頸頹頻顆題額顎顏顓願顛類顥顧顫顯顰顱風颯颱颳颶颺颼飄飛食飢飧飩飪飭飯飲飴飼飽飾餃餅餉養餌餐餒餓餘餚餛餞餡館餮餵餽餾餿饅饉饑饒饕饗饜饞首香馥馨馬馭馮馱馳馴駁駐駑駒駕駙駛駝駟駢駭駱駿騁騎騖騙騫騰騵騷騾驀驃驅驍驕驗驚驛驟驢驥驪骨骯骰骷骸骼髁髏髑髒髓體髖高髡髦髭髮髯髻鬃鬆鬍鬚鬢鬣鬥鬧鬨鬱鬲鬼魁魂魄魅魍魎魏魑魔魘魚魯魷鮑鮪鮫鮭鮮鯀鯈鯉鯊鯖鯛鯧鯨鯽鰍鰓鰥鰭鰱鰻鰾鱉鱔鱖鱗鱟鱷鱸鳥鳩鳳鳴鳶鴃鴆鴉鴒鴕鴛鴣鴦鴨鴻鴿鵑鵝鵠鵡鵪鵬鵲鶉鶯鶴鶸鷂鷓鷗鷥鷲鷹鷺鸚鸛鸞鹵鹹鹼鹽鹿麂麋麒麓麗麝麟麥麩麴麵麻麼麾黃黌黍黎黏黑黔默黛黜黝點黠黨黯黴黷鼇鼎鼓鼕鼙鼠鼬鼯鼴鼻鼾齊齋齒齜齟齡齣齦齧齪齬齲齷龍龐龔龜","z":"ㄧ ㄉㄧㄥ ㄑㄧ ㄓㄤˋ ㄙㄢ ㄕㄤˋ ㄒㄧㄚˋ ㄅㄨˋ ㄍㄞˋ ㄔㄡˇ ㄑㄧㄝˇ ㄆㄧ ㄕˋ ㄑㄧㄡ ㄅㄧㄥˇ ㄔㄥˊ ㄉㄧㄡ ㄅㄧㄥˋ ㄧㄚ ㄓㄨㄥ ㄈㄥ ㄔㄨㄢˋ ㄨㄢˊ ㄉㄢ ㄓㄨˇ ㄋㄞˇ ㄐㄧㄡˇ ㄇㄜ˙ ㄓ ㄓㄚˋ ㄏㄨ ㄈㄚˊ ㄆㄧㄥ ㄆㄤ ㄍㄨㄞ ㄔㄥˊ ㄧˇ ㄐㄧㄡˇ ㄑㄧˇ ㄧㄝˇ ㄐㄧ ㄖㄨˇ ㄍㄢ ㄌㄨㄢˋ ㄌㄜ˙ ㄩˇ ㄕˋ ㄦˋ ㄩˊ ㄩㄣˊ ㄏㄨˋ ㄨˇ ㄐㄧㄥˇ ㄍㄣˋ ㄒㄧㄝ ㄧㄚˋ ㄐㄧˊ ㄨㄤˊ ㄎㄤˋ ㄐㄧㄠ ㄏㄞˋ ㄧˋ ㄏㄥ ㄒㄧㄤˇ ㄐㄧㄥ ㄊㄧㄥˊ ㄌㄧㄤˋ ㄅㄛˊ ㄖㄣˊ ㄕㄣˊ ㄖㄣˊ ㄉㄧㄥ ㄗㄜˋ ㄆㄨ ㄔㄡˊ ㄐㄧㄣ ㄐㄧㄝˋ ㄖㄥˊ ㄗㄞˇ ㄕˋ ㄊㄚ ㄓㄤˋ ㄈㄨˋ ㄒㄧㄢ ㄖㄣˋ ㄑㄧㄢ ㄉㄞˋ ㄌㄧㄥˋ ㄧˇ ㄧㄤˇ ㄓㄨㄥˋ ㄆㄧˇ ㄐㄧㄢˋ ㄖㄣˋ ㄈㄣˋ ㄈㄤˇ ㄑㄧˇ ㄎㄤˋ ㄧ ㄐㄧˊ ㄨˇ ㄈㄨˊ ㄈㄚˊ ㄒㄧㄡ ㄈㄨ ㄏㄨㄛˇ ㄅㄛˊ ㄍㄨ ㄅㄢˋ ㄌㄧㄥˊ ㄕㄣ ㄘˋ ㄙˋ ㄍㄚ ㄉㄧㄢˋ ㄉㄢˋ ㄓㄨˋ ㄅㄨˋ ㄨㄟˋ ㄉㄧ ㄓㄨˋ ㄗㄨㄛˇ ㄧㄡˋ ㄓㄢˋ ㄏㄜˊ ㄊㄨㄛˊ ㄩˊ ㄧˋ ㄈㄨˊ ㄗㄨㄛˋ ㄍㄡ ㄋㄧㄥˋ ㄋㄧˇ ㄩㄥ ㄆㄟˋ ㄌㄠˇ ㄧㄤˊ ㄅㄞˇ ㄐㄧㄚ ㄅㄧㄥˋ ㄑㄩㄢˊ ㄊㄧㄠ ㄧˋ ㄕˇ ㄎㄢˇ ㄌㄞˊ ㄔˇ ㄌㄧˋ ㄕˋ ㄓㄨ ㄧㄡˋ ㄌㄨㄣˊ ㄍㄨㄥ ㄧ ㄨˇ ㄏㄡˊ ㄑㄧㄣ ㄌㄩˇ ㄐㄩˊ ㄅㄧㄢˋ ㄒㄧˋ ㄘㄨˋ ㄜˊ ㄐㄩㄣˋ ㄗㄨˇ ㄑㄧㄠˋ ㄌㄧˋ ㄩㄥˇ ㄙㄨˊ ㄈㄨˊ ㄌㄧˇ ㄅㄠˇ ㄩˊ ㄑㄧˊ ㄒㄧㄚˊ ㄒㄧㄣˋ ㄒㄧㄡ ㄈㄨˇ ㄐㄩˋ ㄆㄞˊ ㄈㄥˋ ㄢˇ ㄅㄧˇ ㄔㄤ ㄌㄧㄚˇ ㄘㄤ ㄍㄜˋ ㄍㄨㄢ ㄅㄟˋ ㄕㄨ ㄇㄣ˙ ㄉㄠˇ ㄐㄩㄝˊ ㄒㄧㄥˋ ㄊㄤˇ ㄏㄡˋ ㄧˇ ㄐㄧㄝˋ ㄔㄤˋ ㄈㄤˇ ㄎㄨㄥ ㄐㄩㄢˋ ㄐㄩˋ ㄑㄧㄢˋ ㄋㄧˊ ㄌㄨㄣˊ ㄨㄛ ㄓˊ ㄧㄢˇ ㄐㄧㄚˇ ㄨㄟˇ ㄖㄨㄛˋ ㄨㄟ ㄆㄧㄢ ㄒㄧㄝˊ ㄗㄨㄛˋ ㄊㄧㄥˊ ㄐㄧㄢˋ ㄇㄧㄢˇ ㄧˇ ㄘㄜˋ ㄓㄣ ㄡˇ ㄊㄡ ㄗㄚˊ ㄨㄟˇ ㄍㄨㄟ ㄈㄨˋ ㄅㄤˋ ㄐㄧㄝˊ ㄘㄤ ㄙㄢˇ ㄅㄟˋ ㄒㄧㄠˋ ㄐㄧㄚ ㄘㄨㄟ ㄩㄥ ㄗㄨㄥˇ ㄠˋ ㄔㄨㄢˊ ㄓㄞˋ ㄕㄤ ㄕㄚˇ ㄑㄧㄥ ㄐㄧㄣˇ ㄌㄨˋ ㄓㄨㄢˋ ㄒㄧㄤˋ ㄑㄧㄠˊ ㄆㄨˊ ㄒㄧ ㄌㄧㄠˊ ㄐㄧㄠˇ ㄙㄥ ㄒㄧㄢˋ ㄐㄧㄢˋ ㄊㄨㄥˊ ㄍㄨˋ ㄐㄧㄤ ㄐㄧㄚˋ ㄆㄧˋ ㄧˊ ㄋㄨㄥˊ ㄧˋ ㄉㄤˋ ㄎㄨㄞˋ ㄐㄧㄢˇ ㄅㄧㄣ ㄖㄨˊ ㄔㄡˊ ㄔㄞˊ ㄐㄧㄣˇ ㄔㄤˊ ㄌㄟˇ ㄧㄡ ㄔㄨˇ ㄔㄢˊ ㄌㄧˋ ㄌㄨㄛˊ ㄊㄤˇ ㄧㄢˇ ㄦˊ ㄨˋ ㄩㄣˇ ㄩㄢˊ ㄒㄩㄥ ㄔㄨㄥ ㄓㄠˋ ㄒㄩㄥ ㄒㄧㄢ ㄍㄨㄤ ㄎㄜˋ ㄉㄨㄟˋ ㄇㄧㄢˇ ㄦˊ ㄊㄨˋ ㄙˋ ㄧㄢˇ ㄉㄡ ㄐㄧㄥ ㄖㄨˋ ㄋㄟˋ ㄑㄩㄢˊ ㄌㄧㄤˇ ㄅㄚ ㄍㄨㄥ ㄌㄧㄡˋ ㄒㄧ ㄍㄨㄥˋ ㄅㄧㄥ ㄑㄧˊ ㄐㄩˋ ㄉㄧㄢˇ ㄐㄧㄢ ㄐㄧˋ ㄖㄢˇ ㄘㄜˋ ㄗㄞˋ ㄓㄡˋ ㄇㄠˋ ㄇㄧㄢˇ ㄖㄨㄥˇ ㄍㄨㄢ ㄓㄨㄥˇ ㄩㄢ ㄇㄧㄥˊ ㄇㄧˋ ㄉㄨㄥ ㄅㄧㄥ ㄧㄝˇ ㄌㄥˇ ㄌㄧㄝˋ ㄓㄨㄣˇ ㄉㄧㄠ ㄌㄧㄥˊ ㄉㄨㄥˋ ㄌㄧㄣˇ ㄋㄧㄥˊ ㄐㄧˇ ㄈㄢˊ ㄏㄨㄤˊ ㄎㄞˇ ㄉㄥˋ ㄒㄩㄥ ㄊㄨ ㄠ ㄔㄨ ㄏㄢˊ ㄉㄠ ㄉㄧㄠ ㄖㄣˋ ㄈㄣ ㄑㄧㄝ ㄧˋ ㄎㄢ ㄨㄣˇ ㄒㄧㄥˊ ㄏㄨㄚˋ ㄩㄝˋ ㄌㄧㄝˋ ㄔㄨ ㄆㄢˋ ㄅㄧㄝˊ ㄆㄠˊ ㄌㄧˋ ㄕㄢ ㄍㄨㄚ ㄉㄠˋ ㄓˋ ㄕㄨㄚ ㄑㄩㄢˋ ㄘˋ ㄎㄜˋ ㄉㄨㄛˋ ㄊㄧˋ ㄗㄜˊ ㄒㄩㄝ ㄎㄜˋ ㄌㄚˊ ㄑㄧㄢˊ ㄕㄚ ㄊㄧ ㄆㄡ ㄍㄤ ㄨㄢ ㄅㄛ ㄕㄥˋ ㄐㄧㄢˇ ㄈㄨˋ ㄍㄜ ㄎㄞˇ ㄔㄨㄤˋ ㄔㄢˇ ㄆㄧㄠ ㄐㄧㄠˇ ㄐㄩㄝˊ ㄏㄨㄚˋ ㄐㄩˋ ㄆㄧ ㄌㄧㄡˊ ㄍㄨㄟˋ ㄐㄧㄢˋ ㄐㄧˋ ㄧˋ ㄌㄧˋ ㄍㄨㄥ ㄐㄧㄚ ㄌㄧㄝˋ ㄓㄨˋ ㄋㄨˇ ㄐㄧㄝˊ ㄑㄩˊ ㄎㄨㄤ ㄏㄜˊ ㄐㄧㄣˋ ㄅㄛˊ ㄩㄥˇ ㄇㄧㄢˇ ㄌㄟ ㄉㄨㄥˋ ㄒㄩˋ ㄎㄢ ㄨˋ ㄒㄩㄣ ㄕㄥˋ ㄌㄠˊ ㄇㄨˋ ㄕˋ ㄐㄧ ㄑㄧㄣˊ ㄔㄠ ㄒㄧㄝˊ ㄒㄩㄣ ㄌㄧˋ ㄑㄩㄢˋ ㄕㄠˊ ㄩㄣˊ ㄍㄡ ㄨˋ ㄅㄠ ㄘㄨㄥ ㄒㄩㄥ ㄆㄨˊ ㄆㄠˊ ㄈㄨˊ ㄅㄧˇ ㄏㄨㄚˋ ㄅㄟˇ ㄕ˙ ㄗㄚ ㄐㄧㄤˋ ㄎㄨㄤ ㄒㄧㄚˊ ㄈㄟˇ ㄏㄨㄟˋ ㄍㄨㄟˋ ㄆㄧˇ ㄅㄧㄢˇ ㄋㄧˋ ㄑㄩ ㄕˊ ㄑㄧㄢ ㄙㄚˋ ㄕㄥ ㄨˇ ㄏㄨㄟˋ ㄅㄢˋ ㄅㄟ ㄗㄨˊ ㄓㄨㄛˊ ㄒㄧㄝˊ ㄋㄢˊ ㄅㄛˊ ㄅㄛ˙ ㄅㄧㄢˋ ㄓㄢˋ ㄎㄚˇ ㄍㄨㄚˋ ㄓ ㄇㄠˇ ㄧㄣˋ ㄨㄟ ㄐㄧˊ ㄌㄨㄢˇ ㄐㄩㄢˇ ㄒㄧㄝˋ ㄒㄩˋ ㄑㄩㄝˋ ㄑㄧㄥ ㄜˋ ㄏㄡˋ ㄘㄨㄛˋ ㄩㄢˊ ㄐㄩㄝˊ ㄧㄢˋ ㄌㄧˋ ㄑㄩˋ ㄘㄢ ㄧㄡˋ ㄔㄚ ㄐㄧˊ ㄧㄡˇ ㄈㄢˇ ㄕㄨ ㄑㄩˇ ㄕㄡˋ ㄆㄢˋ ㄙㄡˇ ㄘㄨㄥˊ ㄎㄡˇ ㄍㄨˇ ㄐㄩˋ ㄌㄧㄥˋ ㄉㄠ ㄎㄡˋ ㄓˇ ㄐㄧㄠˋ ㄓㄠˋ ㄅㄚ ㄉㄧㄥ ㄎㄜˇ ㄊㄞˊ ㄔˋ ㄕˇ ㄧㄡˋ ㄆㄛˇ ㄙ ㄌㄜˋ ㄉㄧㄠ ㄒㄩ ㄔ ㄍㄜˋ ㄧㄠ ㄏㄜˊ ㄐㄧˊ ㄉㄧㄠˋ ㄘㄨㄣˋ ㄊㄨㄥˊ ㄇㄧㄥˊ ㄏㄡˋ ㄌㄧˋ ㄊㄨˇ ㄒㄧㄤˋ ㄓㄚ ㄐㄩㄣ ㄌㄧㄣˋ ㄊㄨㄣ ㄧㄣˊ ㄈㄟˋ ㄈㄡˇ ㄅㄚ˙ ㄈㄣ ㄏㄢˊ ㄊㄧㄥ ㄎㄥ ㄕㄨㄣˇ ㄓ ㄨˊ ㄔㄠˇ ㄋㄚˋ ㄒㄧ ㄔㄨㄟ ㄨㄣˇ ㄏㄡˇ ㄨˊ ㄧㄚ˙ ㄌㄩˇ ㄜˋ ㄉㄞ ㄔㄥˊ ㄍㄠˋ ㄔˇ ㄋㄜ˙ ㄓㄡ ㄍㄨ ㄨㄟˋ ㄏㄜ ㄋㄠˊ ㄍㄚ ㄆㄟ ㄕㄣ ㄏㄨ ㄇㄧㄥˋ ㄐㄩˇ ㄉㄨㄛ ㄆㄠˊ ㄗㄚˇ ㄏㄜˊ ㄐㄧㄡˋ ㄈㄨˋ ㄓㄡˋ ㄍㄨ ㄎㄚ ㄉㄨㄥ ㄧˊ ㄌㄧㄝˇ ㄗ ㄇㄧㄝ ㄇㄧ ㄓˇ ㄧㄠˇ ㄍㄜ ㄗㄢˊ ㄎㄜˊ ㄒㄧㄢˊ ㄒㄧㄡ ㄧㄢˋ ㄧ ㄞ ㄆㄧㄣˇ ㄕㄣˇ ㄏㄨㄥˇ ㄨㄚ ㄏㄚ ㄗㄞ ㄞ ㄇㄡ ㄩㄢˊ ㄍㄜ ㄛˊ ㄕㄠˋ ㄌㄧ ㄋㄚˇ ㄎㄨ ㄒㄧㄠ ㄓㄜˊ ㄅㄨˇ ㄏㄥ ㄍㄥˇ ㄧㄢˋ ㄙㄨㄛ ㄔㄨㄣˊ ㄞ ㄒㄧ ㄊㄤˊ ㄨˊ ㄐㄧ ㄏㄨˇ ㄕㄡˋ ㄨㄟˊ ㄔㄤˋ ㄌㄧˋ ㄧㄛ ㄋㄧㄢˋ ㄊㄨㄛˋ ㄓㄠ ㄎㄣˇ ㄓㄨㄛˊ ㄕㄤ ㄚ˙ ㄨㄣˋ ㄊㄠˊ ㄉㄢˋ ㄉㄢˋ ㄔㄨㄞˋ ㄧㄚˇ ㄑㄧˇ ㄈㄟ ㄒㄧㄢˊ ㄆㄧˊ ㄌㄚ˙ ㄆㄚ ㄔˋ ㄊㄧˊ ㄐㄧㄡ ㄎㄚ ㄨㄟˋ ㄋㄢˊ ㄕㄢˋ ㄌㄚˇ ㄏㄡˊ ㄏㄢˇ ㄉㄧㄝˊ ㄛ ㄔㄨㄢˇ ㄏㄨㄟˋ ㄏㄨㄢˋ ㄒㄧˇ ㄏㄜ ㄎㄨㄟˋ ㄒㄩㄢ ㄙㄤˋ ㄔ ㄑㄧㄠˊ ㄉㄢ ㄌㄧˊ ㄧㄛ ㄓㄚ ㄇㄧㄠ ㄩˋ ㄒㄧㄡˋ ㄑㄧㄤ ㄙㄜˋ ㄙㄨˋ ㄇㄚ˙ ㄎㄜ ㄙㄤˇ ㄨ ㄕˋ ㄐㄧㄝ ㄨㄥ ㄙˋ ㄔ ㄏㄠˊ ㄙㄨㄛ˙ ㄏㄞ ㄣˊ ㄅㄧˋ ㄠˊ ㄙㄡˋ ㄙㄡˇ ㄉㄧˊ ㄊㄢˋ ㄘㄠˊ ㄐㄧㄚ ㄌㄡˊ ㄍㄚ ㄒㄧㄠ ㄡˇ ㄗㄜˊ ㄔㄤˊ ㄇㄚ˙ ㄉㄨ ㄏㄨㄚ ㄌㄠˊ ㄒㄧㄠˋ ㄐㄧ ㄔㄠˊ ㄗㄨㄟˇ ㄙ ㄌㄧㄠˊ ㄒㄧ ㄏㄟ ㄧㄝ ㄒㄩ ㄆㄨ ㄑㄧㄣˊ ㄛ ㄐㄧㄣˋ ㄋㄨㄥˊ ㄑㄧˋ ㄜˋ ㄗㄠˋ ㄧ ㄕˋ ㄞ ㄐㄩㄝˊ ㄆㄣ ㄍㄚˊ ㄉㄨㄣ ㄉㄤ ㄋㄧㄥˊ ㄖㄨˊ ㄒㄧㄚˋ ㄏㄠˊ ㄊㄧˋ ㄔㄤˊ ㄌㄨˇ ㄧㄢˋ ㄌㄨㄥˊ ㄒㄧㄤˋ ㄧㄢˊ ㄧㄥ ㄖㄤˇ ㄐㄩㄝˊ ㄓㄨㄢˋ ㄋㄧㄝˋ ㄒㄧㄠ ㄧˋ ㄌㄨㄛ ㄋㄤˊ ㄙㄨ ㄓㄨˇ ㄑㄧㄡˊ ㄙˋ ㄐㄧㄢˇ ㄏㄨㄟˊ ㄧㄣ ㄉㄨㄣˋ ㄘㄨㄥ ㄏㄨˊ ㄎㄨㄣˋ ㄍㄨˋ ㄧㄡˋ ㄆㄨˇ ㄩˇ ㄑㄩㄢ ㄩˇ ㄍㄨㄛˊ ㄨㄟˊ ㄩㄢˊ ㄩㄢˊ ㄊㄨˊ ㄊㄨㄢˊ ㄊㄨˇ ㄗㄞˋ ㄨㄟˊ ㄨ ㄍㄨㄟ ㄧˊ ㄉㄧˋ ㄓㄣˋ ㄑㄧˊ ㄙㄜˋ ㄓˇ ㄐㄩㄣ ㄈㄤ ㄊㄢ ㄎㄢˇ ㄏㄨㄞˋ ㄗㄨㄛˋ ㄎㄥ ㄆㄛ ㄎㄨㄣ ㄊㄢˇ ㄍㄢ ㄆㄧㄥˊ ㄎㄜˇ ㄔㄜˋ ㄔㄨㄟˊ ㄌㄜˋ ㄒㄧㄥˊ ㄍㄞ ㄧㄣˊ ㄍㄡˋ ㄩㄢˊ ㄎㄨㄚˇ ㄍㄥˇ ㄞ ㄇㄞˊ ㄔㄥˊ ㄆㄨˇ ㄩˋ ㄅㄨˋ ㄆㄧˊ ㄓˊ ㄆㄟˊ ㄐㄧ ㄊㄤˊ ㄐㄧㄢ ㄉㄨㄟ ㄩˋ ㄜˋ ㄍㄨㄛ ㄏㄡˋ ㄅㄠˇ ㄉㄧ ㄎㄢ ㄧㄠˊ ㄧㄢˋ ㄅㄠˋ ㄔㄤˇ ㄉㄨˇ ㄎㄨㄞˋ ㄧㄥˊ ㄊㄚ ㄙㄨˋ ㄕˊ ㄊㄚˇ ㄊㄨˊ ㄊㄤˊ ㄓㄨㄥˇ ㄙㄞ ㄨˋ ㄊㄧㄢˊ ㄨㄣ ㄔㄣˊ ㄑㄧㄢˋ ㄕㄨㄤˇ ㄕㄨˊ ㄔˊ ㄐㄧㄥˋ ㄕㄨˋ ㄉㄧㄢˋ ㄇㄨˋ ㄓㄨㄟˋ ㄗㄥ ㄒㄩ ㄈㄢˊ ㄇㄛˋ ㄉㄨㄣ ㄉㄨㄛˋ ㄈㄣˊ ㄎㄣˇ ㄅㄧˋ ㄩㄥ ㄊㄢˊ ㄒㄩㄣ ㄏㄜˋ ㄧㄚ ㄏㄠˊ ㄌㄟˇ ㄎㄨㄤˋ ㄏㄨㄞˋ ㄌㄨㄥˇ ㄌㄧˋ ㄖㄤˇ ㄅㄚˋ ㄕˋ ㄖㄣˊ ㄓㄨㄤˋ ㄧ ㄏㄨˊ ㄕㄡˋ ㄒㄧㄚˋ ㄎㄨㄟˊ ㄒㄧ ㄨㄞˋ ㄙㄨˋ ㄉㄨㄛ ㄧㄝˋ ㄍㄡˋ ㄇㄥˋ ㄧㄣˊ ㄏㄨㄛˇ ㄉㄚˋ ㄊㄧㄢ ㄊㄞˋ ㄈㄨ ㄧㄠ ㄧㄤ ㄕ ㄧˊ ㄎㄨㄚ ㄐㄧㄚ ㄧㄢˇ ㄑㄧˊ ㄋㄞˋ ㄈㄥˋ ㄎㄨㄟˊ ㄗㄡˋ ㄏㄨㄢˋ ㄑㄧˋ ㄅㄣ ㄧˋ ㄊㄠˋ ㄗㄤˋ ㄒㄧ ㄉㄧㄢˋ ㄕㄜ ㄠˋ ㄌㄧㄢˊ ㄉㄨㄛˊ ㄕˋ ㄈㄣˋ ㄋㄩˇ ㄋㄨˊ ㄋㄞˇ ㄐㄧㄢ ㄊㄚ ㄏㄠˇ ㄕㄨㄛˋ ㄖㄨˊ ㄈㄟ ㄨㄤˋ ㄖㄣˋ ㄧㄢˊ ㄉㄨˋ ㄐㄧˋ ㄧㄠ ㄇㄧㄠˋ ㄓㄨㄤ ㄋㄧㄡ ㄅㄧˇ ㄩˊ ㄊㄨㄛˇ ㄈㄤˊ ㄋㄧ ㄓㄡˊ ㄋㄧˇ ㄇㄟˋ ㄑㄧ ㄑㄧㄝˋ ㄅㄢˋ ㄇㄨˇ ㄗˇ ㄕˇ ㄕㄢ ㄐㄧㄝˇ ㄍㄨ ㄙˋ ㄒㄧㄥˋ ㄨㄟˇ ㄆㄧㄣ ㄧㄠˊ ㄐㄧㄤ ㄐㄧㄠ ㄌㄠˇ ㄐㄧㄢ ㄧˊ ㄓˊ ㄐㄧ ㄧㄣ ㄗ ㄨㄟ ㄨㄚˊ ㄆㄧㄥ ㄌㄧˇ ㄙㄨㄛ ㄨㄟˇ ㄋㄧㄤˊ ㄩˊ ㄋㄚˋ ㄐㄩㄢ ㄕㄣ ㄉㄧˋ ㄜˊ ㄇㄧㄢˇ ㄑㄩˇ ㄔㄤ ㄜ ㄌㄡˊ ㄆㄛˊ ㄨㄢˇ ㄅㄧㄠˇ ㄏㄨㄣ ㄅㄧˋ ㄈㄨˋ ㄌㄢˊ ㄊㄧㄥˊ ㄒㄩˋ ㄇㄟˊ ㄇㄟˋ ㄩㄢˋ ㄨㄚ ㄆㄧˋ ㄒㄧˊ ㄠˇ ㄇㄚ ㄍㄡˋ ㄐㄧㄚˋ ㄙㄠˇ ㄐㄧˊ ㄒㄧㄢˊ ㄆㄧㄠˊ ㄩˋ ㄌㄟˊ ㄉㄧˊ ㄧㄢ ㄔㄤˊ ㄋㄣˋ ㄨˇ ㄒㄧㄢˊ ㄖㄠˊ ㄒㄧ ㄔㄢˊ ㄐㄧㄠ ㄋㄧㄠˇ ㄇㄚ ㄆㄧㄣˊ ㄧㄥ ㄧㄥˊ ㄕㄣˇ ㄕㄨㄤ ㄋㄧㄤˊ ㄗˇ ㄐㄧㄝˊ ㄐㄩㄝˊ ㄎㄨㄥˇ ㄩㄣˋ ㄗˋ ㄘㄨㄣˊ ㄈㄨˊ ㄅㄟˋ ㄗ ㄒㄧㄠˋ ㄇㄥˋ ㄐㄧˋ ㄍㄨ ㄏㄞˊ ㄙㄨㄣ ㄕㄨˊ ㄘㄢˋ ㄗ ㄈㄨ ㄒㄩㄝˊ ㄖㄨˊ ㄋㄧㄝˋ ㄌㄨㄢˊ ㄊㄚ ㄓㄞˊ ㄩˇ ㄕㄡˇ ㄢ ㄙㄨㄥˋ ㄨㄢˊ ㄏㄨㄥˊ ㄗㄨㄥ ㄍㄨㄢ ㄓㄡˋ ㄉㄧㄥˋ ㄨㄢˇ ㄧˊ ㄎㄜˋ ㄒㄩㄢ ㄕˋ ㄧㄡˋ ㄏㄨㄢˋ ㄍㄨㄥ ㄗㄞˇ ㄏㄞˋ ㄧㄢˋ ㄒㄧㄠ ㄐㄧㄚ ㄔㄣˊ ㄖㄨㄥˊ ㄙㄨˋ ㄐㄧˋ ㄐㄧˋ ㄧㄣˊ ㄇㄧˋ ㄎㄡˋ ㄈㄨˋ ㄇㄟˋ ㄏㄢˊ ㄩˋ ㄇㄛˋ ㄔㄚˊ ㄍㄨㄚˇ ㄑㄧㄣˇ ㄨˋ ㄌㄧㄠˊ ㄕˊ ㄋㄧㄥˊ ㄓㄞˋ ㄕㄣˇ ㄒㄧㄝˇ ㄎㄨㄢ ㄌㄧㄠˊ ㄏㄨㄢˊ ㄔㄨㄥˇ ㄅㄠˇ ㄘㄨㄣˋ ㄙˋ ㄈㄥ ㄕㄜˋ ㄐㄧㄤ ㄓㄨㄢ ㄨㄟˋ ㄗㄨㄣ ㄒㄩㄣˊ ㄉㄨㄟˋ ㄉㄠˇ ㄒㄧㄠˇ ㄕㄠˇ ㄐㄧㄢ ㄕㄤˋ ㄧㄡˊ ㄧㄡˊ ㄍㄚˋ ㄐㄧㄡˋ ㄍㄢ ㄕ ㄧㄣˇ ㄔˇ ㄋㄧˊ ㄨㄟˇ ㄋㄧㄠˋ ㄐㄩˊ ㄆㄧˋ ㄐㄩ ㄐㄧㄝˋ ㄑㄩ ㄨ ㄕ ㄕˇ ㄆㄧㄥˊ ㄐㄧ ㄒㄧㄝˋ ㄓㄢˇ ㄇㄢˇ ㄊㄧˋ ㄈㄟˋ ㄊㄨˊ ㄌㄩˇ ㄘㄥˊ ㄌㄩˇ ㄐㄩˋ ㄕㄨˇ ㄊㄨㄣˊ ㄕㄢ ㄧˋ ㄐㄧˊ ㄑㄧˊ ㄘㄣˊ ㄔㄚˋ ㄍㄤ ㄧㄢˊ ㄒㄧㄡˋ ㄉㄞˋ ㄩㄝˋ ㄇㄧㄣˊ ㄢˋ ㄉㄨㄥˋ ㄓˋ ㄜˊ ㄩˋ ㄑㄧㄠˋ ㄈㄥ ㄒㄧㄢˋ ㄉㄠˇ ㄐㄩㄣˋ ㄒㄧㄚˊ ㄎㄢˋ ㄎㄨㄥ ㄔㄨㄥˊ ㄑㄧˊ ㄎㄨㄣ ㄘㄨㄟ ㄧㄚˊ ㄍㄤˇ ㄌㄨㄣˊ ㄐㄩㄝˊ ㄓㄥ ㄒㄧㄠˊ ㄙㄨㄥ ㄅㄥ ㄨㄞˇ ㄐㄧ ㄑㄧㄢˋ ㄌㄢˊ ㄙㄨㄥ ㄘㄨㄛˊ ㄓㄢˇ ㄑㄩ ㄑㄧㄣ ㄉㄥˋ ㄖㄨㄥˊ ㄌㄧㄥˇ ㄩˇ ㄩㄝˋ ㄔㄢˊ ㄨㄟ ㄌㄨㄢˊ ㄉㄧㄢ ㄧㄢˊ ㄔㄨㄢ ㄓㄡ ㄒㄩㄣˊ ㄔㄠˊ ㄍㄨㄥ ㄗㄨㄛˇ ㄑㄧㄠˇ ㄐㄩˋ ㄨ ㄔㄚ ㄐㄧˇ ㄧˇ ㄙˋ ㄅㄚ ㄒㄧㄤˋ ㄒㄩㄣˋ ㄐㄧㄣ ㄕˋ ㄅㄨˋ ㄈㄢ ㄒㄧ ㄊㄤˇ ㄆㄚˋ ㄊㄧㄝ ㄌㄧㄢˊ ㄓㄡˇ ㄅㄛˊ ㄉㄧˋ ㄧˋ ㄕㄨㄞˋ ㄕ ㄒㄧˊ ㄓㄤˋ ㄉㄞˋ ㄨㄟˊ ㄔㄤˊ ㄇㄠˋ ㄓㄥˋ ㄨㄟˊ ㄈㄨˊ ㄏㄨㄤˇ ㄇㄢˋ ㄇㄨˋ ㄍㄨㄛˊ ㄓㄤˋ ㄓˋ ㄈㄢ ㄔㄨㄤˊ ㄅㄧˋ ㄅㄤ ㄍㄢˋ ㄆㄧㄥˊ ㄋㄧㄢˊ ㄅㄧㄥˋ ㄒㄧㄥˋ ㄍㄢˋ ㄏㄨㄢˋ ㄧㄡˋ ㄧㄡ ㄐㄧˇ ㄅㄧˋ ㄔㄨㄤˊ ㄒㄩˋ ㄉㄧˇ ㄆㄠˊ ㄉㄧㄢˋ ㄍㄥ ㄈㄨˇ ㄒㄧㄤˊ ㄉㄨˋ ㄗㄨㄛˋ ㄎㄨˋ ㄊㄧㄥˊ ㄢ ㄕㄨˋ ㄎㄤ ㄩㄥ ㄩˇ ㄘㄜˋ ㄒㄧㄤ ㄐㄧㄡˋ ㄕㄚˋ ㄌㄧㄢˊ ㄌㄤˊ ㄎㄨㄛˋ ㄌㄧㄠˋ ㄔㄨˊ ㄙ ㄇㄧㄠˋ ㄔㄤˇ ㄈㄟˋ ㄍㄨㄤˇ ㄌㄨˊ ㄊㄧㄥ ㄧㄢˊ ㄊㄧㄥˊ ㄐㄧㄢˋ ㄍㄨㄥˇ ㄋㄧㄢˋ ㄅㄧㄢˋ ㄋㄨㄥˋ ㄧˋ ㄅㄧˋ ㄧˋ ㄕˋ ㄕˋ ㄍㄨㄥ ㄉㄧㄠˋ ㄧㄣˇ ㄈㄨˊ ㄏㄨㄥˊ ㄔˊ ㄉㄧˋ ㄒㄧㄢˊ ㄏㄨˊ ㄋㄨˇ ㄇㄧˇ ㄖㄨㄛˋ ㄓㄤ ㄑㄧㄤˊ ㄅㄧˋ ㄅㄧㄝˋ ㄊㄢˊ ㄐㄧㄤˋ ㄇㄧˊ ㄨㄢ ㄏㄨㄟˋ ㄏㄨㄟˋ ㄧˊ ㄒㄧㄥˊ ㄊㄨㄥˊ ㄧㄢˋ ㄘㄞˇ ㄅㄧㄠ ㄉㄧㄠ ㄅㄧㄣ ㄆㄥˊ ㄓㄤ ㄧㄥˇ ㄆㄤˊ ㄧˋ ㄅㄧˇ ㄈㄨˊ ㄨㄤˇ ㄓㄥ ㄉㄞˋ ㄒㄩㄣˋ ㄏㄣˇ ㄧㄤˊ ㄏㄨㄞˊ ㄌㄩˋ ㄏㄡˋ ㄒㄩˊ ㄐㄧㄥˋ ㄊㄨˊ ㄉㄜˊ ㄆㄞˊ ㄒㄧˇ ㄔㄤˊ ㄘㄨㄥˊ ㄌㄞˊ ㄩˋ ㄏㄨㄤˊ ㄈㄨˋ ㄒㄩㄣˊ ㄆㄤˊ ㄨㄟ ㄓㄥ ㄉㄜˊ ㄔㄜˋ ㄏㄨㄟ ㄒㄧㄣ ㄅㄧˋ ㄐㄧˋ ㄖㄣˇ ㄘㄨㄣˇ ㄓˋ ㄨㄤˋ ㄇㄤˊ ㄊㄧㄢˇ ㄓㄨㄥ ㄙㄨㄥ ㄎㄨㄞˋ ㄔㄣˊ ㄋㄧㄢˋ ㄋㄧㄡˇ ㄏㄨ ㄈㄣˋ ㄗㄣˇ ㄧㄤˋ ㄋㄨˋ ㄓㄥ ㄆㄚˋ ㄅㄨˋ ㄉㄚˊ ㄙ ㄉㄞˋ ㄧˊ ㄐㄧˊ ㄒㄧㄥˋ ㄩㄢˋ ㄋㄧˊ ㄍㄨㄞˋ ㄈㄨˊ ㄑㄧㄝˋ ㄔㄨˋ ㄕˋ ㄏㄥˊ ㄏㄨㄤˇ ㄎㄨㄥˇ ㄕㄨˋ ㄧㄤˋ ㄏㄨㄟ ㄗˋ ㄒㄩˋ ㄔˇ ㄏㄣˋ ㄣ ㄎㄜˋ ㄉㄨㄥˋ ㄊㄧㄢˊ ㄍㄨㄥ ㄒㄧ ㄑㄧㄚˋ ㄩㄥˇ ㄑㄧㄠ ㄩㄝˋ ㄒㄧ ㄊㄧˋ ㄏㄢˋ ㄏㄨㄟˇ ㄅㄟˋ ㄙㄨㄥˇ ㄨˋ ㄧㄡ ㄏㄨㄢˋ ㄋㄧㄣˊ ㄅㄟ ㄘㄨㄟˋ ㄔㄤˋ ㄇㄣˋ ㄐㄧˋ ㄒㄧㄥˋ ㄉㄠˋ ㄑㄧ ㄑㄧㄥˊ ㄔㄡˊ ㄉㄨㄣ ㄨㄢˇ ㄏㄨㄛˋ ㄊㄧˋ ㄨㄤˇ ㄏㄨ ㄒㄧ ㄨㄟˊ ㄏㄨㄟˋ ㄜˋ ㄉㄧㄢˋ ㄉㄨㄛˋ ㄋㄠˇ ㄒㄧㄤˇ ㄓㄨㄟˋ ㄏㄨㄤˊ ㄖㄜˇ ㄒㄧㄥ ㄘㄜˋ ㄑㄧㄠˇ ㄔㄡˊ ㄑㄧㄢ ㄩˋ ㄩˊ ㄇㄧㄣˇ ㄅㄧˋ ㄧˋ ㄎㄞˋ ㄜˋ ㄩˊ ㄞˋ ㄑㄧㄝˋ ㄍㄢˇ ㄌㄥˋ ㄎㄨㄟˋ ㄔㄨㄤˋ ㄎㄞˇ ㄎㄞˋ ㄩㄢˋ ㄌㄧˋ ㄧㄣ ㄘˊ ㄊㄞˋ ㄏㄨㄤ ㄩㄣˋ ㄕㄣˋ ㄇㄨˋ ㄘㄢˇ ㄘㄢˊ ㄊㄜˋ ㄊㄨㄥˋ ㄇㄢˋ ㄍㄨㄢˋ ㄏㄨㄟˋ ㄎㄞˇ ㄙㄨㄥˇ ㄌㄩˋ ㄨㄟˋ ㄩㄥ ㄑㄧㄥˋ ㄎㄤ ㄑㄧ ㄩˋ ㄧㄡ ㄅㄟˋ ㄅㄧㄝ ㄗㄥ ㄌㄧㄢˊ ㄆㄧㄥˊ ㄑㄧㄠˊ ㄉㄢˋ ㄈㄣˋ ㄔㄨㄥ ㄑㄧˋ ㄇㄧㄣˇ ㄐㄧㄥˇ ㄨˇ ㄒㄧㄢˋ ㄧˋ ㄏㄢˋ ㄉㄨㄥˇ ㄎㄣˇ ㄒㄧㄝˋ ㄧㄥ ㄠˋ ㄇㄠˋ ㄌㄧㄣˇ ㄇㄣˋ ㄋㄨㄛˋ ㄔㄥˊ ㄇㄥˇ ㄌㄢˇ ㄏㄨㄞˊ ㄒㄩㄢˊ ㄔㄢˋ ㄐㄩˋ ㄕㄜˋ ㄧˋ ㄌㄧㄢˋ ㄍㄜ ㄨˋ ㄒㄩ ㄕㄨˋ ㄖㄨㄥˊ ㄔㄥˊ ㄨㄛˇ ㄐㄧㄝˋ ㄑㄧㄤ ㄏㄨㄛˋ ㄑㄧ ㄐㄧㄚˊ ㄐㄧˇ ㄎㄢ ㄐㄧˊ ㄐㄧㄝˊ ㄌㄨˋ ㄓㄢˋ ㄒㄧˋ ㄔㄨㄛ ㄉㄞˋ ㄏㄨˋ ㄌㄧˋ ㄈㄤˊ ㄙㄨㄛˇ ㄅㄧㄢˇ ㄕㄢˋ ㄏㄨˋ ㄈㄟ ㄕㄡˇ ㄕㄡ˙ ㄘㄞˊ ㄓㄚ ㄆㄨ ㄅㄚ ㄉㄚˇ ㄖㄥ ㄊㄨㄛ ㄎㄤˊ ㄎㄡˋ ㄋㄧㄡˇ ㄅㄢˋ ㄔㄜˇ ㄅㄢ ㄈㄨˊ ㄆㄧ ㄜˋ ㄓㄠˇ ㄔㄥˊ ㄐㄧˋ ㄔㄠ ㄨㄣˇ ㄐㄩㄝˊ ㄅㄚˇ ㄧˋ ㄕㄨ ㄓㄨㄚ ㄊㄡˊ ㄉㄡˇ ㄎㄤˋ ㄓㄜˊ ㄆㄥ ㄆㄧ ㄊㄞˊ ㄅㄠˋ ㄉㄧˇ ㄇㄛˇ ㄧㄚ ㄔㄡ ㄇㄧㄣˇ ㄈㄨˊ ㄓㄨˇ ㄔㄞ ㄇㄨˇ ㄋㄧㄢ ㄌㄚ ㄆㄠ ㄅㄢˋ ㄆㄞ ㄌㄧㄣ ㄍㄨㄞˇ ㄐㄩˋ ㄊㄨㄛˋ ㄅㄚˊ ㄊㄨㄛ ㄠˇ ㄐㄩ ㄓㄨㄛ ㄆㄢˋ ㄓㄠ ㄅㄞˋ ㄎㄨㄛˋ ㄕˋ ㄐㄧㄝˊ ㄓㄥˇ ㄍㄨㄥˇ ㄑㄩㄢˊ ㄕㄨㄢ ㄎㄠˇ ㄆㄧㄣ ㄓㄨㄞ ㄕˊ ㄋㄚˊ ㄔˊ ㄍㄨㄚˋ ㄓˇ ㄑㄧㄝˋ ㄢˋ ㄊㄧㄠ ㄨㄚ ㄞ ㄋㄨㄛˊ ㄘㄨㄛˋ ㄓㄣˋ ㄊㄧㄥˇ ㄨㄢˇ ㄒㄧㄝˊ ㄨˇ ㄎㄨㄣˇ ㄓㄨㄛ ㄅㄚ ㄏㄢˋ ㄕㄠ ㄋㄧㄝ ㄐㄩㄢ ㄅㄨˇ ㄆㄥˇ ㄕㄜˇ ㄌㄧㄝˋ ㄇㄣˊ ㄞˊ ㄐㄩㄢˇ ㄔㄨㄟˊ ㄐㄧㄝˊ ㄋㄚˋ ㄋㄧㄢˇ ㄒㄧㄢ ㄙㄠˇ ㄌㄨㄣ ㄕㄡˋ ㄉㄧㄠˋ ㄓㄤˇ ㄊㄠ ㄆㄞˊ ㄧㄝ ㄐㄩㄝˊ ㄓㄥ ㄍㄨㄚˋ ㄌㄩㄝˋ ㄘㄞˇ ㄊㄢˋ ㄔㄜˋ ㄐㄧㄝ ㄎㄨㄥˋ ㄊㄨㄟ ㄧㄢˇ ㄘㄨㄛˋ ㄐㄩ ㄐㄧㄢˇ ㄎㄨㄟˊ ㄖㄡˊ ㄗㄡˋ ㄇㄧㄠˊ ㄊㄧˊ ㄔㄚ ㄧ ㄧㄤˊ ㄏㄨㄢˋ ㄨㄛˋ ㄔㄨㄞ ㄎㄞ ㄐㄧㄡ ㄐㄧㄝ ㄏㄨㄟ ㄩㄢˊ ㄅㄟ ㄍㄡˋ ㄙㄨㄣˇ ㄅㄛˊ ㄘㄨㄛ ㄙㄠ ㄧㄠˊ ㄉㄠˇ ㄙㄡ ㄍㄠˇ ㄊㄤˊ ㄅㄢ ㄉㄚ ㄑㄧㄢ ㄑㄧㄤˇ ㄔㄚˊ ㄓㄚˋ ㄨˇ ㄍㄨㄞ ㄅㄧㄥˇ ㄕㄨㄞ ㄓㄞ ㄌㄡˇ ㄘㄨㄟ ㄇㄛˊ ㄓˊ ㄓˋ ㄇㄛ ㄇㄛˊ ㄓㄜˊ ㄘㄢˋ ㄆㄧㄝ ㄌㄠ ㄔㄥ ㄙㄚ ㄋㄠˊ ㄙ ㄗㄨㄣˇ ㄋㄧㄢˇ ㄓㄨㄤˋ ㄉㄢˇ ㄔㄜˋ ㄅㄛ ㄌㄧㄠ ㄈㄨˇ ㄑㄧㄠˋ ㄅㄛ ㄘㄨㄛ ㄓㄨㄢˋ ㄆㄨ ㄑㄧㄣˋ ㄊㄚˋ ㄏㄢˋ ㄨㄛ ㄐㄧㄢˇ ㄩㄥ ㄌㄟˊ ㄌㄨˇ ㄕㄢˋ ㄗㄜˊ ㄐㄧ ㄉㄤˇ ㄘㄠ ㄑㄧㄥˊ ㄑㄧㄣˊ ㄉㄢ ㄅㄞ ㄐㄩˋ ㄐㄧˇ ㄓㄨㄛˊ ㄘㄚ ㄋㄧˇ ㄨㄛˋ ㄋㄧㄥˊ ㄍㄜ ㄓˋ ㄎㄨㄛˋ ㄒㄧㄝˊ ㄅㄞˇ ㄙㄡˇ ㄖㄠˇ ㄆㄢ ㄋㄧㄢˇ ㄌㄨㄥˇ ㄌㄢˊ ㄖㄤˇ ㄔㄢ ㄒㄧㄝˊ ㄕㄜˋ ㄌㄨㄢˊ ㄊㄢ ㄐㄧㄠˇ ㄐㄩㄝˊ ㄌㄢˇ ㄓ ㄕㄡ ㄧㄡ ㄍㄞˇ ㄍㄨㄥ ㄈㄤˋ ㄓㄥˋ ㄍㄨˋ ㄒㄧㄠˋ ㄇㄧˇ ㄇㄧㄣˇ ㄐㄧㄡˋ ㄩˇ ㄔˋ ㄠˊ ㄅㄞˋ ㄒㄩˋ ㄐㄧㄠ ㄅㄧˋ ㄔㄤˇ ㄍㄢˇ ㄙㄢˋ ㄉㄨㄣ ㄐㄧㄥˋ ㄑㄧㄠ ㄓㄥˇ ㄉㄧˊ ㄈㄨ ㄕㄨˋ ㄌㄧㄢˇ ㄅㄧˋ ㄨㄣˊ ㄈㄟˇ ㄅㄢ ㄌㄢˊ ㄉㄡˋ ㄌㄧㄠˋ ㄏㄨˊ ㄒㄧㄝˊ ㄓㄣ ㄨㄛˋ ㄐㄧㄣ ㄔˋ ㄈㄨˇ ㄓㄨㄛˊ ㄓㄢˇ ㄙ ㄒㄧㄣ ㄉㄨㄢˋ ㄈㄤ ㄩˊ ㄕ ㄆㄤˊ ㄌㄩˇ ㄒㄩㄢˊ ㄐㄧㄥ ㄋㄧˇ ㄗㄨˊ ㄧˇ ㄑㄧˊ ㄐㄧˋ ㄖˋ ㄉㄢˋ ㄓˇ ㄗㄠˇ ㄒㄩㄣˊ ㄒㄩˋ ㄏㄢˋ ㄨㄤˋ ㄩㄣˊ ㄤˊ ㄎㄨㄣ ㄕㄥ ㄏㄠˋ ㄔㄤ ㄇㄧㄥˊ ㄏㄨㄣ ㄧˋ ㄒㄧ ㄒㄧㄣ ㄒㄧㄥ ㄧㄥˋ ㄌㄧㄥˊ ㄔㄨㄣ ㄇㄟˋ ㄗㄨㄛˊ ㄓㄠ ㄕˋ ㄩˋ ㄔㄠˊ ㄕˊ ㄏㄨㄤˋ ㄒㄩㄢˇ ㄐㄧㄣˋ ㄕㄤˇ ㄧㄢˋ ㄕㄞˋ ㄨㄢˇ ㄓㄡˋ ㄒㄧ ㄨˋ ㄏㄨㄟˋ ㄔㄣˊ ㄆㄨˇ ㄐㄧㄥˇ ㄒㄧ ㄑㄧㄥˊ ㄐㄧㄥ ㄍㄨㄟˇ ㄓˋ ㄌㄧㄤˋ ㄒㄩㄢ ㄒㄧㄚˊ ㄩㄣ ㄏㄨㄟ ㄧㄝ ㄕㄨˇ ㄋㄨㄢˇ ㄢˋ ㄧㄤˊ ㄇㄧㄥˊ ㄔㄤˋ ㄐㄧˋ ㄗㄢˋ ㄇㄨˋ ㄋㄧˋ ㄅㄠˋ ㄌㄧㄠˊ ㄒㄧㄢ ㄧㄝˋ ㄌㄧˋ ㄊㄢˊ ㄒㄧㄠˇ ㄞˋ ㄕㄨˇ ㄧㄠˋ ㄆㄨˋ ㄎㄨㄤˋ ㄒㄧ ㄋㄤˇ ㄕㄞˋ ㄩㄝ ㄑㄩ ㄧㄝˋ ㄍㄥˋ ㄏㄜˊ ㄕㄨ ㄘㄠˊ ㄇㄢˋ ㄘㄥˊ ㄊㄧˋ ㄗㄨㄟˋ ㄏㄨㄟˋ ㄩㄝˋ ㄧㄡˇ ㄆㄥˊ ㄈㄨˊ ㄕㄨㄛˋ ㄓㄣˋ ㄌㄤˇ ㄨㄤˋ ㄔㄠˊ ㄑㄧ ㄇㄥˊ ㄌㄨㄥˊ ㄇㄨˋ ㄨㄟˋ ㄇㄛˋ ㄅㄣˇ ㄓㄚˊ ㄕㄨˋ ㄓㄨ ㄆㄨˇ ㄉㄨㄛˇ ㄒㄧㄡˇ ㄍㄢ ㄕㄢ ㄌㄧˇ ㄒㄧㄥˋ ㄘㄞˊ ㄘㄨㄣ ㄅㄧㄠ ㄓㄤˋ ㄇㄤˊ ㄉㄨˋ ㄑㄧˇ ㄕㄨˋ ㄍㄤ ㄇㄧㄠˇ ㄏㄤˊ ㄅㄟ ㄐㄧㄝˊ ㄉㄨㄥ ㄍㄠˇ ㄧㄠˇ ㄔㄨˇ ㄆㄚˊ ㄓㄨˋ ㄙㄨㄥ ㄅㄢˇ ㄆㄧˊ ㄨㄤˇ ㄈㄤ ㄒㄧ ㄉㄡˇ ㄓㄣˇ ㄌㄧㄣˊ ㄇㄟˊ ㄍㄨㄛˇ ㄓ ㄎㄨ ㄆㄧㄥˊ ㄍㄨㄞˇ ㄐㄧㄚˋ ㄍㄡˇ ㄅㄧㄥˇ ㄅㄞˇ ㄇㄡˇ ㄍㄢ ㄑㄧ ㄖㄢˇ ㄖㄡˊ ㄒㄧㄚˊ ㄧㄡˋ ㄊㄨㄛˋ ㄓㄚˋ ㄉㄧˇ ㄔㄚˊ ㄐㄧㄡˋ ㄐㄧㄢˇ ㄎㄜ ㄓㄨˋ ㄌㄧㄡˇ ㄔㄞˊ ㄕㄢ ㄕˋ ㄕㄨㄢ ㄌㄧˋ ㄧˊ ㄒㄧㄠˋ ㄒㄩˇ ㄓㄨ ㄏㄜˊ ㄍㄣ ㄍㄜˊ ㄗㄞ ㄐㄧㄝˊ ㄏㄥˊ ㄍㄨㄟˋ ㄊㄠˊ ㄨㄟˊ ㄎㄨㄤ ㄢˋ ㄓㄨㄛ ㄊㄨㄥˊ ㄙㄤ ㄏㄨㄢˊ ㄐㄩˊ ㄊㄨㄥˇ ㄍㄢˇ ㄌㄧㄤˊ ㄑㄧㄡˊ ㄊㄧㄥˇ ㄇㄟˊ ㄅㄤ ㄗˇ ㄓ ㄍㄥˇ ㄊㄧㄠˊ ㄒㄧㄠ ㄏㄨㄣˊ ㄕㄠ ㄨˊ ㄌㄧˊ ㄙㄨㄛ ㄊㄧ ㄒㄧㄝˋ ㄎㄨㄣˇ ㄕㄨ ㄈㄢˋ ㄑㄧˋ ㄇㄧㄢˊ ㄑㄧˊ ㄍㄨㄣˋ ㄅㄤˋ ㄗㄨㄥ ㄗㄠˇ ㄐㄧˊ ㄆㄥˊ ㄉㄨㄥˋ ㄊㄤˊ ㄉㄧˋ ㄓㄢˋ ㄙㄣ ㄑㄧ ㄎㄜ ㄓㄠˋ ㄍㄨㄢ ㄈㄣ ㄧˇ ㄓˊ ㄔㄨㄟˊ ㄐㄧㄠ ㄧㄝ ㄧㄤˊ ㄈㄥ ㄒㄧㄝ ㄔㄨˇ ㄏㄨˋ ㄌㄧㄢˋ ㄌㄥˊ ㄋㄢˊ ㄇㄟˊ ㄓㄣ ㄐㄧˊ ㄧㄝˋ ㄔㄨˇ ㄐㄧˊ ㄎㄞˇ ㄧㄥˊ ㄍㄞˋ ㄩˊ ㄌㄤˊ ㄖㄨㄥˊ ㄓㄣ ㄅㄤˇ ㄧㄠˊ ㄍㄢˋ ㄓㄚˋ ㄙㄨㄣˇ ㄒㄧㄝˋ ㄖㄨㄥˊ ㄌㄧㄡˊ ㄑㄩㄝˋ ㄊㄚˋ ㄍㄠˇ ㄆㄢˊ ㄍㄡˋ ㄔㄨㄟˊ ㄑㄧㄤ ㄏㄨㄞˊ ㄍㄤˋ ㄍㄨㄛˇ ㄑㄧ ㄐㄧㄤˇ ㄘㄠˊ ㄓㄨㄤ ㄌㄜˋ ㄘㄨㄥ ㄈㄢˊ ㄌㄧㄤˊ ㄌㄡˊ ㄅㄧㄠ ㄕㄨ ㄓㄤ ㄇㄛˊ ㄧㄤˋ ㄑㄧㄠˊ ㄆㄨˇ ㄕㄨˋ ㄏㄨㄚˋ ㄗㄨㄣ ㄍㄢˇ ㄑㄧㄠ ㄖㄠˊ ㄑㄧㄠˊ ㄐㄩˊ ㄔㄥˊ ㄐㄧ ㄒㄧㄤˋ ㄊㄨㄛˇ ㄏㄥˊ ㄕㄨ ㄊㄢˊ ㄒㄧˊ ㄧㄢˊ ㄉㄤˋ ㄅㄛˋ ㄍㄨㄟˋ ㄑㄧㄥˊ ㄐㄧㄢˇ ㄑㄧㄤˊ ㄇㄥˊ ㄊㄠˊ ㄊㄞˊ ㄅㄧㄣ ㄋㄧㄥˊ ㄎㄢˇ ㄓㄠˋ ㄍㄨㄟˋ ㄌㄨˇ ㄌㄩˊ ㄓˋ ㄉㄨˊ ㄔㄨˊ ㄔㄣˋ ㄌㄧㄥˊ ㄧㄥ ㄌㄢˊ ㄑㄩㄢˊ ㄌㄧˋ ㄌㄢˇ ㄑㄧㄢˋ ㄘˋ ㄒㄧㄣ ㄩˋ ㄑㄧ ㄑㄧㄣ ㄎㄨㄢˇ ㄒㄧㄝ ㄑㄧㄢˋ ㄍㄜ ㄊㄢˋ ㄡ ㄕㄜˋ ㄔㄨˋ ㄩˊ ㄏㄨㄢ ㄓˇ ㄓㄥˋ ㄘˇ ㄅㄨˋ ㄨˇ ㄑㄧˊ ㄨㄞ ㄙㄨㄟˋ ㄌㄧˋ ㄍㄨㄟ ㄉㄞˇ ㄙˇ ㄇㄛˋ ㄧㄤ ㄉㄞˋ ㄒㄩㄣˋ ㄕㄨ ㄓˊ ㄘㄢˊ ㄕㄤ ㄌㄧㄢˋ ㄅㄧㄣˋ ㄐㄧㄢ ㄉㄨㄢˋ ㄧㄣ ㄕㄚ ㄎㄜˊ ㄉㄧㄢˋ ㄏㄨㄟˇ ㄧˋ ㄡ ㄨˊ ㄇㄨˇ ㄇㄟˇ ㄉㄨˊ ㄩˋ ㄅㄧˇ ㄆㄧˊ ㄔㄢˊ ㄇㄠˊ ㄏㄠˊ ㄑㄧㄡˊ ㄊㄢˇ ㄐㄧㄢˋ ㄔㄤˇ ㄓㄢ ㄕˋ ㄉㄧ ㄇㄧㄣˊ ㄇㄤˊ ㄋㄞˇ ㄈㄣ ㄈㄨˊ ㄑㄧˋ ㄧㄣ ㄏㄞˋ ㄧㄤˇ ㄢ ㄑㄧㄥ ㄧㄚˋ ㄉㄢˋ ㄌㄩˋ ㄩㄣ ㄕㄨㄟˇ ㄕㄨㄟ˙ ㄩㄥˇ ㄈㄢˋ ㄊㄧㄥ ㄓ ㄑㄧㄡˊ ㄨㄢˊ ㄈㄢˋ ㄒㄧ ㄕㄢˋ ㄏㄢˋ ㄨ ㄒㄩㄣˋ ㄖㄨˇ ㄍㄨㄥˇ ㄐㄧㄤ ㄔˊ ㄨ ㄇㄧˋ ㄨㄤ ㄊㄞˋ ㄐㄧˊ ㄅㄧㄢˋ ㄨㄣˋ ㄐㄩㄝˊ ㄑㄧˋ ㄈㄣˊ ㄑㄧㄣˋ ㄧˊ ㄨㄛˋ ㄩㄢˊ ㄏㄤˋ ㄔㄣˊ ㄔㄣˊ ㄉㄨㄣˋ ㄏㄨˋ ㄇㄨˋ ㄇㄟˊ ㄇㄧㄢˇ ㄔㄨㄥ ㄅㄧˇ ㄕㄚ ㄆㄟˋ ㄇㄛˋ ㄇㄟˋ ㄐㄩˇ ㄊㄨㄛˊ ㄏㄜˊ ㄈㄟˋ ㄧㄡˊ ㄓˋ ㄓㄠˇ ㄍㄨ ㄓㄢ ㄧㄢˊ ㄎㄨㄤˋ ㄒㄧㄝˋ ㄑㄧㄡˊ ㄑㄩㄢˊ ㄆㄛ ㄇㄧˋ ㄏㄨㄥˊ ㄈㄚˇ ㄇㄠˇ ㄙˋ ㄈㄢˋ ㄓ ㄌㄧㄥˊ ㄆㄠˋ ㄅㄛ ㄑㄧˋ ㄋㄧˊ ㄓㄨˋ ㄇㄧㄣˇ ㄊㄞˋ ㄧㄤ ㄩㄥˇ ㄅㄥˋ ㄧㄤˊ ㄌㄧㄝˋ ㄐㄧˋ ㄒㄧˇ ㄌㄨㄛˋ ㄉㄨㄥˋ ㄐㄧㄣ ㄨㄟˇ ㄒㄧㄝˋ ㄏㄨㄥˊ ㄒㄩˋ ㄊㄠˊ ㄦˇ ㄓㄡ ㄒㄩㄣˊ ㄒㄩㄥ ㄍㄨㄤ ㄏㄨㄢˊ ㄏㄨㄛˊ ㄑㄧㄚˋ ㄆㄞˋ ㄌㄧㄡˊ ㄓㄜˋ ㄐㄩㄣˋ ㄧˋ ㄆㄨˇ ㄏㄠˋ ㄌㄤˋ ㄌㄧˇ ㄈㄨˊ ㄩˋ ㄏㄞˇ ㄐㄧㄣˋ ㄐㄧㄚ ㄋㄧㄝˋ ㄐㄧㄥ ㄒㄧㄠ ㄕㄜˋ ㄋㄧㄢˇ ㄩㄥˇ ㄒㄧㄢˊ ㄐㄩㄢ ㄘㄣˊ ㄊㄧˋ ㄈㄨˊ ㄕㄨㄢˋ ㄧㄚˊ ㄧㄝˋ ㄏㄢˊ ㄏㄜˊ ㄌㄧㄤˊ ㄓㄨㄛ ㄗ ㄒㄧ ㄒㄧㄠˊ ㄑㄧˊ ㄌㄧㄣˊ ㄊㄤˇ ㄕㄨ ㄑㄧ ㄊㄠˊ ㄘㄨㄥˊ ㄌㄟˋ ㄙㄨㄥ ㄉㄢˋ ㄩ ㄍㄢˋ ㄐㄧㄥˋ ㄌㄨㄣˊ ㄧㄣˊ ㄘㄨㄟˋ ㄏㄨㄞˊ ㄕㄣ ㄔㄨㄣˊ ㄩㄢ ㄏㄨㄣˋ ㄧㄢ ㄑㄧㄢˇ ㄊㄧㄢ ㄑㄧㄥ ㄏㄨㄢˋ ㄓㄨˇ ㄐㄧㄢˇ ㄩˊ ㄑㄩˊ ㄉㄨˋ ㄓㄚ ㄅㄛˊ ㄨㄛˋ ㄨㄛ ㄘㄜˋ ㄨㄟˋ ㄍㄤˇ ㄒㄩㄢˋ ㄎㄜˇ ㄧㄡˊ ㄇㄧㄠˇ ㄏㄨㄣˊ ㄆㄞˋ ㄇㄟˊ ㄘㄡˋ ㄊㄨㄢ ㄇㄧㄢˇ ㄐㄧㄢ ㄏㄨˊ ㄒㄧㄤ ㄓㄢˋ ㄏㄨㄤˊ ㄇㄧㄣˇ ㄩㄥˇ ㄉㄨㄥˋ ㄧㄢ ㄊㄤ ㄩㄢˊ ㄍㄞˋ ㄩㄢˊ ㄓㄨㄣˇ ㄎㄜˋ ㄌㄧㄡ ㄍㄡ ㄧˋ ㄆㄨˇ ㄌㄧˋ ㄒㄧ ㄨㄣ ㄙㄨˋ ㄒㄧㄡˋ ㄖㄨㄥˊ ㄋㄧˋ ㄕ ㄆㄤ ㄘㄤ ㄇㄧㄝˋ ㄉㄧㄢ ㄗ ㄉㄧˊ ㄏㄨㄚˊ ㄗˇ ㄊㄠ ㄊㄥˊ ㄏㄨˋ ㄓˋ ㄕㄣˋ ㄉㄧ ㄌㄨˇ ㄍㄨㄣˇ ㄇㄢˇ ㄩˊ ㄆㄧㄠˋ ㄑㄧ ㄌㄡˋ ㄌㄧˊ ㄧㄢˇ ㄘㄠˊ ㄇㄛˋ ㄏㄢˋ ㄌㄧㄢˊ ㄒㄩㄢˊ ㄧ ㄇㄢˋ ㄗˋ ㄌㄨㄛˋ ㄕㄨˋ ㄓㄤˇ ㄓㄤ ㄐㄧㄢˋ ㄧㄤˋ ㄐㄧㄤ ㄆㄛ ㄐㄧㄝˊ ㄆㄢ ㄑㄧㄢˊ ㄒㄧˋ ㄒㄩㄣˋ ㄖㄨㄣˋ ㄌㄠˇ ㄊㄢˊ ㄔㄠˊ ㄒㄩㄣˊ ㄎㄨㄟˋ ㄕㄢ ㄔㄢˊ ㄊㄨㄥˊ ㄙㄜˋ ㄔㄥˊ ㄐㄧㄠ ㄔㄜˋ ㄆㄥ ㄐㄧㄢˋ ㄇㄧㄢˇ ㄗㄠˇ ㄗㄜˊ ㄩˋ ㄌㄧˇ ㄉㄧㄢˋ ㄠˋ ㄏㄨㄢˊ ㄔㄢˊ ㄉㄢˋ ㄐㄧ ㄓㄨㄛˊ ㄌㄧㄢˊ ㄋㄨㄥˊ ㄕ ㄋㄧㄥˋ ㄇㄥˊ ㄐㄧˋ ㄏㄠˊ ㄖㄨˊ ㄊㄠ ㄏㄨㄛˋ ㄌㄢˋ ㄐㄩㄣˋ ㄆㄨˊ ㄓㄨㄛˊ ㄨㄟˊ ㄅㄧㄣ ㄐㄧㄢˋ ㄌㄩˋ ㄉㄨˊ ㄒㄧㄝˋ ㄕㄣˇ ㄌㄧㄡˊ ㄆㄨˋ ㄅㄧㄣ ㄌㄨˊ ㄏㄢˋ ㄧㄥˊ ㄌㄧˋ ㄒㄧㄠ ㄌㄞˋ ㄇㄧˊ ㄌㄧㄢˋ ㄌㄢˊ ㄍㄨㄢˋ ㄙㄚˇ ㄊㄢ ㄅㄚˋ ㄨㄢ ㄌㄨㄢˊ ㄏㄨㄛˇ ㄏㄨㄟ ㄗㄠˋ ㄐㄧㄡˇ ㄓㄨㄛˊ ㄗㄞ ㄔㄨㄟ ㄧㄢˊ ㄔㄠˇ ㄎㄤˋ ㄓˋ ㄓㄠˋ ㄒㄩㄢˋ ㄐㄩˋ ㄊㄢˋ ㄆㄠˋ ㄐㄩㄥˇ ㄅㄧㄥˇ ㄓㄚˋ ㄨㄟˊ ㄌㄧㄝˋ ㄧㄤˊ ㄨ ㄏㄨㄥ ㄌㄠˋ ㄎㄠˇ ㄒㄧ ㄆㄥ ㄈㄥ ㄧㄢ ㄏㄢˋ ㄅㄟˋ ㄈㄣˊ ㄎㄨㄣ ㄨˊ ㄐㄧㄠ ㄧㄢˋ ㄖㄢˊ ㄒㄧㄚ ㄌㄧㄢˋ ㄏㄨㄤˊ ㄐㄧㄢ ㄋㄨㄢˇ ㄧㄢ ㄩˋ ㄕㄚ ㄇㄟˊ ㄏㄨㄢˋ ㄒㄩˋ ㄓㄠˋ ㄨㄟ ㄈㄢˊ ㄧㄤˊ ㄓㄨˇ ㄕㄢ ㄒㄧ ㄒㄩㄥˊ ㄧㄥˊ ㄖㄨㄥˊ ㄒㄧ ㄕㄨˊ ㄩㄣˋ ㄠˊ ㄖㄜˋ ㄒㄧ ㄔˋ ㄖㄢˊ ㄧㄢˋ ㄉㄥ ㄉㄨㄣˋ ㄌㄧㄠˊ ㄌㄧㄣˊ ㄕㄠ ㄧㄢˋ ㄊㄤˋ ㄇㄣˋ ㄧㄥˊ ㄩˋ ㄗㄠˋ ㄘㄢˋ ㄙㄨㄟˋ ㄏㄨㄟˇ ㄓㄨˊ ㄒㄧㄝˋ ㄏㄨㄟˋ ㄖㄨˊ ㄒㄩㄣ ㄐㄧㄣˋ ㄉㄠˋ ㄅㄠˋ ㄕㄨㄛˋ ㄌㄨˊ ㄌㄢˋ ㄘㄨㄢˋ ㄓㄠˇ ㄆㄚˊ ㄓㄥ ㄩㄢˊ ㄐㄩㄝˊ ㄈㄨˋ ㄅㄚˋ ㄉㄧㄝ ㄧㄝˊ ㄧㄠˊ ㄕㄨㄤˇ ㄦˇ ㄑㄧㄤˊ ㄆㄧㄢˋ ㄅㄢˇ ㄆㄞˊ ㄉㄧㄝˊ ㄧㄡˇ ㄉㄨˊ ㄧㄚˊ ㄋㄧㄡˊ ㄆㄧㄣˋ ㄇㄡˊ ㄊㄚ ㄇㄨˇ ㄌㄠˊ ㄇㄨˋ ㄨˋ ㄍㄨˇ ㄕㄥ ㄉㄧˇ ㄊㄜˋ ㄑㄧㄢ ㄒㄧ ㄌㄧˊ ㄐㄧ ㄎㄠˋ ㄌㄨㄛˋ ㄇㄠˊ ㄉㄨˊ ㄒㄧ ㄑㄩㄢˇ ㄈㄢˋ ㄓㄨㄤˋ ㄎㄨㄤˊ ㄉㄧˊ ㄒㄧㄚˊ ㄏㄨˊ ㄍㄡˇ ㄐㄩ ㄏㄣˇ ㄐㄧㄠˇ ㄕㄡˋ ㄐㄩㄢˋ ㄌㄧˊ ㄒㄧㄚˊ ㄌㄤˊ ㄅㄟˋ ㄍㄨㄛˇ ㄔㄤ ㄓㄥ ㄇㄥˇ ㄘㄞ ㄨㄟˇ ㄒㄧㄥ ㄏㄡˊ ㄧㄡˊ ㄧㄡˊ ㄏㄨㄚˊ ㄩㄢˊ ㄩˋ ㄕ ㄐㄧㄤˇ ㄓㄤ ㄐㄩㄝˊ ㄉㄨˊ ㄋㄧㄥˊ ㄏㄨㄛˋ ㄌㄧㄝˋ ㄍㄨㄤˇ ㄕㄡˋ ㄊㄚˇ ㄒㄧㄢˋ ㄌㄨㄛˊ ㄒㄩㄢˊ ㄗ ㄌㄩˋ ㄩˋ ㄨㄤˊ ㄐㄧㄡˇ ㄨㄣˊ ㄩㄝˋ ㄐㄩㄝˊ ㄨㄢˊ ㄇㄟˊ ㄌㄧㄥˊ ㄉㄞˋ ㄉㄧㄢˋ ㄅㄛ ㄆㄛˋ ㄕㄢ ㄓㄣ ㄌㄨㄛˋ ㄓㄨ ㄍㄨㄟ ㄅㄢ ㄆㄟˋ ㄒㄧㄢˋ ㄑㄧㄡˊ ㄌㄤˊ ㄌㄧˇ ㄌㄧㄡˊ ㄧㄚˊ ㄌㄧˊ ㄔㄣ ㄗㄨㄛˊ ㄏㄨˇ ㄑㄧˊ ㄎㄨㄣ ㄑㄧˊ ㄍㄨㄢˇ ㄌㄧㄣˊ ㄑㄧㄣˊ ㄆㄧˊ ㄆㄚˊ ㄈㄚˋ ㄏㄨㄣˊ ㄇㄠˋ ㄒㄧㄚˊ ㄋㄠˇ ㄏㄨˊ ㄧㄥ ㄩˊ ㄖㄨㄟˋ ㄙㄜˋ ㄙㄨㄛˇ ㄧㄠˊ ㄧㄥˊ ㄇㄚˇ ㄊㄤˊ ㄌㄤˊ ㄍㄨㄟ ㄐㄧㄣˇ ㄘㄨㄟˇ ㄌㄧˊ ㄓㄤ ㄌㄧㄣˊ ㄏㄨㄤˊ ㄆㄨˊ ㄐㄧㄥˇ ㄐㄧ ㄞˋ ㄅㄧˋ ㄘㄢˋ ㄑㄩˊ ㄏㄨㄢˊ ㄒㄧˇ ㄒㄩㄢˊ ㄑㄩㄥˊ ㄌㄨㄥˊ ㄧㄥ ㄒㄧㄤ ㄗㄢˋ ㄍㄨㄚ ㄏㄨˋ ㄆㄧㄠˊ ㄅㄢˋ ㄖㄤˊ ㄨㄚˇ ㄆㄧㄥˊ ㄘˊ ㄓㄣ ㄡ ㄇㄥˊ ㄨㄥˋ ㄍㄢ ㄕㄣˋ ㄊㄧㄢˊ ㄕㄥ ㄔㄢˇ ㄕㄥ ㄙㄨ ㄩㄥˋ ㄕㄨㄞˇ ㄈㄨˇ ㄩㄥˇ ㄅㄥˊ ㄊㄧㄢˊ ㄧㄡˊ ㄐㄧㄚˇ ㄕㄣ ㄋㄢˊ ㄉㄧㄢ ㄓㄣˋ ㄊㄧㄢˊ ㄐㄧㄝˋ ㄑㄩㄢˇ ㄨㄟˋ ㄆㄢˋ ㄌㄧㄡˊ ㄅㄣˇ ㄔㄨˋ ㄇㄨˇ ㄅㄧˋ ㄌㄩㄝˋ ㄑㄧˊ ㄈㄢ ㄏㄨㄚˋ ㄧˋ ㄉㄤ ㄐㄧ ㄐㄧ ㄐㄧㄤ ㄔㄡˊ ㄉㄧㄝˊ ㄆㄧˇ ㄕㄨ ㄧˊ ㄍㄜ ㄐㄧㄡˋ ㄕㄢˋ ㄔㄣˋ ㄧㄡˊ ㄅㄚ ㄐㄧㄝˋ ㄧˋ ㄆㄧˊ ㄍㄢ ㄘ ㄉㄢˇ ㄓㄣˇ ㄊㄥˊ ㄐㄩ ㄐㄧˊ ㄐㄧㄚ ㄅㄧㄥˋ ㄓㄥˋ ㄑㄩㄢˊ ㄧˊ ㄓˋ ㄏㄣˊ ㄉㄡˋ ㄐㄧㄥˋ ㄊㄨㄥˋ ㄆㄧˇ ㄙㄨㄢ ㄌㄧˋ ㄓˋ ㄊㄢˊ ㄈㄟˋ ㄇㄚˊ ㄌㄧㄣˊ ㄔ ㄅㄧˋ ㄨㄟˇ ㄩ ㄘㄨㄟˋ ㄩˋ ㄈㄥ ㄧㄤˊ ㄏㄨㄢˋ ㄨㄣ ㄐㄧˊ ㄔㄨㄤ ㄅㄢ ㄌㄧㄡˊ ㄕㄡˋ ㄋㄩㄝˋ ㄉㄚ ㄓㄤˋ ㄑㄩㄝˊ ㄌㄡˋ ㄌㄧㄠˊ ㄌㄠˊ ㄞˊ ㄩˋ ㄆㄧˇ ㄌㄧˋ ㄅㄧㄝˇ ㄔ ㄧㄤˇ ㄓㄥ ㄌㄞˋ ㄒㄩㄢˇ ㄧㄣˇ ㄊㄢ ㄉㄧㄢ ㄍㄨㄟˇ ㄉㄥ ㄈㄚ ㄅㄞˊ ㄅㄞˇ ㄗㄠˋ ㄉㄜ˙ ㄐㄧㄝ ㄏㄨㄤˊ ㄍㄨㄟ ㄍㄠ ㄐㄧㄠˇ ㄏㄠˋ ㄨㄢˇ ㄞˊ ㄆㄧˊ ㄆㄠˋ ㄘㄨㄣ ㄓㄡˋ ㄇㄧㄣˇ ㄩˊ ㄅㄟ ㄓㄨㄥ ㄆㄣˊ ㄧㄥˊ ㄧˋ ㄏㄜˊ ㄤˋ ㄏㄜˊ ㄎㄨㄟ ㄕㄥˋ ㄉㄠˋ ㄓㄢˇ ㄇㄥˊ ㄐㄧㄣˇ ㄐㄧㄢ ㄆㄢˊ ㄍㄨㄢˋ ㄌㄨˊ ㄉㄤˋ ㄇㄨˋ ㄉㄧㄥ ㄇㄤˊ ㄓˊ ㄒㄧㄤ ㄉㄨㄣˇ ㄆㄢˋ ㄉㄨㄣˋ ㄕㄥˇ ㄇㄧㄠˇ ㄇㄟˊ ㄎㄢˋ ㄓㄣ ㄇㄧㄢˊ ㄓㄚˇ ㄒㄩㄢˋ ㄎㄨㄤˋ ㄐㄩㄢˋ ㄇㄡˊ ㄊㄧㄠˋ ㄧㄢˇ ㄓㄨㄥˋ ㄎㄨㄣˋ ㄐㄧㄥ ㄓㄥ ㄌㄞˋ ㄕㄨㄟˋ ㄙㄨㄟ ㄉㄨ ㄆㄧˋ ㄇㄨˋ ㄋㄧˋ ㄧˋ ㄐㄧㄝˊ ㄘㄞˇ ㄉㄨˇ ㄎㄨㄟˊ ㄖㄨㄟˋ ㄇㄧㄠˊ ㄇㄧ ㄔㄣ ㄎㄜ ㄒㄧㄚ ㄇㄧㄥˊ ㄇㄢˊ ㄆㄧㄠˇ ㄔㄥ ㄆㄧㄝ ㄑㄧㄠˊ ㄉㄥˋ ㄕㄨㄣˋ ㄌㄧㄠˇ ㄎㄢˋ ㄊㄨㄥˊ ㄓㄢ ㄐㄧㄢˇ ㄍㄨˇ ㄑㄩˊ ㄇㄥˊ ㄌㄨㄥˊ ㄔㄨˋ ㄓㄨˇ ㄇㄠˊ ㄐㄧㄣ ㄕˇ ㄧˇ ㄓ ㄐㄩˇ ㄉㄨㄢˇ ㄞˇ ㄐㄧㄠˇ ㄕˊ ㄒㄧˋ ㄕㄚ ㄑㄧˋ ㄎㄢˇ ㄧㄢˊ ㄈㄚˊ ㄓㄚˇ ㄐㄩ ㄉㄧˇ ㄓㄣ ㄅㄧㄢ ㄆㄥ ㄆㄠˋ ㄆㄛˋ ㄕㄣ ㄗㄚˊ ㄓㄨ ㄒㄧㄥˊ ㄒㄧㄠ ㄌㄧㄡˊ ㄧㄥˋ ㄧㄢˋ ㄆㄥˊ ㄎㄨㄥ ㄉㄧㄠ ㄌㄨˋ ㄙㄨㄟˋ ㄅㄟ ㄉㄨㄟˋ ㄨㄢˇ ㄉㄧㄢˇ ㄉㄧㄝˊ ㄐㄧㄝˊ ㄅㄧˋ ㄕㄨㄛˋ ㄆㄥˋ ㄊㄢˋ ㄑㄩㄝˋ ㄇㄚˇ ㄋㄧㄢˇ ㄘˊ ㄅㄤˋ ㄌㄟˇ ㄘㄨㄛ ㄆㄢˊ ㄎㄜ ㄓㄨㄢ ㄑㄧˋ ㄇㄛˊ ㄑㄧㄥˋ ㄐㄧ ㄉㄥˋ ㄌㄧㄣˊ ㄏㄨㄤˊ ㄐㄧㄠ ㄔㄨˇ ㄞˋ ㄎㄨㄤˋ ㄌㄧˋ ㄌㄧˋ ㄈㄢˊ ㄕˋ ㄕㄜˋ ㄙˋ ㄑㄧˊ ㄒㄧㄢ ㄑㄧˊ ㄑㄧˊ ㄓˇ ㄧㄡˋ ㄇㄧˋ ㄗㄨˇ ㄓ ㄗㄨㄛˋ ㄓㄨˋ ㄕㄣˊ ㄙㄨㄟˋ ㄘˊ ㄒㄧㄤˊ ㄆㄧㄠˋ ㄐㄧˋ ㄑㄧˊ ㄌㄨˋ ㄐㄧㄣˋ ㄏㄨㄛˋ ㄓㄣ ㄈㄨˊ ㄩˋ ㄒㄧˇ ㄔㄢˊ ㄌㄧˇ ㄉㄠˇ ㄖㄤˊ ㄩˇ ㄩˊ ㄑㄧㄣˊ ㄏㄜˊ ㄊㄨ ㄒㄧㄡˋ ㄙ ㄒㄧㄢ ㄅㄧㄥˇ ㄑㄧㄡ ㄎㄜ ㄇㄧㄠˇ ㄇㄧˋ ㄗㄨ ㄇㄛˋ ㄔㄥˋ ㄑㄧㄣˊ ㄧㄤ ㄓˋ ㄧˊ ㄒㄧ ㄕㄨㄟˋ ㄍㄢˇ ㄔㄥˊ ㄕㄠ ㄖㄣˇ ㄓˋ ㄌㄥˊ ㄎㄜ ㄅㄧㄥˇ ㄔㄡˊ ㄓㄨㄥˇ ㄔㄥ ㄐㄧˋ ㄉㄠˋ ㄐㄧㄚˋ ㄐㄧ ㄍㄠˇ ㄍㄨˇ ㄇㄨˋ ㄌㄨˋ ㄙㄨ ㄐㄧ ㄧㄥˇ ㄙㄨㄟˋ ㄋㄨㄥˊ ㄙㄜˋ ㄏㄨㄟˋ ㄨㄣˇ ㄏㄨㄛˋ ㄒㄩㄝˊ ㄐㄧㄡ ㄑㄩㄥˊ ㄎㄨㄥ ㄔㄨㄢ ㄊㄨ ㄓㄞˇ ㄧㄠˇ ㄓˋ ㄊㄧㄠˇ ㄐㄧㄠˋ ㄔㄨㄤ ㄐㄩㄥˇ ㄎㄨ ㄎㄜ ㄨㄛ ㄨㄚ ㄑㄩㄥˊ ㄧㄠˊ ㄎㄨㄟ ㄌㄨㄥˊ ㄘㄨㄢˋ ㄑㄧㄠˋ ㄉㄡˋ ㄑㄧㄝˋ ㄌㄧˋ ㄓㄢˋ ㄐㄧㄥˋ ㄓㄤ ㄐㄩㄣˋ ㄊㄨㄥˊ ㄐㄧㄝˊ ㄉㄨㄢ ㄐㄧㄥˋ ㄓㄨˊ ㄓㄨˊ ㄩˊ ㄍㄢ ㄅㄚ ㄒㄧㄠˋ ㄕㄥ ㄉㄧˊ ㄔ ㄌㄧˋ ㄈㄨˊ ㄅㄣˋ ㄉㄧˋ ㄗㄜˊ ㄅㄧˇ ㄉㄥˇ ㄐㄧㄣ ㄙㄨㄣˇ ㄈㄚˊ ㄎㄨㄤ ㄓㄨˋ ㄊㄨㄥˇ ㄉㄚˊ ㄘㄜˋ ㄩㄣˊ ㄐㄧㄢˇ ㄕˋ ㄧㄢˊ ㄎㄨㄞˋ ㄅㄧˇ ㄍㄜˋ ㄐㄧㄢ ㄓㄥ ㄅㄛˊ ㄐㄧ ㄙㄨㄢˋ ㄑㄧㄢˊ ㄔㄨㄟˊ ㄍㄨㄢˇ ㄐㄧㄢˋ ㄒㄧㄤ ㄓㄣ ㄓㄨˋ ㄐㄧㄝˊ ㄏㄨㄤˊ ㄈㄢˋ ㄓㄨㄢˋ ㄆㄧㄢ ㄓㄨˋ ㄏㄡˊ ㄍㄠ ㄖㄨㄛˋ ㄒㄧㄠˇ ㄘㄨㄢˋ ㄉㄨˇ ㄅㄧˋ ㄕㄞ ㄆㄥˊ ㄇㄧㄝˋ ㄘㄨˋ ㄙㄨˋ ㄌㄡˇ ㄙㄨㄛ ㄉㄢ ㄐㄧㄢˇ ㄎㄨㄟˋ ㄏㄨㄤˊ ㄗㄢ ㄒㄧㄠ ㄧㄢˊ ㄅㄛˇ ㄑㄧㄢ ㄌㄧㄢˊ ㄅㄨˋ ㄓㄡˋ ㄌㄢˊ ㄔㄡˊ ㄐㄧˊ ㄊㄥˊ ㄌㄞˋ ㄌㄨㄥˊ ㄌㄢˊ ㄑㄧㄢ ㄩㄝˋ ㄌㄧˊ ㄌㄨㄛˊ ㄩˋ ㄇㄧˇ ㄗˇ ㄈㄣˇ ㄌㄧˋ ㄆㄛˋ ㄘㄨ ㄙㄨˋ ㄓㄡ ㄌㄧㄤˊ ㄐㄧㄥ ㄩㄝˋ ㄘㄨㄟˋ ㄗㄨㄥˋ ㄐㄧㄥ ㄏㄨˊ ㄍㄠ ㄊㄤˊ ㄘㄠ ㄇㄧˊ ㄙㄢˇ ㄈㄣˋ ㄗㄠ ㄎㄤ ㄇㄛˊ ㄌㄧㄤˊ ㄋㄨㄛˋ ㄊㄨㄢˊ ㄇㄧˋ ㄒㄧˋ ㄐㄧㄡ ㄐㄧˋ ㄓㄡˋ ㄩㄝ ㄏㄨㄥˊ ㄩ ㄏㄜˊ ㄖㄣˋ ㄨㄣˇ ㄨㄣˊ ㄋㄚˋ ㄋㄧㄡˇ ㄔㄨㄣˊ ㄆㄧ ㄕㄚ ㄓˇ ㄐㄧˊ ㄈㄣ ㄩㄣˊ ㄙㄨˋ ㄈㄤˇ ㄙㄨㄛˇ ㄗˇ ㄗㄚ ㄌㄟˋ ㄒㄧˋ ㄈㄨˊ ㄒㄧㄝˋ ㄕㄣ ㄕㄠˋ ㄈㄨˊ ㄔㄨˋ ㄓㄨㄥ ㄒㄧㄢˊ ㄗㄨˇ ㄅㄢˋ ㄐㄧㄝˊ ㄐㄩㄝˊ ㄊㄠ ㄐㄧㄠˇ ㄌㄨㄛˋ ㄒㄩㄢˋ ㄍㄟˇ ㄖㄨㄥˊ ㄒㄩˋ ㄉㄧㄝˊ ㄊㄨㄥˇ ㄙ ㄐㄧㄤˋ ㄐㄩㄢˋ ㄅㄤˇ ㄙㄨㄟ ㄎㄨㄣˇ ㄐㄧㄥ ㄗㄨㄥ ㄉㄨㄛˇ ㄌㄩˋ ㄔㄡˊ ㄕㄡˋ ㄨㄟˊ ㄨㄢˇ ㄍㄤ ㄨㄤˇ ㄓㄨㄟˋ ㄘㄞˇ ㄌㄨㄣˊ ㄑㄧˇ ㄓㄢˋ ㄔㄨㄛˋ ㄌㄧㄥˊ ㄇㄧㄢˊ ㄗ ㄐㄧㄣˇ ㄒㄩˋ ㄐㄧㄢ ㄎㄜˋ ㄒㄧㄢˋ ㄐㄧ ㄉㄨㄢˋ ㄉㄧˋ ㄩㄢˊ ㄅㄧㄢ ㄏㄨㄢˇ ㄇㄧㄢˇ ㄨㄟˇ ㄇㄧㄠˇ ㄌㄧㄢˋ ㄊㄧˊ ㄓˋ ㄧㄥˊ ㄐㄧㄣˋ ㄧˋ ㄓㄡˋ ㄐㄧㄢ ㄈㄨˋ ㄔㄣ ㄍㄠˇ ㄒㄧㄢˋ ㄈㄥˋ ㄙㄨㄛ ㄧㄢˇ ㄗㄨㄥˋ ㄌㄟˊ ㄑㄧㄢˋ ㄇㄢˋ ㄌㄩˇ ㄆㄧㄠˇ ㄗㄨㄥˇ ㄐㄧ ㄕㄢ ㄈㄢˊ ㄅㄥˇ ㄙㄠ ㄇㄡˊ ㄑㄧㄤˇ ㄗㄥ ㄓ ㄕㄢˋ ㄈㄢ ㄌㄧㄠˊ ㄖㄠˋ ㄒㄧㄡˋ ㄕㄥˊ ㄏㄨㄟˋ ㄒㄧˋ ㄐㄧㄢˇ ㄐㄧㄠˇ ㄧˋ ㄐㄧˋ ㄅㄧㄣ ㄗㄨㄢˇ ㄒㄩˋ ㄔㄢˊ ㄧㄥ ㄘㄞˊ ㄒㄧㄢ ㄌㄢˇ ㄈㄡˇ ㄍㄤ ㄑㄩㄝ ㄅㄛ ㄑㄧㄥˋ ㄊㄢˊ ㄧㄥ ㄍㄨㄢˋ ㄨㄤˇ ㄏㄢˇ ㄍㄨˇ ㄓㄠˋ ㄗㄨㄟˋ ㄓˋ ㄈㄚˊ ㄕㄨˇ ㄇㄚˋ ㄅㄚˋ ㄌㄧˊ ㄌㄨㄛˊ ㄐㄧ ㄧㄤˊ ㄇㄧˇ ㄑㄧㄤ ㄇㄟˇ ㄍㄠ ㄌㄧㄥˊ ㄒㄧㄡ ㄑㄩㄣˊ ㄒㄧㄢˋ ㄧˋ ㄐㄧㄝˊ ㄒㄧ ㄕㄢ ㄌㄟˊ ㄍㄥ ㄔㄢˋ ㄩˇ ㄧˋ ㄨㄥ ㄔˋ ㄧˋ ㄌㄧㄥˊ ㄒㄧˊ ㄒㄧㄤˊ ㄒㄧ ㄉㄧˊ ㄘㄨㄟˋ ㄈㄟˇ ㄆㄧㄢ ㄏㄜˊ ㄏㄢˋ ㄠˊ ㄧˋ ㄑㄧㄠˋ ㄈㄢ ㄧˋ ㄧㄠˋ ㄌㄠˇ ㄎㄠˇ ㄇㄠˋ ㄓㄜˇ ㄑㄧˊ ㄉㄧㄝˊ ㄦˊ ㄕㄨㄚˇ ㄋㄞˋ ㄉㄨㄢ ㄌㄟˇ ㄍㄥ ㄏㄠˋ ㄩㄣˊ ㄅㄚˋ ㄙˋ ㄡˇ ㄋㄡˋ ㄦˇ ㄧㄝˊ ㄉㄢ ㄍㄥˇ ㄌㄧㄥˊ ㄌㄧㄠˊ ㄍㄨㄚ ㄕㄥˋ ㄆㄧㄣˋ ㄐㄩˋ ㄨㄣˊ ㄌㄧㄢˊ ㄘㄨㄥ ㄠˊ ㄕㄥ ㄙㄨㄥˇ ㄋㄧㄝˋ ㄓˊ ㄊㄧㄥ ㄌㄨㄥˊ ㄩˋ ㄧˋ ㄙㄨˋ ㄙˋ ㄓㄠˋ ㄖㄡˋ ㄌㄜ ㄐㄧ ㄏㄨㄤ ㄒㄧㄠˋ ㄓㄡˇ ㄉㄨˋ ㄍㄤ ㄍㄢ ㄍㄨˇ ㄓ ㄈㄟˊ ㄐㄧㄢ ㄈㄤˊ ㄓㄨㄣ ㄎㄣˇ ㄍㄨㄥ ㄩˋ ㄧㄠˊ ㄈㄟˋ ㄨㄟˋ ㄓㄡˋ ㄅㄟˋ ㄊㄞ ㄆㄤˋ ㄆㄟ ㄐㄧㄚˇ ㄓ ㄅㄠ ㄏㄨˊ ㄧㄣˋ ㄒㄩ ㄧㄢ ㄎㄨㄚˋ ㄧˊ ㄍㄨㄤ ㄍㄜ ㄉㄨㄥˋ ㄒㄩㄥ ㄆㄧㄢˊ ㄋㄥˊ ㄓ ㄒㄧㄝˊ ㄘㄨㄟˋ ㄇㄞˋ ㄐㄧˊ ㄅㄛˊ ㄔㄨㄣˊ ㄕㄣˋ ㄒㄧㄡ ㄊㄨㄛ ㄆㄨˊ ㄉㄡˋ ㄓㄤˋ ㄆㄧˊ ㄊㄧㄢˇ ㄧㄝˋ ㄧㄢ ㄕㄣˋ ㄈㄨˇ ㄈㄨˇ ㄈㄟˊ ㄑㄧㄤ ㄨㄢˋ ㄒㄧㄥ ㄋㄠˇ ㄓㄨㄥˇ ㄙㄞ ㄧㄠ ㄐㄧㄢˋ ㄐㄧㄠˇ ㄩˊ ㄔㄤˊ ㄈㄨˋ ㄒㄧㄢˋ ㄊㄨㄟˇ ㄅㄤˇ ㄌㄩˇ ㄍㄜˊ ㄅㄛˊ ㄍㄠ ㄅㄧㄠ ㄈㄨ ㄊㄤˊ ㄇㄛˊ ㄒㄧ ㄐㄧㄠ ㄆㄥˊ ㄋㄧˋ ㄕㄢˋ ㄧㄥ ㄉㄢˇ ㄎㄨㄞˋ ㄋㄨㄥˊ ㄊㄨㄣˊ ㄅㄧˋ ㄩㄥ ㄧˋ ㄌㄧㄢˇ ㄑㄧˊ ㄅㄧㄣˋ ㄌㄚˋ ㄌㄨˊ ㄗㄤˋ ㄗㄚ ㄔㄣˊ ㄨㄛˋ ㄗㄤ ㄌㄧㄣˊ ㄗˋ ㄋㄧㄝˋ ㄔㄡˋ ㄓˋ ㄓˋ ㄊㄞˊ ㄓㄣ ㄐㄧㄡˋ ㄩˊ ㄧㄠˇ ㄔㄨㄥ ㄐㄧㄡˋ ㄩˇ ㄒㄧㄥˋ ㄐㄩˇ ㄐㄧㄡˋ ㄕㄜˊ ㄕㄜˇ ㄕˋ ㄕㄨ ㄊㄧㄢˇ ㄔㄨㄢˇ ㄕㄨㄣˋ ㄨˇ ㄓㄡ ㄕㄢ ㄅㄢˇ ㄏㄤˊ ㄈㄤˇ ㄅㄢ ㄉㄨㄛˋ ㄅㄛˊ ㄒㄧㄢˊ ㄔㄨㄢˊ ㄊㄧㄥˇ ㄇㄥˇ ㄙㄡ ㄘㄤ ㄐㄧㄢˋ ㄍㄣˇ ㄌㄧㄤˊ ㄐㄧㄢ ㄙㄜˋ ㄧㄢˋ ㄘㄠˇ ㄘㄠˇ ㄞˋ ㄩˋ ㄕㄠˊ ㄇㄤˊ ㄈㄨˊ ㄓ ㄕㄢ ㄈㄨˊ ㄐㄧㄝˋ ㄈㄣ ㄅㄚ ㄒㄧㄣ ㄐㄧˋ ㄏㄨㄚ ㄈㄤ ㄓˇ ㄩㄣˊ ㄑㄧㄣˊ ㄔㄨˊ ㄧㄚˊ ㄈㄟˋ ㄩㄢˋ ㄖㄢˇ ㄌㄧㄥˊ ㄊㄞˊ ㄇㄧㄠˊ ㄎㄜ ㄇㄨˋ ㄅㄠ ㄍㄡˇ ㄐㄩˋ ㄖㄨㄛˋ ㄎㄨˇ ㄋㄧㄥˊ ㄅㄣˇ ㄧㄥ ㄓㄨㄛˊ ㄇㄠˋ ㄈㄢˋ ㄑㄧㄝˊ ㄇㄠˊ ㄇㄠˊ ㄇㄛˋ ㄇㄧㄥˊ ㄘˊ ㄇㄤˊ ㄓㄨ ㄗ ㄏㄨㄟˊ ㄧㄣ ㄔㄚˊ ㄖㄨㄥ ㄖㄨˊ ㄒㄩㄣˊ ㄑㄩㄢˊ ㄘㄠˇ ㄐㄧㄥ ㄖㄣˇ ㄐㄧㄢˋ ㄏㄨㄤ ㄌㄧˋ ㄏㄜˊ ㄅㄧˊ ㄉㄧˊ ㄊㄨˊ ㄆㄨˊ ㄌㄧˋ ㄓㄨㄤ ㄕㄚ ㄐㄩˇ ㄇㄟˊ ㄐㄧㄥ ㄕㄣ ㄍㄨㄢˇ ㄧㄡˇ ㄐㄧㄚˊ ㄒㄧㄢˋ ㄇㄛˋ ㄇㄤˇ ㄐㄧㄥ ㄐㄧㄢ ㄍㄨ ㄐㄩˊ ㄐㄩㄣ ㄈㄨˊ ㄘㄞˋ ㄊㄨˊ ㄅㄛ ㄆㄨˊ ㄏㄨㄚˊ ㄍㄨ ㄌㄧㄥˊ ㄈㄟ ㄢ ㄧㄢ ㄕㄨ ㄘㄨㄟˋ ㄊㄠˊ ㄔㄤˊ ㄌㄞˊ ㄑㄧ ㄇㄥˊ ㄆㄧㄥˊ ㄨㄟ ㄨㄢˋ ㄒㄩㄢ ㄨㄛ ㄩˊ ㄜˋ ㄌㄨㄛˋ ㄅㄠˇ ㄧㄝˋ ㄓㄜ˙ ㄍㄜˊ ㄆㄨˊ ㄉㄨㄥˇ ㄨㄟˇ ㄆㄚ ㄏㄨˊ ㄗㄤˋ ㄐㄧㄚ ㄎㄨㄟˊ ㄏㄨㄣ ㄉㄧˋ ㄙㄡ ㄇㄥˊ ㄙㄨㄢˋ ㄌㄧˋ ㄆㄨˊ ㄓㄥ ㄘㄤ ㄏㄠ ㄙㄨㄣ ㄒㄩˋ ㄒㄧˊ ㄖㄨㄥˊ ㄨㄥˇ ㄍㄞˋ ㄙㄨㄛ ㄅㄟˋ ㄆㄥˊ ㄌㄧㄢˊ ㄒㄩ˙ ㄌㄧㄥˊ ㄇㄧㄝˋ ㄇㄢˋ ㄅㄛˊ ㄓㄜˋ ㄨㄟˋ ㄘㄞˋ ㄐㄧㄤˇ ㄘㄨㄥ ㄕㄨ ㄧㄣ ㄅㄧˋ ㄈㄢ ㄒㄩㄣˋ ㄐㄧㄠ ㄖㄨㄟˇ ㄏㄨㄟˋ ㄗㄨㄟˋ ㄐㄩㄝˊ ㄉㄤˋ ㄨˊ ㄒㄧㄠ ㄌㄟˇ ㄅㄛˊ ㄨㄟ ㄐㄧˋ ㄐㄧㄤ ㄑㄧㄤˊ ㄒㄩㄝ ㄅㄧˋ ㄐㄧㄢˋ ㄏㄨㄥ ㄙㄚˋ ㄒㄧㄣ ㄕㄨˇ ㄒㄩㄣ ㄊㄞˊ ㄐㄧˋ ㄐㄧˊ ㄌㄢˊ ㄘㄤˊ ㄇㄧㄠˇ ㄡˇ ㄧˋ ㄊㄥˊ ㄧㄠˋ ㄈㄢ ㄙㄡˇ ㄕㄨˇ ㄞˇ ㄌㄧㄣˋ ㄗㄠˇ ㄌㄨˊ ㄙㄨ ㄩㄣˋ ㄆㄧㄥˊ ㄇㄛˊ ㄅㄛˋ ㄒㄧㄢˇ ㄌㄢˊ ㄓㄢˋ ㄌㄨㄛˊ ㄏㄨˇ ㄋㄩㄝˋ ㄑㄧㄢˊ ㄔㄨˇ ㄒㄩ ㄌㄨˇ ㄩˊ ㄏㄠˋ ㄎㄨㄟ ㄔㄨㄥˊ ㄕ ㄏㄨㄥˊ ㄏㄨㄟ ㄇㄥˊ ㄨㄣˊ ㄅㄤˋ ㄧㄣˇ ㄧㄚˊ ㄍㄨㄥ ㄗㄠˇ ㄔ ㄉㄡˇ ㄑㄧㄡ ㄓㄚˋ ㄏㄜˊ ㄏㄢ ㄓㄨˋ ㄍㄨ ㄑㄩ ㄕㄜˊ ㄌㄧㄥˊ ㄉㄢˋ ㄑㄩ ㄏㄨㄟˊ ㄨㄚ ㄓㄨ ㄎㄨㄛˋ ㄐㄧㄠ ㄏㄚˊ ㄓˋ ㄩㄥˇ ㄊㄨㄟˋ ㄜˊ ㄕㄨˇ ㄈㄥ ㄕㄣˋ ㄒㄧㄢˋ ㄓㄜ ㄨˊ ㄌㄧˊ ㄊㄧㄥˊ ㄓ ㄇㄧˋ ㄇㄥˇ ㄒㄧ ㄊㄧㄠˊ ㄧˋ ㄑㄩㄢˊ ㄑㄧㄥ ㄨㄢ ㄎㄜ ㄩˊ ㄕˊ ㄏㄨㄤˊ ㄅㄧㄢ ㄨㄟˋ ㄈㄨˊ ㄒㄧㄚ ㄕ ㄏㄨˊ ㄉㄧㄝˊ ㄨㄛ ㄌㄤˊ ㄆㄤˊ ㄖㄨㄥˊ ㄇㄚˇ ㄇㄧㄥˊ ㄧㄥˊ ㄕˋ ㄊㄤˊ ㄌㄨㄛˊ ㄌㄡˊ ㄕㄨㄞˋ ㄇㄚˊ ㄍㄨㄛ ㄒㄧ ㄓㄤ ㄇㄤˇ ㄆㄢˊ ㄔㄢˊ ㄋㄠˊ ㄔㄨㄥˊ ㄒㄧㄝˋ ㄧˇ ㄔㄢˊ ㄧㄥˊ ㄒㄧㄝ ㄏㄠˊ ㄖㄨˊ ㄌㄚˋ ㄌㄧˊ ㄔㄨㄣˇ ㄌㄧˋ ㄍㄨˇ ㄘㄢˊ ㄉㄨˋ ㄇㄢˊ ㄒㄧㄝˇ ㄒㄧㄥˊ ㄧㄢˇ ㄕㄨˋ ㄐㄧㄝ ㄧㄚˊ ㄨㄟˋ ㄔㄨㄥ ㄏㄥˊ ㄑㄩˊ ㄧ ㄅㄧㄠˇ ㄕㄢ ㄕㄨㄞ ㄓㄨㄥ ㄓˇ ㄖㄣˋ ㄩㄢˊ ㄇㄟˋ ㄐㄧㄚ ㄉㄞˋ ㄆㄠˊ ㄊㄢˇ ㄒㄧㄡˋ ㄍㄨㄣˇ ㄅㄟˋ ㄈㄨˊ ㄘㄞˊ ㄌㄧㄝˋ ㄋㄧㄠˇ ㄆㄡˊ ㄧˋ ㄩˋ ㄑㄧㄡˊ ㄑㄩㄣˊ ㄅㄨˇ ㄓㄨㄤ ㄕㄚ ㄌㄧˇ ㄅㄧˋ ㄔㄡˊ ㄕㄤ˙ ㄆㄟˊ ㄌㄨㄛˇ ㄍㄨㄛˇ ㄓˋ ㄍㄨㄚˋ ㄈㄨˋ ㄅㄧㄢˇ ㄏㄜˋ ㄅㄠ ㄅㄠˇ ㄩˊ ㄔㄨˇ ㄉㄚ ㄖㄨˋ ㄊㄨㄟˋ ㄔˇ ㄎㄨˋ ㄓㄜˇ ㄌㄩˇ ㄒㄧㄝˋ ㄨㄟˋ ㄒㄧㄤ ㄠˇ ㄅㄧˋ ㄐㄧㄣ ㄉㄤ ㄌㄢˊ ㄨㄚˋ ㄅㄞˇ ㄔㄣˋ ㄒㄧˊ ㄒㄧ ㄧㄠˋ ㄊㄢˊ ㄈㄨˋ ㄐㄧㄢˋ ㄍㄨㄟ ㄇㄧˋ ㄕˋ ㄊㄧㄠˋ ㄩˊ ㄑㄧㄣ ㄐㄧˋ ㄐㄧㄣˋ ㄐㄩㄝˊ ㄌㄢˇ ㄍㄨㄢ ㄐㄧㄠˇ ㄐㄧㄣ ㄐㄧㄝˇ ㄕㄤ ㄔㄨˋ ㄐㄩㄝˊ ㄧㄢˊ ㄧㄢˊ ㄉㄧㄥˋ ㄈㄨˋ ㄐㄧˋ ㄒㄩㄣˋ ㄏㄨㄥˋ ㄊㄠˇ ㄒㄩ ㄐㄧㄝˊ ㄧˊ ㄒㄩㄣˋ ㄕㄢˋ ㄑㄧˋ ㄊㄨㄛ ㄐㄧˋ ㄜˊ ㄧㄚˋ ㄙㄨㄥˋ ㄒㄧㄣ ㄐㄩㄝˊ ㄋㄜˋ ㄈㄤˇ ㄕㄜˋ ㄒㄩˇ ㄙㄨˋ ㄏㄜ ㄓㄣˇ ㄓㄨˋ ㄓㄥˋ ㄗ ㄍㄨˇ ㄉㄧˇ ㄓㄚˋ ㄓㄠˋ ㄆㄧㄥˊ ㄅㄧˋ ㄗㄨˇ ㄘˊ ㄩㄥˇ ㄒㄩㄣˊ ㄧˋ ㄕˋ ㄒㄧㄠˋ ㄕ ㄔㄚˋ ㄍㄡˋ ㄍㄨㄟˇ ㄑㄩㄢˊ ㄐㄧㄝˊ ㄏㄨㄚˋ ㄍㄞ ㄒㄧㄤˊ ㄓㄢ ㄜˋ ㄏㄨㄟ ㄓㄨ ㄎㄨㄚ ㄓˋ ㄖㄣˋ ㄎㄨㄤˊ ㄕˋ ㄉㄢˋ ㄧㄡˋ ㄑㄧㄠˋ ㄩˇ ㄔㄥˊ ㄐㄧㄝˋ ㄨ ㄨˋ ㄍㄠˋ ㄙㄨㄥˋ ㄅㄨ ㄏㄨㄟˋ ㄕㄨㄛ ㄕㄟˊ ㄎㄜˋ ㄙㄨㄟˋ ㄈㄟˇ ㄧˋ ㄉㄧㄠˋ ㄔㄢˇ ㄓㄨㄣ ㄊㄢˊ ㄨㄟˇ ㄑㄧㄥˇ ㄓㄥˋ ㄌㄧㄤˋ ㄌㄨㄣˋ ㄩˊ ㄉㄧㄝˊ ㄉㄧˋ ㄒㄧㄝˊ ㄐㄧㄢˋ ㄩˋ ㄗ ㄏㄨㄟˋ ㄢ ㄔㄣˊ ㄈㄥˇ ㄓㄨ ㄧㄢˋ ㄒㄩㄢ ㄋㄨㄛˋ ㄇㄡˊ ㄧㄝˋ ㄨㄟˋ ㄊㄥˊ ㄏㄨㄤˇ ㄇㄧˊ ㄇㄧˋ ㄅㄤˋ ㄑㄧㄢ ㄐㄧㄤˇ ㄒㄧㄝˋ ㄧㄠˊ ㄇㄛˊ ㄓㄜˊ ㄇㄧㄡˋ ㄐㄧㄣˇ ㄏㄨㄚˊ ㄒㄧ ㄓㄥˋ ㄐㄩㄝˊ ㄐㄧ ㄕˊ ㄑㄧㄠˋ ㄊㄢˊ ㄆㄨˇ ㄗㄠˋ ㄐㄧㄥˇ ㄓㄢ ㄆㄧˋ ㄧˋ ㄧˋ ㄑㄧㄢˇ ㄏㄨˋ ㄩˋ ㄉㄨˊ ㄅㄧㄢˋ ㄔㄢˊ ㄖㄤˋ ㄔㄣˋ ㄗㄢˋ ㄉㄤˇ ㄍㄨˇ ㄒㄧ ㄏㄨㄛ ㄉㄡˋ ㄑㄧˇ ㄕˋ ㄨㄢ ㄕㄨˋ ㄈㄥ ㄧㄢˋ ㄕˇ ㄊㄨㄣˊ ㄒㄧㄤˋ ㄏㄨㄢˋ ㄏㄠˊ ㄩˋ ㄓㄨ ㄐㄧㄚ ㄅㄧㄣ ㄅㄠˋ ㄔㄞˊ ㄉㄧㄠ ㄏㄠˊ ㄇㄛˋ ㄇㄠˋ ㄌㄧˊ ㄇㄠ ㄅㄟˋ ㄓㄣ ㄈㄨˋ ㄘㄞˊ ㄍㄨㄥˋ ㄆㄧㄣˊ ㄏㄨㄛˋ ㄈㄢˋ ㄊㄢ ㄍㄨㄢˋ ㄗㄜˊ ㄓㄨˋ ㄗ ㄦˋ ㄍㄨㄟˋ ㄅㄧㄢˇ ㄇㄞˇ ㄉㄞˋ ㄈㄟˋ ㄊㄧㄝ ㄧˊ ㄇㄠˋ ㄏㄜˋ ㄅㄧˋ ㄌㄨˋ ㄌㄧㄣˋ ㄏㄨㄟˋ ㄍㄞ ㄗ ㄐㄧㄚˇ ㄗㄟˊ ㄓㄣˋ ㄕㄜ ㄅㄧㄣ ㄘˋ ㄕㄤˇ ㄆㄟˊ ㄍㄥ ㄒㄧㄢˊ ㄇㄞˋ ㄐㄧㄢˋ ㄈㄨˋ ㄓˋ ㄓㄤˋ ㄉㄨˇ ㄌㄞˋ ㄕㄥˋ ㄓㄨㄢˋ ㄈㄨˋ ㄍㄡˋ ㄙㄞˋ ㄓㄨㄟˋ ㄗㄥˋ ㄗㄢˋ ㄕㄢˋ ㄧㄥˊ ㄗㄤ ㄕㄨˊ ㄧㄢˋ ㄍㄢˋ ㄔˋ ㄕㄜˋ ㄋㄢˇ ㄏㄜˋ ㄓㄜˇ ㄗㄡˇ ㄐㄧㄡ ㄈㄨˋ ㄑㄧˇ ㄔㄣˋ ㄔㄠ ㄩㄝˋ ㄍㄢˇ ㄓㄠˋ ㄊㄤˋ ㄑㄩˋ ㄑㄩ ㄗㄨˊ ㄆㄚ ㄈㄨ ㄓˇ ㄊㄞˊ ㄅㄚˊ ㄉㄧㄝ ㄊㄨㄛˊ ㄆㄠˇ ㄕㄢ ㄅㄛˇ ㄐㄩˋ ㄍㄣ ㄐㄧ ㄐㄧㄠ ㄓㄨ ㄎㄨㄚˋ ㄍㄨㄟˋ ㄌㄨˋ ㄊㄧㄠˋ ㄉㄨㄛˋ ㄐㄩˊ ㄊㄚˋ ㄐㄧㄢˋ ㄏㄨㄞˊ ㄐㄩˋ ㄔˊ ㄑㄩㄢˊ ㄊㄧ ㄘㄞˇ ㄆㄥˋ ㄉㄨㄛˊ ㄩㄥˇ ㄓㄨㄥˇ ㄔㄨㄞˋ ㄖㄡˊ ㄊㄧˊ ㄉㄠˇ ㄘㄨㄛ ㄑㄧ ㄊㄚˋ ㄅㄧˋ ㄘㄨˋ ㄐㄧ ㄆㄢˊ ㄗㄨㄥ ㄅㄥˋ ㄉㄥ ㄉㄨㄣ ㄘㄨˋ ㄐㄩㄝˊ ㄑㄧㄠ ㄆㄨˇ ㄗㄠˋ ㄉㄚˊ ㄓㄨˊ ㄔㄨˊ ㄉㄨㄣˇ ㄔㄡˊ ㄐㄧ ㄩㄝˋ ㄓˊ ㄓˋ ㄋㄧㄝˋ ㄌㄧㄣˋ ㄕㄣ ㄍㄨㄥ ㄉㄨㄛˇ ㄊㄤˇ ㄑㄩ ㄔㄜ ㄧㄚˋ ㄍㄨㄟˇ ㄐㄩㄣ ㄩㄝˋ ㄒㄩㄢ ㄖㄣˋ ㄜˋ ㄖㄨㄢˇ ㄓㄡˊ ㄎㄜ ㄧˋ ㄕˋ ㄐㄧㄠˋ ㄗㄞˋ ㄓˋ ㄓㄜˊ ㄨㄢˇ ㄈㄨˇ ㄑㄧㄥ ㄌㄧㄤˋ ㄗ ㄏㄨㄟ ㄨㄤˇ ㄔㄨㄛˋ ㄍㄨㄣˇ ㄋㄧㄢˇ ㄅㄟˋ ㄌㄨㄣˊ ㄐㄧˊ ㄘㄡˋ ㄕㄨ ㄈㄨˊ ㄓㄢˇ ㄩˊ ㄍㄨˇ ㄒㄧㄚˊ ㄩㄢˊ ㄓㄨㄢˇ ㄓㄜˊ ㄐㄧㄠˋ ㄌㄧㄣˊ ㄏㄨㄥ ㄆㄟˋ ㄒㄧㄣ ㄍㄨ ㄆㄧˋ ㄌㄚˋ ㄅㄢˋ ㄅㄧㄢˋ ㄘˊ ㄅㄧㄢˋ ㄅㄧㄢˋ ㄔㄣˊ ㄖㄨˇ ㄋㄨㄥˊ ㄩ ㄑㄧˋ ㄒㄩㄣˋ ㄧˊ ㄧㄥˊ ㄐㄧㄣˋ ㄈㄢˇ ㄊㄧㄠˊ ㄧˊ ㄐㄩㄥˇ ㄐㄧㄚ ㄉㄞˋ ㄉㄧˊ ㄆㄛˋ ㄉㄧㄝˊ ㄕㄨˋ ㄏㄨㄟˊ ㄇㄧˊ ㄅㄥˋ ㄋㄞˇ ㄓㄨㄟ ㄊㄨㄟˋ ㄙㄨㄥˋ ㄊㄠˊ ㄏㄡˋ ㄋㄧˋ ㄒㄧㄠ ㄊㄡˋ ㄓㄨˊ ㄊㄨˊ ㄐㄧㄥˋ ㄊㄧˋ ㄉㄡˋ ㄓㄜˋ ㄊㄨㄥ ㄍㄨㄤˋ ㄕˋ ㄔㄥˇ ㄙㄨˋ ㄗㄠˋ ㄈㄥˊ ㄌㄧㄢˊ ㄉㄞˇ ㄓㄡ ㄐㄧㄣˋ ㄎㄨㄟˊ ㄨㄟ ㄧˋ ㄅㄧ ㄩˊ ㄉㄨㄣˋ ㄙㄨㄟˋ ㄩˋ ㄧㄡˊ ㄩㄣˋ ㄅㄧㄢˋ ㄍㄨㄛˋ ㄜˋ ㄒㄧㄚˊ ㄏㄨㄤˊ ㄉㄠˋ ㄉㄚˊ ㄨㄟˊ ㄍㄡˋ ㄧㄠˊ ㄌㄧㄡˊ ㄒㄩㄣˋ ㄊㄚˋ ㄉㄧˋ ㄩㄢˇ ㄊㄚˋ ㄑㄧㄢˇ ㄠˊ ㄕˋ ㄗㄠ ㄓㄜ ㄔˊ ㄌㄧㄣˊ ㄗㄨㄣ ㄑㄧㄢ ㄒㄩㄢˇ ㄧˊ ㄌㄧㄠˊ ㄐㄩˋ ㄅㄧˋ ㄧㄠ ㄇㄞˋ ㄒㄧㄝˋ ㄙㄨㄟˋ ㄏㄞˊ ㄦˇ ㄇㄧㄠˇ ㄅㄧㄢ ㄌㄚ ㄌㄨㄛˊ ㄌㄧˇ ㄧˋ ㄩㄥ ㄒㄧㄥˊ ㄋㄚˋ ㄅㄤ ㄒㄧㄝˊ ㄑㄧㄡ ㄕㄠˋ ㄅㄟˋ ㄉㄧˇ ㄩˋ ㄏㄜˊ ㄐㄧㄠ ㄌㄤˊ ㄏㄠˇ ㄐㄩㄣˋ ㄧㄥˇ ㄅㄨˋ ㄍㄨㄛ ㄧㄡˊ ㄉㄡ ㄧㄢˇ ㄜˋ ㄒㄧㄤ ㄗㄡ ㄏㄠˋ ㄩㄥ ㄅㄧˇ ㄧㄣˊ ㄉㄥˋ ㄓㄥˋ ㄌㄧㄣˊ ㄆㄛˊ ㄧㄝˋ ㄗㄡ ㄌㄧˋ ㄧㄡˇ ㄉㄧㄥ ㄑㄧㄡˊ ㄓㄨㄛˊ ㄆㄟˋ ㄐㄧㄡˇ ㄒㄩˋ ㄏㄢ ㄙㄨ ㄇㄧㄥˇ ㄌㄠˋ ㄔㄡˊ ㄊㄨˊ ㄐㄧㄠˋ ㄎㄨˋ ㄙㄨㄢ ㄧㄢ ㄔㄨㄣˊ ㄗㄨㄟˋ ㄘㄨˋ ㄒㄧㄥˇ ㄔㄡˇ ㄩㄣˋ ㄊㄤˊ ㄧ ㄐㄧㄤˋ ㄐㄧㄠˋ ㄈㄚ ㄌㄧˇ ㄒㄩㄣ ㄋㄧㄤˋ ㄒㄧㄣˋ ㄧㄢˋ ㄅㄧㄢˋ ㄘㄞˇ ㄧㄡˋ ㄕˋ ㄌㄧˇ ㄓㄨㄥˋ ㄧㄝˇ ㄌㄧㄤˊ ㄌㄧˊ ㄐㄧㄣ ㄐㄧㄣ ㄓㄠ ㄉㄧㄥ ㄆㄛˋ ㄈㄨˇ ㄓㄣ ㄉㄧㄠˋ ㄎㄡˋ ㄔㄨㄢˋ ㄈㄢˇ ㄍㄤ ㄔㄞ ㄈㄨ ㄋㄚˋ ㄉㄨㄣˋ ㄑㄧㄢˊ ㄅㄢˇ ㄔㄠ ㄋㄧㄡˇ ㄐㄩㄣ ㄍㄞˋ ㄌㄧㄥˊ ㄍㄨˇ ㄅㄛˊ ㄆㄧ ㄅㄨ ㄧㄡˊ ㄊㄧㄢˊ ㄐㄧㄚˇ ㄐㄩˋ ㄒㄩㄢˋ ㄅㄠˋ ㄅㄧˋ ㄅㄛˊ ㄑㄧㄢˊ ㄇㄠˇ ㄑㄧㄢ ㄍㄡ ㄐㄧㄠˇ ㄍㄜˋ ㄅㄧㄥˇ ㄧㄣˊ ㄊㄨㄥˊ ㄒㄧㄢˇ ㄑㄩㄢˊ ㄓㄨ ㄇㄧㄥˊ ㄒㄧㄢˊ ㄢˇ ㄎㄠˋ ㄏㄢˋ ㄖㄨㄟˋ ㄒㄧㄠ ㄊㄧˊ ㄘㄨㄛˋ ㄌㄩˇ ㄒㄧㄣ ㄅㄟˋ ㄈㄥ ㄔㄨˊ ㄆㄨˋ ㄌㄧˇ ㄐㄩˋ ㄍㄤ ㄌㄨˋ ㄓㄨㄟ ㄎㄨㄣ ㄔㄨㄟˊ ㄗ ㄓㄥ ㄉㄧㄥˋ ㄑㄧˊ ㄑㄧㄢˊ ㄐㄧㄣˇ ㄇㄠˊ ㄒㄧ ㄍㄨˋ ㄘㄨㄛˋ ㄇㄥˇ ㄅㄧㄠˇ ㄌㄧㄢˋ ㄍㄨㄛ ㄉㄨˋ ㄜˋ ㄧㄤˊ ㄉㄨㄢˋ ㄑㄧㄝˋ ㄑㄧㄠ ㄏㄨㄢˊ ㄐㄧㄢˋ ㄓㄨㄥ ㄇㄟˇ ㄅㄤˋ ㄖㄨㄥˊ ㄙㄨㄛˇ ㄑㄧㄤ ㄌㄧˋ ㄔㄨㄟˊ ㄨ ㄎㄞˇ ㄏㄠˋ ㄓㄣˋ ㄧˋ ㄋㄧㄝˋ ㄗㄨˊ ㄌㄧㄢˋ ㄌㄨㄛˊ ㄉㄧˊ ㄠˊ ㄎㄥ ㄑㄧㄤ ㄊㄤ ㄇㄢˋ ㄔㄢˇ ㄐㄧㄥˋ ㄅㄧㄠ ㄌㄡˋ ㄗㄢˋ ㄒㄧㄡˋ ㄋㄠˊ ㄓㄨㄥ ㄐㄩㄢ ㄌㄧㄢˊ ㄓㄨㄛˊ ㄌㄟˊ ㄊㄧㄝˇ ㄉㄨㄛˊ ㄉㄤ ㄓㄨˋ ㄐㄧㄢˋ ㄐㄧㄢˋ ㄕㄨㄛˋ ㄅㄧㄠ ㄅㄠˋ ㄌㄨˊ ㄧㄠˋ ㄒㄧㄤ ㄋㄧㄝˋ ㄌㄨㄛˊ ㄗㄨㄢ ㄌㄨㄢˊ ㄗㄠˊ ㄔㄤˊ ㄇㄣˊ ㄕㄨㄢ ㄕㄢˇ ㄅㄧˋ ㄎㄞ ㄏㄨㄥˊ ㄖㄨㄣˋ ㄒㄧㄢˊ ㄒㄧㄢˊ ㄐㄧㄢ ㄇㄧㄣˇ ㄓㄚˊ ㄞˋ ㄍㄜˊ ㄍㄜˊ ㄈㄚˊ ㄍㄨㄟ ㄇㄧㄣˇ ㄌㄩˊ ㄩㄝˋ ㄧㄢˊ ㄅㄢˇ ㄨㄟˊ ㄎㄨㄛˋ ㄑㄩㄝˋ ㄌㄢˊ ㄊㄧㄢˊ ㄏㄜˊ ㄑㄩㄝˋ ㄔㄨㄤˇ ㄍㄨㄢ ㄔㄢˇ ㄆㄧˋ ㄈㄨˋ ㄑㄧㄢ ㄅㄢˇ ㄎㄥ ㄖㄨㄢˇ ㄐㄧㄥˇ ㄈㄤˊ ㄗㄨˇ ㄚ ㄊㄨㄛˊ ㄅㄟ ㄈㄨˋ ㄌㄡˋ ㄇㄛˋ ㄐㄧㄤˋ ㄒㄧㄢˋ ㄒㄧㄥˊ ㄅㄧˋ ㄕㄢˇ ㄕㄥ ㄉㄡˇ ㄩㄢˋ ㄓㄣˋ ㄔㄨˊ ㄆㄟˊ ㄗㄡ ㄧㄣ ㄔㄨㄟˊ ㄔㄣˊ ㄆㄧˊ ㄌㄧㄥˊ ㄊㄠˊ ㄒㄧㄢˋ ㄌㄨˋ ㄧㄤˊ ㄉㄧ ㄩˊ ㄌㄨㄥˊ ㄉㄨㄟˋ ㄙㄨㄟˊ ㄏㄨㄤˊ ㄐㄧㄝ ㄍㄜˊ ㄩㄣˇ ㄞˋ ㄒㄧˋ ㄐㄧˋ ㄓㄤˋ ㄙㄨㄟˋ ㄙㄨㄟˊ ㄒㄧㄢˇ ㄧㄣˇ ㄌㄨㄥˇ ㄌㄧˋ ㄓㄨㄟ ㄓ ㄑㄩㄝˋ ㄧㄢˋ ㄒㄩㄥˊ ㄧㄚˇ ㄐㄧˊ ㄍㄨˋ ㄓˋ ㄍㄡˋ ㄐㄩㄢˋ ㄘˊ ㄩㄥ ㄌㄨㄛˋ ㄉㄧㄠ ㄙㄨㄟ ㄕㄨㄤ ㄔㄨˊ ㄗㄚˊ ㄐㄧ ㄌㄧˊ ㄋㄢˊ ㄩˇ ㄩˊ ㄒㄩㄝˇ ㄨㄣˊ ㄩㄣˊ ㄌㄧㄥˊ ㄌㄟˊ ㄅㄠˊ ㄉㄧㄢˋ ㄒㄩ ㄒㄧㄠ ㄊㄧㄥˊ ㄓㄣˋ ㄇㄟˊ ㄏㄨㄛˋ ㄕㄚˋ ㄈㄟ ㄓㄢ ㄋㄧˊ ㄌㄧㄣˊ ㄕㄨㄤ ㄒㄧㄚˊ ㄌㄧㄡˋ ㄨˋ ㄧㄣˊ ㄒㄧㄢˋ ㄌㄨˋ ㄅㄚˋ ㄆㄧ ㄐㄧˋ ㄇㄞˊ ㄌㄧˋ ㄞˇ ㄌㄧㄥˊ ㄑㄧㄥ ㄐㄧㄥˋ ㄉㄧㄢˋ ㄐㄧㄥˋ ㄈㄟ ㄎㄠˋ ㄇㄧˊ ㄇㄧㄢˋ ㄊㄧㄢˇ ㄧㄝˋ ㄍㄜˊ ㄒㄩㄝ ㄅㄚˇ ㄉㄚˊ ㄧㄤ ㄒㄧㄝˊ ㄢ ㄍㄨㄥˇ ㄑㄧㄠˋ ㄐㄩ ㄖㄡˊ ㄑㄧㄡ ㄅㄧㄢ ㄐㄧㄤ ㄉㄚˊ ㄑㄧㄢ ㄐㄧㄢ ㄨㄟˊ ㄖㄣˋ ㄏㄢˊ ㄊㄠ ㄐㄧㄡˇ ㄧㄣ ㄕㄠˊ ㄏㄨㄤˊ ㄩㄣˋ ㄒㄧㄤˇ ㄧㄝˋ ㄉㄧㄥˇ ㄑㄧㄥˇ ㄒㄧㄤˋ ㄕㄨㄣˋ ㄒㄩ ㄒㄩ ㄙㄨㄥˋ ㄩˋ ㄨㄢˊ ㄅㄢ ㄉㄨㄣˋ ㄆㄛ ㄌㄧㄥˇ ㄏㄜˊ ㄒㄧㄝˊ ㄧˊ ㄈㄨˇ ㄊㄡˊ ㄐㄧㄚˊ ㄏㄢˋ ㄐㄧㄥˇ ㄊㄨㄟˊ ㄆㄧㄣˊ ㄎㄜ ㄊㄧˊ ㄜˊ ㄜˋ ㄧㄢˊ ㄓㄨㄢ ㄩㄢˋ ㄉㄧㄢ ㄌㄟˋ ㄏㄠˋ ㄍㄨˋ ㄔㄢˋ ㄒㄧㄢˇ ㄆㄧㄣˊ ㄌㄨˊ ㄈㄥ ㄙㄚˋ ㄊㄞˊ ㄍㄨㄚ ㄐㄩˋ ㄧㄤˊ ㄙㄡ ㄆㄧㄠ ㄈㄟ ㄕˊ ㄐㄧ ㄙㄨㄣ ㄊㄨㄣˊ ㄖㄣˋ ㄔˋ ㄈㄢˋ ㄧㄣˇ ㄧˊ ㄙˋ ㄅㄠˇ ㄕˋ ㄐㄧㄠˇ ㄅㄧㄥˇ ㄒㄧㄤˇ ㄧㄤˇ ㄦˇ ㄘㄢ ㄋㄟˇ ㄜˋ ㄩˊ ㄧㄠˊ ㄏㄨㄣˊ ㄐㄧㄢˋ ㄒㄧㄢˋ ㄍㄨㄢˇ ㄊㄧㄝˋ ㄨㄟˋ ㄎㄨㄟˋ ㄌㄧㄡˋ ㄙㄡ ㄇㄢˊ ㄐㄧㄣˇ ㄐㄧ ㄖㄠˊ ㄊㄠ ㄒㄧㄤˇ ㄧㄢˋ ㄔㄢˊ ㄕㄡˇ ㄒㄧㄤ ㄈㄨˋ ㄒㄧㄣ ㄇㄚˇ ㄩˋ ㄈㄥˊ ㄊㄨㄛˊ ㄔˊ ㄒㄩㄣˊ ㄅㄛˊ ㄓㄨˋ ㄋㄨˊ ㄐㄩ ㄐㄧㄚˋ ㄈㄨˋ ㄕˇ ㄊㄨㄛˊ ㄙˋ ㄆㄧㄢˊ ㄏㄞˋ ㄌㄨㄛˋ ㄐㄩㄣˋ ㄔㄥˇ ㄑㄧˊ ㄨˋ ㄆㄧㄢˋ ㄑㄧㄢ ㄊㄥˊ ㄩㄢˊ ㄙㄠ ㄌㄨㄛˊ ㄇㄛˋ ㄅㄧㄠ ㄑㄩ ㄒㄧㄠ ㄐㄧㄠ ㄧㄢˋ ㄐㄧㄥ ㄧˋ ㄓㄡˋ ㄌㄩˊ ㄐㄧˋ ㄌㄧˊ ㄍㄨˇ ㄤ ㄊㄡˊ ㄎㄨ ㄏㄞˊ ㄍㄜˊ ㄎㄜ ㄌㄡˊ ㄉㄨˊ ㄗㄤ ㄙㄨㄟˇ ㄊㄧˇ ㄎㄨㄢ ㄍㄠ ㄎㄨㄣ ㄇㄠˊ ㄗ ㄈㄚˋ ㄖㄢˊ ㄐㄧˋ ㄗㄨㄥ ㄙㄨㄥ ㄏㄨˊ ㄒㄩ ㄅㄧㄣˋ ㄌㄧㄝˋ ㄉㄡˋ ㄋㄠˋ ㄏㄨㄥˋ ㄩˋ ㄍㄜˊ ㄍㄨㄟˇ ㄎㄨㄟˊ ㄏㄨㄣˊ ㄆㄛˋ ㄇㄟˋ ㄨㄤˇ ㄌㄧㄤˇ ㄨㄟˋ ㄔ ㄇㄛˊ ㄧㄢˇ ㄩˊ ㄌㄨˇ ㄧㄡˊ ㄅㄠˋ ㄨㄟˇ ㄐㄧㄠ ㄍㄨㄟ ㄒㄧㄢ ㄍㄨㄣˇ ㄊㄧㄠˊ ㄌㄧˇ ㄕㄚ ㄓㄥ ㄉㄧㄠ ㄔㄤ ㄐㄧㄥ ㄗㄟˊ ㄑㄧㄡ ㄙㄞ ㄍㄨㄢ ㄑㄧˊ ㄌㄧㄢˊ ㄇㄢˊ ㄅㄧㄠˋ ㄅㄧㄝ ㄕㄢˋ ㄍㄨㄟˋ ㄌㄧㄣˊ ㄏㄡˋ ㄜˋ ㄌㄨˊ ㄋㄧㄠˇ ㄐㄧㄡ ㄈㄥˋ ㄇㄧㄥˊ ㄩㄢ ㄐㄩㄝˊ ㄓㄣˋ ㄧㄚ ㄌㄧㄥˊ ㄊㄨㄛˊ ㄩㄢ ㄍㄨ ㄧㄤ ㄧㄚ ㄏㄨㄥˊ ㄍㄜ ㄐㄩㄢ ㄜˊ ㄏㄨˊ ㄨˇ ㄢ ㄆㄥˊ ㄑㄩㄝˋ ㄔㄨㄣˊ ㄧㄥ ㄏㄜˋ ㄖㄨㄛˋ ㄧㄠˋ ㄓㄜˋ ㄡ ㄙ ㄐㄧㄡˋ ㄧㄥ ㄌㄨˋ ㄧㄥ ㄍㄨㄢˋ ㄌㄨㄢˊ ㄌㄨˇ ㄒㄧㄢˊ ㄐㄧㄢˇ ㄧㄢˊ ㄌㄨˋ ㄐㄧˇ ㄇㄧˊ ㄑㄧˊ ㄌㄨˋ ㄌㄧˋ ㄕㄜˋ ㄌㄧㄣˊ ㄇㄞˋ ㄈㄨ ㄑㄩ ㄇㄧㄢˋ ㄇㄚˊ ㄇㄜ˙ ㄏㄨㄟ ㄏㄨㄤˊ ㄏㄨㄥˊ ㄕㄨˇ ㄌㄧˊ ㄋㄧㄢˊ ㄏㄟ ㄑㄧㄢˊ ㄇㄛˋ ㄉㄞˋ ㄔㄨˋ ㄧㄡˇ ㄉㄧㄢˇ ㄒㄧㄚˊ ㄉㄤˇ ㄢˋ ㄇㄟˊ ㄉㄨˊ ㄠˊ ㄉㄧㄥˇ ㄍㄨˇ ㄉㄨㄥ ㄆㄧˊ ㄕㄨˇ ㄧㄡˋ ㄨˊ ㄧㄢˇ ㄅㄧˊ ㄏㄢ ㄑㄧˊ ㄓㄞ ㄔˇ ㄔㄞˊ ㄐㄩˇ ㄌㄧㄥˊ ㄔㄨ ㄎㄣˇ ㄋㄧㄝˋ ㄔㄨㄛˋ ㄩˇ ㄑㄩˇ ㄨㄛˋ ㄌㄨㄥˊ ㄆㄤˊ ㄍㄨㄥ ㄍㄨㄟ","p":[["三角形","ㄙㄢ ㄐㄧㄠˇ ㄒㄧㄥˊ"],["差不多","ㄔㄚ ㄅㄨˋ ㄉㄨㄛ"],["為什麼","ㄨㄟˋ ㄕㄣˊ ㄇㄜ˙"],["百分比","ㄅㄞˇ ㄈㄣ ㄅㄧˇ"],["長方形","ㄔㄤˊ ㄈㄤ ㄒㄧㄥˊ"],["長頸鹿","ㄔㄤˊ ㄐㄧㄥˇ ㄌㄨˋ"],["一個","ㄧˊ ㄍㄜˋ"],["一定","ㄧˊ ㄉㄧㄥˋ"],["一樣","ㄧˊ ㄧㄤˋ"],["一直","ㄧˋ ㄓˊ"],["一般","ㄧˋ ㄅㄢ"],["一起","ㄧˋ ㄑㄧˇ"],["一點","ㄧˋ ㄉㄧㄢˇ"],["三角","ㄙㄢ ㄐㄧㄠˇ"],["上學","ㄕㄤˋ ㄒㄩㄝˊ"],["不一","ㄅㄨˋ ㄧˊ"],["不得","ㄅㄨˋ ㄉㄜˊ"],["不是","ㄅㄨˊ ㄕˋ"],["不會","ㄅㄨˊ ㄏㄨㄟˋ"],["不要","ㄅㄨˊ ㄧㄠˋ"],["中間","ㄓㄨㄥ ㄐㄧㄢ"],["主角","ㄓㄨˇ ㄐㄩㄝˊ"],["乘以","ㄔㄥˊ ㄧˇ"],["乘法","ㄔㄥˊ ㄈㄚˇ"],["了解","ㄌㄧㄠˇ ㄐㄧㄝˇ"],["人為","ㄖㄣˊ ㄨㄟˋ"],["什麼","ㄕㄣˊ ㄇㄜ˙"],["今朝","ㄐㄧㄣ ㄓㄠ"],["仔細","ㄗˇ ㄒㄧˋ"],["作品","ㄗㄨㄛˋ ㄆㄧㄣˇ"],["作文","ㄗㄨㄛˋ ㄨㄣˊ"],["作業","ㄗㄨㄛˋ ㄧㄝˋ"],["作者","ㄗㄨㄛˋ ㄓㄜˇ"],["便宜","ㄆㄧㄢˊ ㄧˊ"],["便當","ㄅㄧㄢˋ ㄉㄤ"],["倔強","ㄐㄩㄝˊ ㄐㄧㄤˋ"],["假日","ㄐㄧㄚˋ ㄖˋ"],["假的","ㄐㄧㄚˇ ㄉㄜ˙"],["做作","ㄗㄨㄛˋ ㄗㄨㄛˋ"],["傳記","ㄓㄨㄢˋ ㄐㄧˋ"],["傳說","ㄔㄨㄢˊ ㄕㄨㄛ"],["償還","ㄔㄤˊ ㄏㄨㄢˊ"],["兒童","ㄦˊ ㄊㄨㄥˊ"],["兔子","ㄊㄨˋ ㄗ˙"],["兩個","ㄌㄧㄤˇ ㄍㄜˋ"],["公分","ㄍㄨㄥ ㄈㄣ"],["公轉","ㄍㄨㄥ ㄓㄨㄢˋ"],["出差","ㄔㄨ ㄔㄞ"],["出發","ㄔㄨ ㄈㄚ"],["出處","ㄔㄨ ㄔㄨˋ"],["分數","ㄈㄣ ㄕㄨˋ"],["分開","ㄈㄣ ㄎㄞ"],["到處","ㄉㄠˋ ㄔㄨˋ"],["力量","ㄌㄧˋ ㄌㄧㄤˋ"],["加法","ㄐㄧㄚ ㄈㄚˇ"],["助長","ㄓㄨˋ ㄓㄤˇ"],["勉強","ㄇㄧㄢˇ ㄑㄧㄤˇ"],["午覺","ㄨˇ ㄐㄧㄠˋ"],["參加","ㄘㄢ ㄐㄧㄚ"],["參差","ㄘㄣ ㄘ"],["反義","ㄈㄢˇ ㄧˋ"],["句子","ㄐㄩˋ ㄗ˙"],["吃得","ㄔ ㄉㄜ˙"],["含量","ㄏㄢˊ ㄌㄧㄤˋ"],["命中","ㄇㄧㄥˋ ㄓㄨㄥˋ"],["和好","ㄏㄜˊ ㄏㄠˇ"],["和平","ㄏㄜˊ ㄆㄧㄥˊ"],["哎呀","ㄞ ㄧㄚ"],["哪個","ㄋㄚˇ ㄍㄜˋ"],["唱得","ㄔㄤˋ ㄉㄜ˙"],["商量","ㄕㄤ ㄌㄧㄤˊ"],["喔喔","ㄨㄛ ㄨㄛ"],["喧嘩","ㄒㄩㄢ ㄏㄨㄚˊ"],["因為","ㄧㄣ ㄨㄟˋ"],["地殼","ㄉㄧˋ ㄑㄧㄠˋ"],["垃圾","ㄌㄜˋ ㄙㄜˋ"],["堵塞","ㄉㄨˇ ㄙㄜˋ"],["塞車","ㄙㄜˋ ㄔㄜ"],["填空","ㄊㄧㄢˊ ㄎㄨㄥˋ"],["增長","ㄗㄥ ㄓㄤˇ"],["多少","ㄉㄨㄛ ㄕㄠˇ"],["大將","ㄉㄚˋ ㄐㄧㄤˋ"],["大都","ㄉㄚˋ ㄉㄡ"],["天空","ㄊㄧㄢ ㄎㄨㄥ"],["好像","ㄏㄠˇ ㄒㄧㄤˋ"],["好吃","ㄏㄠˇ ㄔ"],["好奇","ㄏㄠˋ ㄑㄧˊ"],["好學","ㄏㄠˋ ㄒㄩㄝˊ"],["好玩","ㄏㄠˇ ㄨㄢˊ"],["好的","ㄏㄠˇ ㄉㄜ˙"],["好看","ㄏㄠˇ ㄎㄢˋ"],["好處","ㄏㄠˇ ㄔㄨˋ"],["好長","ㄏㄠˇ ㄔㄤˊ"],["孩子","ㄏㄞˊ ㄗ˙"],["學校","ㄒㄩㄝˊ ㄒㄧㄠˋ"],["學生","ㄒㄩㄝˊ ㄕㄥ"],["學習","ㄒㄩㄝˊ ㄒㄧˊ"],["家長","ㄐㄧㄚ ㄓㄤˇ"],["容量","ㄖㄨㄥˊ ㄌㄧㄤˋ"],["寒假","ㄏㄢˊ ㄐㄧㄚˋ"],["寫得","ㄒㄧㄝˇ ㄉㄜ˙"],["將來","ㄐㄧㄤ ㄌㄞˊ"],["將軍","ㄐㄧㄤ ㄐㄩㄣ"],["對應","ㄉㄨㄟˋ ㄧㄥˋ"],["少數","ㄕㄠˇ ㄕㄨˋ"],["工作","ㄍㄨㄥ ㄗㄨㄛˋ"],["差別","ㄔㄚ ㄅㄧㄝˊ"],["市長","ㄕˋ ㄓㄤˇ"],["干擾","ㄍㄢ ㄖㄠˇ"],["幾個","ㄐㄧˇ ㄍㄜˋ"],["弟弟","ㄉㄧˋ ㄉㄧ˙"],["強大","ㄑㄧㄤˊ ㄉㄚˋ"],["影子","ㄧㄥˇ ㄗ˙"],["很長","ㄏㄣˇ ㄔㄤˊ"],["得到","ㄉㄜˊ ㄉㄠˋ"],["快樂","ㄎㄨㄞˋ ㄌㄜˋ"],["急切","ㄐㄧˊ ㄑㄧㄝˋ"],["意思","ㄧˋ ㄙ˙"],["愛好","ㄞˋ ㄏㄠˋ"],["感覺","ㄍㄢˇ ㄐㄩㄝˊ"],["懂得","ㄉㄨㄥˇ ㄉㄜ˙"],["應用","ㄧㄥˋ ㄩㄥˋ"],["應當","ㄧㄥ ㄉㄤ"],["應該","ㄧㄥ ㄍㄞ"],["成分","ㄔㄥˊ ㄈㄣˋ"],["成長","ㄔㄥˊ ㄓㄤˇ"],["房子","ㄈㄤˊ ㄗ˙"],["房間","ㄈㄤˊ ㄐㄧㄢ"],["拿著","ㄋㄚˊ ㄓㄜ˙"],["指頭","ㄓˇ ㄊㄡ˙"],["挑戰","ㄊㄧㄠˇ ㄓㄢˋ"],["接著","ㄐㄧㄝ ㄓㄜ˙"],["提早","ㄊㄧˊ ㄗㄠˇ"],["提示","ㄊㄧˊ ㄕˋ"],["提醒","ㄊㄧˊ ㄒㄧㄥˇ"],["提高","ㄊㄧˊ ㄍㄠ"],["放假","ㄈㄤˋ ㄐㄧㄚˋ"],["放學","ㄈㄤˋ ㄒㄩㄝˊ"],["教室","ㄐㄧㄠˋ ㄕˋ"],["教書","ㄐㄧㄠ ㄕㄨ"],["教育","ㄐㄧㄠˋ ㄩˋ"],["數字","ㄕㄨˋ ㄗˋ"],["數學","ㄕㄨˋ ㄒㄩㄝˊ"],["數量","ㄕㄨˋ ㄌㄧㄤˋ"],["方便","ㄈㄤ ㄅㄧㄢˋ"],["旅行","ㄌㄩˇ ㄒㄧㄥˊ"],["旋轉","ㄒㄩㄢˊ ㄓㄨㄢˇ"],["時間","ㄕˊ ㄐㄧㄢ"],["暑假","ㄕㄨˇ ㄐㄧㄚˋ"],["暖和","ㄋㄨㄢˇ ㄏㄨㄛ˙"],["書包","ㄕㄨ ㄅㄠ"],["會長","ㄏㄨㄟˋ ㄓㄤˇ"],["有空","ㄧㄡˇ ㄎㄨㄥˋ"],["朋友","ㄆㄥˊ ㄧㄡˇ"],["朝代","ㄔㄠˊ ㄉㄞˋ"],["朝陽","ㄓㄠ ㄧㄤˊ"],["村長","ㄘㄨㄣ ㄓㄤˇ"],["杯子","ㄅㄟ ㄗ˙"],["枕頭","ㄓㄣˇ ㄊㄡ˙"],["校長","ㄒㄧㄠˋ ㄓㄤˇ"],["桌子","ㄓㄨㄛ ㄗ˙"],["梳子","ㄕㄨ ㄗ˙"],["樂器","ㄩㄝˋ ㄑㄧˋ"],["樂團","ㄩㄝˋ ㄊㄨㄢˊ"],["橘子","ㄐㄩˊ ㄗ˙"],["歸還","ㄍㄨㄟ ㄏㄨㄢˊ"],["水分","ㄕㄨㄟˇ ㄈㄣˋ"],["沙子","ㄕㄚ ㄗ˙"],["減法","ㄐㄧㄢˇ ㄈㄚˇ"],["測量","ㄘㄜˋ ㄌㄧㄤˊ"],["湯匙","ㄊㄤ ㄔˊ"],["溫和","ㄨㄣ ㄏㄜˊ"],["災難","ㄗㄞ ㄋㄢˋ"],["為了","ㄨㄟˋ ㄌㄜ˙"],["照相","ㄓㄠˋ ㄒㄧㄤˋ"],["猴子","ㄏㄡˊ ㄗ˙"],["玩得","ㄨㄢˊ ㄉㄜ˙"],["班長","ㄅㄢ ㄓㄤˇ"],["生長","ㄕㄥ ㄓㄤˇ"],["當然","ㄉㄤ ㄖㄢˊ"],["發現","ㄈㄚ ㄒㄧㄢˋ"],["發覺","ㄈㄚ ㄐㄩㄝˊ"],["百分","ㄅㄞˇ ㄈㄣ"],["的確","ㄉㄧˊ ㄑㄩㄝˋ"],["盡心","ㄐㄧㄣˋ ㄒㄧㄣ"],["盤子","ㄆㄢˊ ㄗ˙"],["目的","ㄇㄨˋ ㄉㄧˋ"],["直角","ㄓˊ ㄐㄧㄠˇ"],["相信","ㄒㄧㄤ ㄒㄧㄣˋ"],["相同","ㄒㄧㄤ ㄊㄨㄥˊ"],["相差","ㄒㄧㄤ ㄔㄚ"],["看看","ㄎㄢˋ ㄎㄢˋ"],["看著","ㄎㄢˋ ㄓㄜ˙"],["看見","ㄎㄢˋ ㄐㄧㄢˋ"],["睡著","ㄕㄨㄟˋ ㄓㄠˊ"],["睡覺","ㄕㄨㄟˋ ㄐㄧㄠˋ"],["知道","ㄓ ㄉㄠˋ"],["石頭","ㄕˊ ㄊㄡ˙"],["種子","ㄓㄨㄥˇ ㄗˇ"],["種樹","ㄓㄨㄥˋ ㄕㄨˋ"],["種花","ㄓㄨㄥˋ ㄏㄨㄚ"],["種類","ㄓㄨㄥˇ ㄌㄟˋ"],["空格","ㄎㄨㄥˋ ㄍㄜˊ"],["空氣","ㄎㄨㄥ ㄑㄧˋ"],["空間","ㄎㄨㄥ ㄐㄧㄢ"],["穿著","ㄔㄨㄢ ㄓㄨㄛˊ"],["笑得","ㄒㄧㄠˋ ㄉㄜ˙"],["答應","ㄉㄚ ㄧㄥ"],["筷子","ㄎㄨㄞˋ ㄗ˙"],["算數","ㄙㄨㄢˋ ㄕㄨˋ"],["累計","ㄌㄟˇ ㄐㄧˋ"],["聲調","ㄕㄥ ㄉㄧㄠˋ"],["肚子","ㄉㄨˋ ㄗ˙"],["背包","ㄅㄟˋ ㄅㄠ"],["背誦","ㄅㄟˋ ㄙㄨㄥˋ"],["能量","ㄋㄥˊ ㄌㄧㄤˋ"],["自傳","ㄗˋ ㄓㄨㄢˋ"],["自轉","ㄗˋ ㄓㄨㄢˋ"],["興盛","ㄒㄧㄥ ㄕㄥˋ"],["興趣","ㄒㄧㄥˋ ㄑㄩˋ"],["船長","ㄔㄨㄢˊ ㄓㄤˇ"],["苦難","ㄎㄨˇ ㄋㄢˋ"],["茄子","ㄑㄧㄝˊ ㄗ˙"],["著急","ㄓㄠ ㄐㄧˊ"],["蘿蔔","ㄌㄨㄛˊ ㄅㄛ˙"],["處理","ㄔㄨˇ ㄌㄧˇ"],["血量","ㄒㄩㄝˋ ㄌㄧㄤˋ"],["行動","ㄒㄧㄥˊ ㄉㄨㄥˋ"],["行星","ㄒㄧㄥˊ ㄒㄧㄥ"],["行李","ㄒㄧㄥˊ ㄌㄧˇ"],["行業","ㄏㄤˊ ㄧㄝˋ"],["行走","ㄒㄧㄥˊ ㄗㄡˇ"],["衡量","ㄏㄥˊ ㄌㄧㄤˊ"],["要塞","ㄧㄠ ㄙㄞˋ"],["覺得","ㄐㄩㄝˊ ㄉㄜ˙"],["角度","ㄐㄧㄠˇ ㄉㄨˋ"],["角色","ㄐㄩㄝˊ ㄙㄜˋ"],["解決","ㄐㄧㄝˇ ㄐㄩㄝˊ"],["說得","ㄕㄨㄛ ㄉㄜ˙"],["說話","ㄕㄨㄛ ㄏㄨㄚˋ"],["調查","ㄉㄧㄠˋ ㄔㄚˊ"],["調皮","ㄊㄧㄠˊ ㄆㄧˊ"],["請假","ㄑㄧㄥˇ ㄐㄧㄚˋ"],["請教","ㄑㄧㄥˇ ㄐㄧㄠˋ"],["走得","ㄗㄡˇ ㄉㄜ˙"],["走著","ㄗㄡˇ ㄓㄜ˙"],["跑得","ㄆㄠˇ ㄉㄜ˙"],["轉動","ㄓㄨㄢˋ ㄉㄨㄥˋ"],["轉彎","ㄓㄨㄢˇ ㄨㄢ"],["近義","ㄐㄧㄣˋ ㄧˋ"],["迫切","ㄆㄛˋ ㄑㄧㄝˋ"],["這個","ㄓㄜˋ ㄍㄜˋ"],["過分","ㄍㄨㄛˋ ㄈㄣˋ"],["還是","ㄏㄞˊ ㄕˋ"],["還有","ㄏㄞˊ ㄧㄡˇ"],["還給","ㄏㄨㄢˊ ㄍㄟˇ"],["邊塞","ㄅㄧㄢ ㄙㄞˋ"],["部分","ㄅㄨˋ ㄈㄣˋ"],["都市","ㄉㄨ ㄕˋ"],["都是","ㄉㄡ ㄕˋ"],["重新","ㄔㄨㄥˊ ㄒㄧㄣ"],["重複","ㄔㄨㄥˊ ㄈㄨˋ"],["重要","ㄓㄨㄥˋ ㄧㄠˋ"],["重量","ㄓㄨㄥˋ ㄌㄧㄤˋ"],["量詞","ㄌㄧㄤˋ ㄘˊ"],["銀行","ㄧㄣˊ ㄏㄤˊ"],["鑽石","ㄗㄨㄢˋ ㄕˊ"],["長久","ㄔㄤˊ ㄐㄧㄡˇ"],["長城","ㄔㄤˊ ㄔㄥˊ"],["長大","ㄓㄤˇ ㄉㄚˋ"],["長度","ㄔㄤˊ ㄉㄨˋ"],["長得","ㄓㄤˇ ㄉㄜ˙"],["長江","ㄔㄤˊ ㄐㄧㄤ"],["長相","ㄓㄤˇ ㄒㄧㄤˋ"],["長短","ㄔㄤˊ ㄉㄨㄢˇ"],["長處","ㄔㄤˊ ㄔㄨˋ"],["長輩","ㄓㄤˇ ㄅㄟˋ"],["長進","ㄓㄤˇ ㄐㄧㄣˋ"],["長高","ㄓㄤˇ ㄍㄠ"],["間接","ㄐㄧㄢˋ ㄐㄧㄝ"],["關卡","ㄍㄨㄢ ㄑㄧㄚˇ"],["院長","ㄩㄢˋ ㄓㄤˇ"],["除法","ㄔㄨˊ ㄈㄚˇ"],["隊長","ㄉㄨㄟˋ ㄓㄤˇ"],["雙重","ㄕㄨㄤ ㄔㄨㄥˊ"],["難過","ㄋㄢˊ ㄍㄨㄛˋ"],["鞋子","ㄒㄧㄝˊ ㄗ˙"],["音樂","ㄧㄣ ㄩㄝˋ"],["音調","ㄧㄣ ㄉㄧㄠˋ"],["頭髮","ㄊㄡˊ ㄈㄚˇ"],["飛得","ㄈㄟ ㄉㄜ˙"],["養分","ㄧㄤˇ ㄈㄣˋ"],["首相","ㄕㄡˇ ㄒㄧㄤˋ"],["首都","ㄕㄡˇ ㄉㄨ"],["骰子","ㄊㄡˊ ㄗ˙"],["體重","ㄊㄧˇ ㄓㄨㄥˋ"],["高興","ㄍㄠ ㄒㄧㄥˋ"],["高處","ㄍㄠ ㄔㄨˋ"],["高麗","ㄍㄠ ㄌㄧˊ"],["鴨子","ㄧㄚ ㄗ˙"],["鼻子","ㄅㄧˊ ㄗ˙"],["個","ㄍㄜˋ"],["覺","ㄐㄩㄝˊ"]]};
+const ZY = {
+  mode: 'std',            // std 標準 / big 放大 / off 關
+  ready: false, map: null, phr: null, obs: null,
+  SKIP: new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'CANVAS', 'NOSCRIPT', 'TITLE', 'svg', 'SVG', 'IMG']),
+  CJK: /[\u4e00-\u9fff]/,
+  NUM: '一二三四五六七八九十零百千萬兩第',
+  init() {
+    try { const m = localStorage.getItem('kc_zy_mode'); if (m === 'std' || m === 'big' || m === 'off') this.mode = m; } catch (e) {}
+    this.apply();
+  },
+  build() {
+    if (this.ready) return;
+    this.map = new Map(); this.phr = new Map();
+    const zs = ZY_DATA.z.split(' '), cs = ZY_DATA.c;
+    for (let i = 0; i < cs.length; i++) this.map.set(cs[i], zs[i]);
+    for (const [w, r] of ZY_DATA.p) {
+      const k = w[0]; if (!this.phr.has(k)) this.phr.set(k, []);
+      this.phr.get(k).push([w, r.split(' ')]);
+    }
+    this.phr.forEach(a => a.sort((x, y) => y[0].length - x[0].length));
+    this.ready = true;
+  },
+  cycle() {
+    this.mode = this.mode === 'std' ? 'big' : this.mode === 'big' ? 'off' : 'std';
+    try { localStorage.setItem('kc_zy_mode', this.mode); } catch (e) {}
+    this.apply();
+  },
+  label() { return this.mode === 'std' ? '標準' : this.mode === 'big' ? '放大' : '關'; },
+  apply() {
+    const h = document.documentElement, on = this.mode !== 'off';
+    h.classList.toggle('zy-on', on); h.classList.toggle('zy-big', this.mode === 'big');
+    const lb = document.getElementById('zy-label'); if (lb) lb.textContent = this.label();
+    if (on) {
+      this.build();
+      if (!this.obs) this.obs = new MutationObserver(ms => this.onMut(ms));
+      this.scan(document.body); this.watch();
+    } else {
+      if (this.obs) this.obs.disconnect();
+      this.unwrap();
+    }
+  },
+  watch() { this.obs.observe(document.body, { childList: true, subtree: true, characterData: true }); },
+  onMut(ms) {
+    this.obs.disconnect();
+    const set = new Set();
+    for (const m of ms) {
+      if (m.type === 'characterData') set.add(m.target);
+      else m.addedNodes.forEach(n => set.add(n));
+    }
+    set.forEach(n => this.scan(n));
+    this.watch();
+  },
+  skipEl(el) {
+    return !el || this.SKIP.has(el.tagName) || el.closest('.zyw, [data-nozy], svg');
+  },
+  scan(root) {
+    if (!root || !root.isConnected) return;
+    if (root.nodeType === 3) { this.wrap(root); return; }
+    if (root.nodeType !== 1 || this.skipEl(root)) return;
+    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => {
+        if (!this.CJK.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
+        const p = n.parentElement;
+        return this.skipEl(p) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const list = []; let n;
+    while ((n = tw.nextNode())) list.push(n);
+    list.forEach(t => this.wrap(t));
+  },
+  split(r) {
+    const m = r.match(/^([^ˊˇˋ˙]*)([ˊˇˋ˙]?)$/); return m ? [m[1], m[2]] : [r, ''];
+  },
+  read(s, skipQ) {
+    // 回傳與 s 等長的讀音陣列（無則 null）
+    const out = new Array(s.length).fill(null), fixed = new Array(s.length).fill(false);
+    let inQ = false;
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (skipQ) { if (c === '「') { inQ = true; continue; } if (c === '」') { inQ = false; continue; } if (inQ) continue; }
+      if (!this.CJK.test(c)) continue;
+      const cand = this.phr.get(c);
+      let hit = false;
+      if (cand) for (const [w, r] of cand) {
+        if (s.startsWith(w, i)) { for (let k = 0; k < w.length; k++) { out[i + k] = r[k]; fixed[i + k] = true; } i += w.length - 1; hit = true; break; }
+      }
+      if (!hit && this.map.has(c)) out[i] = this.map.get(c);
+    }
+    // 「一」「不」變調（只處理沒有詞組定案的）
+    for (let i = 0; i < s.length - 1; i++) {
+      if (fixed[i] || !out[i]) continue;
+      const c = s[i], nx = out[i + 1];
+      if (!nx) continue;
+      const nt = this.split(nx)[1];
+      if (c === '不' && nt === 'ˋ') out[i] = 'ㄅㄨˊ';
+      else if (c === '一' && !this.NUM.includes(s[i + 1]) && !'月日號'.includes(s[i + 1]) && !(i > 0 && this.NUM.includes(s[i - 1]))) {
+        out[i] = nt === 'ˋ' ? 'ㄧˊ' : 'ㄧˋ';
+      }
+    }
+    return out;
+  },
+  wrap(t) {
+    if (!t.parentNode || !this.CJK.test(t.nodeValue)) return;
+    const par = t.parentElement;
+    if (this.skipEl(par)) return;
+    const s = t.nodeValue, skipQ = !!(par && par.closest('[data-zyq]'));
+    const rd = this.read(s, skipQ);
+    if (!rd.some(Boolean)) return;
+    const w = document.createElement('span'); w.className = 'zyw';
+    let buf = '';
+    const flush = () => { if (buf) { w.appendChild(document.createTextNode(buf)); buf = ''; } };
+    for (let i = 0; i < s.length; i++) {
+      if (!rd[i]) { buf += s[i]; continue; }
+      flush();
+      const [b, tone] = this.split(rd[i]);
+      const e = document.createElement('span');
+      e.className = 'zy n' + Math.min(4, b.length) + ((tone && tone !== '˙') ? '' : ' t0');
+      e.dataset.b = b; if (tone) e.dataset.t = tone;
+      e.textContent = s[i];
+      w.appendChild(e);
+    }
+    flush();
+    t.parentNode.replaceChild(w, t);
+  },
+  unwrap() {
+    document.querySelectorAll('.zyw').forEach(w => w.replaceWith(document.createTextNode(w.textContent)));
+  }
+};
+window.ZY = ZY;
+
+window.addEventListener('DOMContentLoaded', () => { Game.init(); ZY.init(); });
 window.Game = Game;
 </script>
 </body>
