@@ -1,0 +1,348 @@
+# 知識之城 RPG — 最終版圖資製作清單（無列車）
+
+## 規格（全部通用）
+
+- 格式：**PNG，透明背景**（沒有透明背景，角色會帶著白色方框）
+- 角色／怪物／寵物／Boss 尺寸：**512 × 512 像素**正方形（Boss 建議 768×768）
+- 角色置中、四周留約 8% 空白、腳踩在底部
+- 大小：每張建議 **300KB 以內**（可用 tinypng.com 壓縮）
+- 檔名：**全小寫英文 + 數字，不要空格、不要中文**
+- 資料夾：在 `index.html` 旁邊建立 `img` 資料夾，所有圖片放進去
+
+```
+你的資料夾/
+├─ index.html
+└─ img/
+   ├─ hero_warrior.png
+   ├─ mon_m01.png
+   ├─ pet_p1_0.png
+   ├─ bg_map_zone0.png
+   └─ ...
+```
+
+**不用一次做完**：有哪張圖就換哪張，沒有的圖遊戲會自動用現有的 SVG 插圖或 emoji（Boss 用 emoji）。
+
+---
+
+## 統一畫風提示詞（每張都加在最前面，畫風才會一致）
+
+```
+cute chibi children's game character illustration, storybook watercolor style, soft thick outline, vibrant warm colors, big sparkling eyes, full body, single character, centered, plain white background, no text, no shadow
+```
+
+接著在後面加上角色描述，例如：
+`a brave boy warrior with brown hair, blue armor, red cape, holding a sword`
+
+去背小技巧：生成時用純白背景，再丟進 remove.bg 或 Photoshop / Photopea 去背，存成 PNG。
+
+---
+
+## 一、英雄（5 張）— 尺寸 512×512
+
+| 檔名 | 內容 |
+|---|---|
+| hero_warrior.png | 戰士：棕髮男孩、藍色盔甲、紅披風、拿劍 |
+| hero_mage.png | 魔法師：粉紅長髮女孩、紫色尖帽、拿法杖 |
+| hero_archer.png | 弓箭手：綠色兜帽、拿弓 |
+| hero_engineer.png | 工程師：戴護目鏡的帽子、吊帶褲、拿扳手 |
+| hero_scholar.png | 學者：書卷帽、長袍、拿書本（取代原列車長） |
+
+---
+
+## 二、第一批最優先（約 20 張，立刻有感）
+
+| 檔名 | 內容 | 尺寸 |
+|---|---|---|
+| hero_warrior.png | 戰士 | 512×512 |
+| hero_mage.png | 魔法師 | 512×512 |
+| hero_archer.png | 弓箭手 | 512×512 |
+| hero_engineer.png | 工程師 | 512×512 |
+| hero_scholar.png | 學者 | 512×512 |
+| mon_m01.png | 加法史萊姆：藍色史萊姆，頭上有嫩芽 | 512×512 |
+| pet_p1_0.png | 小貓（第一階） | 512×512 |
+| pet_p2_0.png | 小狗（第一階） | 512×512 |
+| pet_p3_0.png | 企鵝（第一階） | 512×512 |
+| pet_p4_0.png | 狐狸（第一階） | 512×512 |
+| pet_p5_0.png | 兔子（第一階） | 512×512 |
+| pet_p6_0.png | 貓頭鷹（第一階） | 512×512 |
+| pet_p7_0.png | 小恐龍（第一階） | 512×512 |
+| pet_p8_0.png | 小書精靈（第一階） | 512×512 |
+| bg_home.png | 首頁主畫面背景 | 1080×1920 |
+| bg_battle.png | 一般戰鬥場景 | 1280×720 |
+| bg_map.png | 世界地圖總覽 | 1400×900 |
+| ui_avatar_frame.png | 玩家頭像框 | 128×128 |
+
+---
+
+## 三、寵物（共 24 張：8 種 × 3 階段）— 尺寸 512×512
+
+檔名格式：`pet_寵物編號_階段.png`，階段 0＝第一階、1＝第二階、2＝第三階
+
+| 檔名 | 進化線 |
+|---|---|
+| pet_p1_0 / pet_p1_1 / pet_p1_2 | 小貓 → 劍士貓 → 聖光獅王 |
+| pet_p2_0 / pet_p2_1 / pet_p2_2 | 小狗 → 巡邏犬 → 皇家聖伯納 |
+| pet_p3_0 / pet_p3_1 / pet_p3_2 | 企鵝 → 紳士企鵝 → 冰晶帝王企鵝 |
+| pet_p4_0 / pet_p4_1 / pet_p4_2 | 狐狸 → 九尾靈狐 → 天狐仙子 |
+| pet_p5_0 / pet_p5_1 / pet_p5_2 | 兔子 → 月光兔 → 星辰玉兔 |
+| pet_p6_0 / pet_p6_1 / pet_p6_2 | 貓頭鷹 → 博士貓頭鷹 → 智慧大賢梟 |
+| pet_p7_0 / pet_p7_1 / pet_p7_2 | 小恐龍 → 暴龍 → 知識龍 |
+| pet_p8_0 / pet_p8_1 / pet_p8_2 | 小書精靈 → 知識精靈 → 智慧大賢者 |
+
+完整檔名列表：
+pet_p1_0.png ~ pet_p1_2.png
+pet_p2_0.png ~ pet_p2_2.png
+pet_p3_0.png ~ pet_p3_2.png
+pet_p4_0.png ~ pet_p4_2.png
+pet_p5_0.png ~ pet_p5_2.png
+pet_p6_0.png ~ pet_p6_2.png
+pet_p7_0.png ~ pet_p7_2.png
+pet_p8_0.png ~ pet_p8_2.png
+
+---
+
+## 四、區域 Boss（共 9 張）— 尺寸 768×768
+
+| 檔名 | Boss |
+|---|---|
+| boss_0.png | 第1章 初心村：初心守護木偶王 |
+| boss_1.png | 第2章 注音森林：聲調精靈女王 |
+| boss_2.png | 第3章 數學平原：四則運算巨像 |
+| boss_3.png | 第4章 閱讀峽谷：古卷奇美拉 |
+| boss_4.png | 第5章 英文港口：深海字母克拉肯 |
+| boss_5.png | 第6章 科學研究所：知識機器人 Mk-II |
+| boss_6.png | 第7章 知識王國：皇家博學黃金龍 |
+| boss_7.png | 第8章 智慧神殿：全知智慧大天使 |
+| boss_weak.png | 錯題大魔王（紫黑色的小惡魔大王） |
+
+---
+
+## 五、52 隻怪物 — 尺寸 512×512
+
+檔名格式：`mon_編號.png`
+
+| 檔名 | 怪物 | 出沒區域 |
+|---|---|---|
+| mon_m01.png | 加法史萊姆 | 初心村 |
+| mon_m02.png | 減法史萊姆 | 初心村 |
+| mon_m03.png | 色彩小蘑菇 | 初心村 |
+| mon_m04.png | 形狀方塊怪 | 初心村 |
+| mon_m05.png | 蘋果精靈 | 初心村 |
+| mon_m06.png | 初心小木靈 | 初心村 |
+| mon_m07.png | ㄅㄆㄇ樹精 | 注音森林 |
+| mon_m08.png | 拼音松鼠 | 注音森林 |
+| mon_m09.png | 二聲飛鳥 | 注音森林 |
+| mon_m10.png | 三聲跳跳蛙 | 注音森林 |
+| mon_m11.png | 四聲閃電蜂 | 注音森林 |
+| mon_m12.png | 輕聲棉花怪 | 注音森林 |
+| mon_m13.png | 生字小書蟲 | 注音森林 |
+| mon_m14.png | 乘法哥布林 | 數學平原 |
+| mon_m15.png | 除法騎士 | 數學平原 |
+| mon_m16.png | 九九乘法狼 | 數學平原 |
+| mon_m17.png | 時鐘貓頭鷹 | 數學平原 |
+| mon_m18.png | 金幣寶箱怪 | 數學平原 |
+| mon_m19.png | 分數飛龍 | 數學平原 |
+| mon_m20.png | 小數刺蝟 | 數學平原 |
+| mon_m21.png | 閱讀蝙蝠 | 閱讀峽谷 |
+| mon_m22.png | 成語石像鬼 | 閱讀峽谷 |
+| mon_m23.png | 標點符號妖 | 閱讀峽谷 |
+| mon_m24.png | 修辭火狐 | 閱讀峽谷 |
+| mon_m25.png | 詩詞仙鶴 | 閱讀峽谷 |
+| mon_m26.png | 故事羊皮紙 | 閱讀峽谷 |
+| mon_m27.png | 寓言穿山甲 | 閱讀峽谷 |
+| mon_m28.png | 英文企鵝 | 英文港口 |
+| mon_m29.png | 單字海鷗 | 英文港口 |
+| mon_m30.png | 文法寄居蟹 | 英文港口 |
+| mon_m31.png | 句型海豚 | 英文港口 |
+| mon_m32.png | ABC水母 | 英文港口 |
+| mon_m33.png | 發音海豹 | 英文港口 |
+| mon_m34.png | 航海燈塔怪 | 英文港口 |
+| mon_m35.png | 自然機器人 | 科學研究所 |
+| mon_m36.png | 磁力線圈怪 | 科學研究所 |
+| mon_m37.png | 光學稜鏡獸 | 科學研究所 |
+| mon_m38.png | 齒輪守衛 | 科學研究所 |
+| mon_m39.png | 電流精靈 | 科學研究所 |
+| mon_m40.png | 重力浮游球 | 科學研究所 |
+| mon_m41.png | 化學燒瓶怪 | 科學研究所 |
+| mon_m42.png | 百分比巨龍 | 知識王國 |
+| mon_m43.png | 歷史鎧甲兵 | 知識王國 |
+| mon_m44.png | 地理羅盤怪 | 知識王國 |
+| mon_m45.png | 公民天秤獸 | 知識王國 |
+| mon_m46.png | 面積獅鷲 | 知識王國 |
+| mon_m47.png | 速率飛馬 | 知識王國 |
+| mon_m48.png | 應用題魔導師 | 智慧神殿 |
+| mon_m49.png | 天文星象龍 | 智慧神殿 |
+| mon_m50.png | 邏輯斯芬克斯 | 智慧神殿 |
+| mon_m51.png | 百科全書魔像 | 智慧神殿 |
+| mon_m52.png | 銀河智慧結晶 | 智慧神殿 |
+
+---
+
+## 六、地圖／場景背景
+
+| 檔名 | 用途 | 尺寸 |
+|---|---|---|
+| bg_home.png | 首頁主畫面（城堡＋天空） | 1080×1920 或 720×1280 |
+| bg_map.png | 世界地圖總覽 | 1400×900 |
+| bg_map_zone0.png | 初心村地圖底圖 | 1600×1000 |
+| bg_map_zone1.png | 注音森林 | 1600×1000 |
+| bg_map_zone2.png | 數學平原 | 1600×1000 |
+| bg_map_zone3.png | 閱讀峽谷 | 1600×1000 |
+| bg_map_zone4.png | 英文港口 | 1600×1000 |
+| bg_map_zone5.png | 科學研究所 | 1600×1000 |
+| bg_map_zone6.png | 知識王國 | 1600×1000 |
+| bg_map_zone7.png | 智慧神殿 | 1600×1000 |
+| bg_battle.png | 一般戰鬥場景 | 1280×720 |
+| bg_battle_boss.png | Boss 戰鬥場景 | 1280×720 |
+| bg_city.png | 城市建設總覽底圖 | 1600×900 |
+| bg_pets.png | 寵物頁背景（可選） | 1600×900 |
+| bg_parent.png | 家長模式背景（可選） | 1600×900 |
+
+背景提示詞可改用：
+```
+cute children's game environment background, storybook watercolor, soft colors, no characters, no text, wide landscape
+```
+
+---
+
+## 七、城市建築圖示 — 尺寸 256×256
+
+| 檔名 | 建築 |
+|---|---|
+| build_house.png | 房屋 |
+| build_shop.png | 商店 |
+| build_school.png | 學校 |
+| build_library.png | 圖書館 |
+| build_hospital.png | 醫院 |
+| build_park.png | 公園 |
+| build_lab.png | 研究所 |
+| build_museum.png | 博物館 |
+| build_amuse.png | 遊樂園 |
+| build_stadium.png | 體育館 |
+
+（已移除火車站）
+
+---
+
+## 八、UI 元件（商業級手機 RPG 風格）
+
+### 面板與按鈕
+
+| 檔名 | 用途 | 尺寸 |
+|---|---|---|
+| ui_panel_wood.png | 木紋大面板 | 640×480 或可平鋪 128×128 |
+| ui_panel_header.png | 棕色標題條 | 640×64 |
+| ui_btn_blue.png | 一般藍按鈕 | 256×80 |
+| ui_btn_green.png | 綠／確認 | 256×80 |
+| ui_btn_amber.png | 琥珀／特殊 | 256×80 |
+| ui_btn_red.png | 紅／危險 | 256×80 |
+| ui_btn_nav.png | 底部導覽未選中 | 120×80 |
+| ui_btn_nav_active.png | 底部導覽選中 | 120×80 |
+| ui_card.png | 職業／建築／寵物小卡底板 | 320×400 |
+| ui_modal.png | 戰鬥／彈窗底板 | 720×900 |
+| ui_home_topbar.png | 首頁頂部狀態列 | 720×120 |
+
+### 戰鬥 UI
+
+| 檔名 | 用途 | 尺寸 |
+|---|---|---|
+| ui_hp_bar_bg.png | HP 條底 | 200×24 |
+| ui_hp_bar_fill_player.png | 玩家 HP（綠） | 200×24 |
+| ui_hp_bar_fill_enemy.png | 敵人 HP（紅） | 200×24 |
+| ui_combo_badge.png | COMBO 星形徽章 | 192×192 |
+| ui_skill_frame.png | 技能格（未就緒） | 96×96 |
+| ui_skill_frame_ready.png | 技能格（就緒） | 96×96 |
+| ui_opt_btn.png | 答題選項按鈕 | 280×72 |
+| ui_question_box.png | 題目白框 | 640×120 |
+
+### 小圖示 — 尺寸 64×64
+
+| 檔名 | 用途 |
+|---|---|
+| icon_gold.png | 金幣 |
+| icon_diamond.png | 鑽石 |
+| icon_wood.png | 木材 |
+| icon_stone.png | 石材 |
+| icon_steel.png | 鋼鐵 |
+| icon_exp.png | 經驗 |
+| icon_pop.png | 人口 |
+| icon_pet.png | 寵物 |
+| icon_lock.png | 鎖定 |
+| icon_star.png | 星星 |
+| icon_check.png | 完成 |
+| icon_trophy.png | 成就 |
+| icon_daily.png | 每日任務 |
+| icon_shop.png | 商店 |
+| icon_bag.png | 背包 |
+
+### 地圖標記 — 尺寸 64×64
+
+| 檔名 | 用途 |
+|---|---|
+| map_pin.png | 區域圖釘 |
+| map_pin_lock.png | 未解鎖 |
+| map_pin_current.png | 目前所在 |
+| map_pin_boss.png | Boss 標記 |
+
+---
+
+## 九、行銷／其他（可選）
+
+| 檔名 | 用途 | 尺寸 |
+|---|---|---|
+| banner_title.png | Logo 知識之城 RPG | 800×200 |
+| og_cover.png | 社群分享圖 | 1200×630 |
+| loading.png | 載入圖 | 512×512 |
+| icon_app.png | PWA 圖示 | 512×512 |
+
+---
+
+## 數量總覽（已移除全部列車）
+
+| 分類 | 張數 | 主要尺寸 |
+|---|---|---|
+| 英雄 | 5 | 512×512 |
+| 怪物 | 52 | 512×512 |
+| Boss | 9 | 768×768 |
+| 寵物 | 24 | 512×512 |
+| 地圖／場景 BG | 約 14 | 1600×1000 等 |
+| 建築 | 10 | 256×256 |
+| UI／按鈕／圖示 | 約 45 | 見上表 |
+| **合計約** | **約 160 張** | |
+
+---
+
+## 建議製作順序
+
+**Phase A（約 18～22 張，立刻有感）**
+- 5 英雄 + mon_m01～m06 + pet_p1_0～p8_0
+- bg_home、bg_battle、bg_map、ui_avatar_frame
+
+**Phase B**
+- Boss 0～2、各區怪、bg_map_zone0～3
+
+**Phase C**
+- 10 建築、bg_city、其餘怪物
+
+**Phase D**
+- 剩餘怪／寵進化／世界總覽／UI 精修
+
+---
+
+## 程式說明（已內建）
+
+- 路徑規則：`img/` + 檔名（例如 hero:warrior → img/hero_warrior.png）
+- **缺圖自動退回**：英雄／怪物／寵物缺 PNG 時改用內建 SVG；Boss 等用 emoji
+- 有圖就自動顯示，無需改程式，上傳對應檔名即可
+- **已完全移除**：列車收藏、鐵道路線、火車站建築、列車長職業、列車相關成就
+
+---
+
+## 與宣傳圖對應的 UI 重點
+
+1. 首頁：玩家頭像 + 等級 + 金幣／鑽石 + 經驗條 + 大按鈕「開始冒險」
+2. 底部導覽：冒險｜地圖｜圖鑑｜寵物｜城市｜任務｜家長｜設定
+3. 戰鬥：怪物在上、英雄在下、大題目框、大型選項按鈕、COMBO 顯示
+4. 圖鑑：未取得顯示黑影、已取得彩色、完成度百分比
+5. 家長模式：正確率、弱點分析、學習曲線
+6. 整體風格：高彩度、Q 版、大型按鈕、強烈成就感、無網頁感

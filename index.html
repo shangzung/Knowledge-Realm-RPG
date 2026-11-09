@@ -1,0 +1,3038 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#5b9bd5" />
+<title>知識之城 RPG</title>
+<style>
+:root {
+  --p: #4a9fd4; --p2: #2a7ab0; --acc: #ff9a3c; --acc2: #ffd76a;
+  --g: #5bb85a; --r: #e05555; --pur: #7a4fc4;
+  --ink: #4a3320; --ink2: #7a5a3a; --muted: #8a6a4a; --text: #4a3320;
+  --gold: #d9a85a; --gold-d: #b9822f; --cream: #fffdf4; --cream2: #fdeec8;
+  --navy: #27366f; --navy2: #46589f;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+html, body {
+  height: 100%; height: 100dvh;
+  font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  color: var(--ink); background: radial-gradient(ellipse at 50% 0%, #5fa8d8, #1f4a6e);
+  overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+button, .btn, select { font-family: inherit; cursor: pointer; touch-action: manipulation; border: none; outline: none; }
+
+/* ===== APP 外框：天空 → 草地 ===== */
+#app {
+  display: flex; flex-direction: column; height: 100%; height: 100dvh;
+  max-width: 430px; margin: 0 auto; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, #7ccaf7 0, #bfe8fb 90px, #9ee06c 230px, #6cc04c 100%);
+  box-shadow: 0 0 40px rgba(0,0,0,.3);
+}
+
+/* ===== 頂部狀態列（與戰鬥頂欄同風格） ===== */
+#top-status {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px; z-index: 20;
+  padding: calc(8px + var(--safe-t)) 10px 4px;
+}
+.avatar-wrap {
+  position: relative; flex: none; width: 50px; height: 50px; border-radius: 50%;
+  background: linear-gradient(#fff6d6, #ffe4a0); border: 3px solid #fff;
+  box-shadow: 0 3px 0 #c4892a, 0 4px 10px rgba(0,0,0,.2);
+}
+#avatar-ico {
+  width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+#avatar-ico > div { width: 100% !important; height: 100% !important; }
+#avatar-ico img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: 50% 8%; transform: scale(1.75); transform-origin: 50% 18%; }
+.avatar-wrap .lv {
+  position: absolute; bottom: -5px; right: -7px;
+  background: linear-gradient(#b894f2, #7a4fc4); color: #fff; font-size: 10px; font-weight: 900;
+  padding: 1px 7px; border-radius: 99px; border: 2px solid #fff; box-shadow: 0 2px 0 #4c2f8f;
+}
+.player-info {
+  flex: 1; min-width: 0; padding: 4px 10px 5px;
+  background: linear-gradient(180deg, #fffef2, #f4f0c8); border: 3px solid #fff; border-radius: 16px;
+  box-shadow: 0 3px 0 rgba(90,120,50,.45), 0 4px 10px rgba(0,0,0,.12);
+}
+.player-name { font-weight: 900; font-size: 13px; color: #3f6a2c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exp-bar { height: 11px; margin-top: 3px; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.exp-bar > i { display: block; height: 100%; border-radius: 99px; transition: width .3s; background: linear-gradient(180deg, #8ad0ff, #3b8be0); }
+.currency-row { display: flex; flex-direction: column; gap: 4px; flex: none; }
+.currency {
+  display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 9px;
+  font-size: 12px; font-weight: 900; color: #5a3a18; white-space: nowrap;
+  background: linear-gradient(180deg, #fffdf4, #ffeec2); border: 2px solid #e6b85a; border-radius: 99px;
+  box-shadow: 0 2px 0 #c99532, 0 3px 8px rgba(0,0,0,.12);
+}
+.currency.gem { border-color: #8ec0ef; background: linear-gradient(180deg, #f6fbff, #d7ecff); box-shadow: 0 2px 0 #6aa4d6, 0 3px 8px rgba(0,0,0,.12); }
+
+/* ===== 內容區 ===== */
+#main { flex: 1; min-height: 0; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.panel {
+  display: none; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; padding: 8px 12px 20px;
+}
+.panel.active { display: block; animation: panelIn .25s ease; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* 面板：奶油金框 + 紫色緞帶標題（同「知識挑戰！」） */
+.card {
+  position: relative; margin: 24px 0 14px; padding: 24px 12px 12px;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8);
+  border: 4px solid #d9a85a; border-radius: 22px;
+  box-shadow: 0 5px 0 #b9822f, 0 10px 20px rgba(40,60,20,.22), inset 0 2px 0 #fff;
+}
+.card:first-child { margin-top: 20px; }
+.card > h3 {
+  position: absolute; left: 50%; top: -16px; transform: translateX(-50%); margin: 0; display: block;
+  white-space: nowrap; padding: 4px 22px; font-size: 14px; font-weight: 900; letter-spacing: 1px; color: #fff;
+  background: linear-gradient(#a37cf4, #6a3fc4); border: 2px solid #f0c860; border-radius: 10px;
+  box-shadow: 0 3px 0 #4a2a94; text-shadow: 0 1px 0 #3d1f80;
+}
+.card > .muted:first-of-type { display: block; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 380px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+.muted { color: var(--muted); font-size: 12px; font-weight: 700; }
+.center { text-align: center; }
+label.muted { display: block; margin: 2px 0 6px; }
+
+/* 寶石按鈕 */
+.btn {
+  min-height: 46px; padding: 10px 16px; border-radius: 16px;
+  font-weight: 900; font-size: 15px; color: #fff; letter-spacing: .5px;
+  border: 3px solid rgba(255,255,255,.9);
+  background: linear-gradient(#6cc0ff, #2f86d8); box-shadow: 0 4px 0 #1f5f9f, 0 6px 10px rgba(0,0,0,.15);
+  text-shadow: 0 1px 0 rgba(0,0,0,.3); transition: transform .1s, box-shadow .1s;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1f5f9f; }
+.btn.green { background: linear-gradient(#9ae27c, #3aa83a); box-shadow: 0 4px 0 #26772a, 0 6px 10px rgba(0,0,0,.15); }
+.btn.amber { background: linear-gradient(#ffe08a, #f5a21e); box-shadow: 0 4px 0 #b87310, 0 6px 10px rgba(0,0,0,.15); color: #5a3a18; text-shadow: 0 1px 0 rgba(255,255,255,.55); }
+.btn.red { background: linear-gradient(#ff9a8a, #e0453a); box-shadow: 0 4px 0 #a02a22, 0 6px 10px rgba(0,0,0,.15); }
+.btn.purple { background: linear-gradient(#b894f2, #7a4fc4); box-shadow: 0 4px 0 #4c2f8f, 0 6px 10px rgba(0,0,0,.15); }
+.btn.gray { background: linear-gradient(#f2f2f2, #cfcfcf); color: #666; box-shadow: 0 4px 0 #999; text-shadow: none; }
+.btn.green:active { box-shadow: 0 1px 0 #26772a; } .btn.amber:active { box-shadow: 0 1px 0 #b87310; }
+.btn.red:active { box-shadow: 0 1px 0 #a02a22; } .btn.purple:active { box-shadow: 0 1px 0 #4c2f8f; }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: .5; pointer-events: none; filter: grayscale(.4); }
+.btn.sm { min-height: 38px; padding: 6px 14px; font-size: 13px; border-radius: 14px; }
+
+/* 大按鈕「開始冒險」 */
+.big-start {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; margin: 0 0 6px; padding: 14px; font-size: 20px; font-weight: 900; letter-spacing: 3px;
+  color: #fff; border-radius: 22px; border: 4px solid #fff;
+  background: linear-gradient(#ffd45a, #f0820a);
+  box-shadow: 0 6px 0 #b45a05, 0 10px 18px rgba(0,0,0,.25);
+  text-shadow: 0 2px 0 #b45a05, 0 0 8px rgba(120,50,0,.4);
+  animation: startPulse 1.8s ease-in-out infinite;
+}
+.big-start:active { transform: translateY(4px); box-shadow: 0 2px 0 #b45a05; animation: none; }
+@keyframes startPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.12); } }
+
+/* 職業卡 */
+.class-card {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; min-height: 118px;
+  border: 3px solid #e6cf9a; border-radius: 16px; background: linear-gradient(180deg, #fff, #fdf3d6);
+  color: var(--ink); box-shadow: 0 3px 0 #d9b86a; transition: transform .12s;
+}
+.class-card:active { transform: translateY(2px); }
+.class-card.sel { border-color: #a37cf4; background: linear-gradient(180deg, #f9f3ff, #e6d8fb); box-shadow: 0 0 0 2px #ffd23a, 0 4px 0 #7a4fc4; }
+.class-card b { font-size: 13px; color: #4a3320; }
+.class-card small { font-size: 10px; color: var(--ink2); text-align: center; line-height: 1.2; font-weight: 700; }
+
+/* ===== 底部導覽（深藍金邊，同技能列） ===== */
+#nav {
+  flex: 0 0 auto; display: flex; gap: 2px; z-index: 20; overflow-x: auto; scrollbar-width: none;
+  padding: 8px 6px calc(8px + var(--safe-b));
+  background: linear-gradient(180deg, #46589f, #27366f); border-top: 3px solid #f0c860;
+  box-shadow: 0 -4px 14px rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.15);
+}
+#nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  flex: 1 0 auto; min-width: 52px; padding: 2px; background: transparent;
+  font-size: 10px; font-weight: 800; color: #cfd8ff; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.nav-btn .ico {
+  width: 36px; height: 36px; border-radius: 50%; font-size: 20px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.10); border: 2px solid transparent; transition: transform .18s, box-shadow .18s;
+}
+.nav-btn.active { color: #fff; }
+.nav-btn.active .ico {
+  background: radial-gradient(circle at 35% 30%, #ffe48a, #f08a10 75%); border-color: #fff;
+  transform: translateY(-4px) scale(1.1);
+  box-shadow: 0 0 12px 2px rgba(255,210,60,.8), 0 3px 0 rgba(0,0,0,.3);
+}
+
+/* ===== BATTLE — 直立式兒童 RPG（對齊宣傳圖） ===== */
+#battle {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  justify-content: center; isolation: isolate;
+  background: linear-gradient(180deg, #7ccaf7 0%, #cdeccf 50%, #6fc04e 100%);
+}
+#battle.active { display: flex; }
+.battle-box {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 430px; height: 100%; height: 100dvh;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: #6fc04e; box-shadow: 0 0 40px rgba(0,0,0,.28);
+  --sp: clamp(92px, min(21vh, 36vw), 160px);
+}
+
+/* ---- 場景（背景 + 角色 + 頂欄疊在同一層） ---- */
+.battle-scene { position: relative; flex: 1 1 0; min-height: 150px; overflow: hidden; }
+.bg-layer { position: absolute; inset: 0; pointer-events: none; }
+.bg-layer svg { width: 100%; height: 100%; display: block; }
+.bg-img { background-size: cover; background-position: center bottom; opacity: 0; transition: opacity .4s; }
+.bg-img.on { opacity: 1; }
+.battle-scene.boss .bg-svg { filter: hue-rotate(-32deg) saturate(.85) brightness(.86); }
+.battle-scene.boss::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(ellipse at 50% 100%, transparent 40%, rgba(90,0,70,.30));
+}
+
+/* ---- 頂欄 ---- */
+.bt-top {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 8;
+  display: flex; align-items: center; gap: 6px;
+  padding: calc(8px + var(--safe-t)) 8px 0;
+}
+.bt-pause {
+  flex: none; width: 36px; height: 36px; border-radius: 12px; font-size: 15px; color: #fff;
+  background: linear-gradient(#b894f2, #7a4fc4); border: 3px solid #fff;
+  box-shadow: 0 3px 0 #4c2f8f, 0 4px 10px rgba(0,0,0,.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.bt-pause:active { transform: translateY(2px); box-shadow: 0 1px 0 #4c2f8f; }
+.bt-title {
+  flex: 1; min-width: 0; height: 32px; padding: 0 12px;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 900; color: #3f6a2c;
+  background: linear-gradient(180deg, #fffef2, #f4f0c8);
+  border: 3px solid #fff; border-radius: 99px;
+  box-shadow: 0 3px 0 rgba(90,120,50,.45), 0 4px 10px rgba(0,0,0,.12);
+}
+.bt-title b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 900; }
+.bt-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 3px; height: 28px;
+  padding: 0 9px; font-size: 12px; font-weight: 900; color: #5a3a18; white-space: nowrap;
+  background: linear-gradient(180deg, #fffdf4, #ffeec2);
+  border: 2px solid #e6b85a; border-radius: 99px;
+  box-shadow: 0 2px 0 #c99532, 0 3px 8px rgba(0,0,0,.12);
+}
+.bt-chip.gem { border-color: #8ec0ef; background: linear-gradient(180deg, #f6fbff, #d7ecff); box-shadow: 0 2px 0 #6aa4d6, 0 3px 8px rgba(0,0,0,.12); }
+.bt-chip.hp  { border-color: #f0a0b0; background: linear-gradient(180deg, #fff8fa, #ffe0e8); box-shadow: 0 2px 0 #d27086, 0 3px 8px rgba(0,0,0,.12); color: #b03050; }
+.bt-chip small { font-size: 10px; font-weight: 800; color: #d9506b; }
+.bt-sub {
+  position: absolute; left: 8px; right: 8px; top: calc(52px + var(--safe-t)); z-index: 8;
+  display: flex; justify-content: space-between; align-items: center; pointer-events: none;
+}
+
+/* ---- 角色站位：同一條地平線 ---- */
+.battle-arena {
+  position: absolute; left: 0; right: 0; bottom: 4px; z-index: 3;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 6px;
+}
+.ba-player, .ba-enemy { position: relative; display: flex; justify-content: center; align-items: flex-end; }
+.ba-player { width: 54%; padding-left: calc(var(--sp) * .30); }
+.ba-enemy  { width: 46%; }
+
+.char-sprite {
+  position: relative; z-index: 2; flex: none;
+  width: var(--sp); height: var(--sp);
+  display: flex; align-items: flex-end; justify-content: center;
+  filter: drop-shadow(0 4px 5px rgba(20,60,20,.28));
+}
+.char-sprite img, .char-sprite > div, .char-sprite .art-fallback {
+  width: 100% !important; height: 100% !important; max-width: none; max-height: none; object-fit: contain;
+}
+/* Boss：明顯比一般怪大，並限制不超過場景高度 */
+.battle-scene { container-type: size; }
+.ba-enemy.boss { width: 56%; margin-right: -6px; justify-content: flex-end; }
+.char-sprite.boss {
+  width: calc(var(--sp) * 1.6); height: calc(var(--sp) * 1.6);
+  width: min(calc(var(--sp) * 1.6), calc(100cqh - 96px), 62cqw);
+  height: min(calc(var(--sp) * 1.6), calc(100cqh - 96px), 62cqw);
+}
+.char-sprite::after {
+  content: ''; position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%);
+  width: 70%; height: 12px; z-index: -1; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(20,70,20,.38) 0%, transparent 72%);
+}
+.ba-enemy .char-sprite { animation: foeIdle 2.4s ease-in-out infinite; }
+@keyframes foeIdle { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+
+/* 寵物：站在主角「身旁」的同一條地平線上（不再疊到腳底） */
+.pet-sprite {
+  position: absolute; left: 8px; bottom: 0; z-index: 4;
+  width: calc(var(--sp) * .44); height: calc(var(--sp) * .44);
+  display: flex; align-items: flex-end; justify-content: center;
+  filter: drop-shadow(0 3px 3px rgba(20,60,20,.3));
+  pointer-events: none;
+  animation: petBob 2.2s ease-in-out infinite;
+}
+.pet-sprite:empty { display: none; }
+.pet-sprite img, .pet-sprite > div, .pet-sprite .art-fallback {
+  width: 100% !important; height: 100% !important; max-width: none; max-height: none; object-fit: contain;
+}
+.pet-sprite .art-fallback {
+  text-align: center; transform: scaleX(-1);
+  font-size: calc(var(--sp) * .32) !important; line-height: calc(var(--sp) * .44);
+  filter: drop-shadow(0 2px 0 rgba(255,255,255,.5));
+}
+.pet-sprite::after {
+  content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+  width: 76%; height: 8px; z-index: -1; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(20,70,20,.38) 0%, transparent 72%);
+}
+@keyframes petBob { 0%,100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+
+/* ---- COMBO：放在頂欄第二排正中間（天空區），不會壓到角色 ---- */
+.combo {
+  display: none; position: relative; flex: 0 1 auto; min-width: 0;
+  height: 32px; padding: 0 12px 0 30px; align-items: center; gap: 5px; white-space: nowrap;
+  border-radius: 99px; border: 3px solid #ffd96a; color: #fff;
+  background: linear-gradient(180deg, #b58cf8, #6a35c8);
+  box-shadow: 0 3px 0 #3f1f85, 0 5px 12px rgba(60,20,110,.35), inset 0 2px 0 rgba(255,255,255,.3);
+}
+.combo.show { display: inline-flex; }
+.combo svg { position: absolute; left: -13px; top: 50%; width: 40px; height: 40px; margin-top: -20px; filter: drop-shadow(0 2px 2px rgba(60,20,110,.5)); }
+.combo span { position: relative; font-size: 11px; font-weight: 900; letter-spacing: .6px; text-shadow: 0 1px 0 #3f1f85; }
+.combo b { position: relative; font-size: 19px; font-weight: 900; line-height: 1; color: #ffe46a; text-shadow: 0 2px 0 #3f1f85; }
+.combo.t2 { background: linear-gradient(180deg, #ffb35c, #e8650a); border-color: #fff0a0; box-shadow: 0 3px 0 #9a3d05, 0 5px 12px rgba(180,80,0,.4), inset 0 2px 0 rgba(255,255,255,.35); }
+.combo.t2 span, .combo.t2 b { text-shadow: 0 2px 0 #9a3d05; }
+.combo.t3 { background: linear-gradient(180deg, #ff8a98, #d6203f); border-color: #fff0a0; box-shadow: 0 3px 0 #8a1028, 0 0 14px rgba(255,80,100,.75), inset 0 2px 0 rgba(255,255,255,.35); }
+.combo.t3 span, .combo.t3 b { text-shadow: 0 2px 0 #8a1028; }
+.combo.pop { animation: comboPop .45s cubic-bezier(.2,1.4,.4,1); }
+@keyframes comboPop { 0% { transform: scale(.5); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@media (max-width: 380px) {
+  .combo { padding: 0 9px 0 26px; height: 30px; } .combo span { font-size: 10px; } .combo b { font-size: 17px; }
+  .bt-chip.hp small { display: none; }
+}
+
+/* ---- 下半部 ---- */
+.battle-lower {
+  flex: 0 0 auto; position: relative; z-index: 4;
+  background: linear-gradient(180deg, #6cc04c 0%, #5db443 100%);
+  padding-top: 8px;
+}
+.battle-lower::before {
+  content: ''; position: absolute; left: 0; right: 0; top: -12px; height: 14px;
+  background: radial-gradient(ellipse 60% 100% at 50% 100%, #6cc04c 70%, transparent 71%);
+  pointer-events: none;
+}
+
+/* 狀態卡 */
+.battle-cards { display: flex; gap: 8px; padding: 0 8px; }
+.stat-card {
+  flex: 1; min-width: 0; padding: 6px 8px 7px; border-radius: 16px;
+  border: 3px solid #c9a8ee; background: linear-gradient(180deg, #fffdfa, #f8eefc);
+  box-shadow: 0 4px 0 #9a74c8, 0 6px 12px rgba(30,60,20,.18);
+}
+.stat-card.foe { border-color: #8ec4ee; background: linear-gradient(180deg, #fbfeff, #e6f3fd); box-shadow: 0 4px 0 #5f9ccc, 0 6px 12px rgba(30,60,20,.18); }
+.sc-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.sc-portrait {
+  flex: none; width: 34px; height: 34px; border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+  background: linear-gradient(#fff6d6, #ffe4a0); border: 2px solid #e0a84a;
+}
+.sc-portrait > div, .sc-portrait img { width: 100% !important; height: 100% !important; }
+.sc-id { min-width: 0; flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.sc-name { font-size: 13px; font-weight: 900; color: #6a35a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-card.foe .sc-name { color: #22649e; }
+.sc-lv { flex: none; font-size: 10px; font-weight: 900; color: #fff; padding: 1px 7px; border-radius: 99px; background: linear-gradient(#b894f2, #7a4fc4); }
+.stat-card.foe .sc-lv { background: linear-gradient(#6cb6ee, #2f7fc0); }
+.sc-lv.boss { background: linear-gradient(#ff8a7a, #d63a3a) !important; }
+.bar {
+  position: relative; height: 14px; margin-top: 3px; overflow: hidden;
+  background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px;
+}
+.bar i { display: block; height: 100%; border-radius: 99px; transition: width .3s; }
+.bar.hp i { background: linear-gradient(180deg, #ff9aa8, #e0405a); }
+.bar.mp i { background: linear-gradient(180deg, #8ad0ff, #3b8be0); }
+.bar span {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 900; color: #fff; letter-spacing: .3px;
+  text-shadow: 0 1px 1px rgba(60,20,30,.65), 0 0 2px rgba(60,20,30,.5);
+}
+.sc-stats { display: flex; gap: 10px; margin-top: 5px; font-size: 11px; font-weight: 800; color: #6b4a20; white-space: nowrap; }
+
+/* 知識挑戰面板 */
+.battle-panel {
+  position: relative; margin: 16px 8px 0; padding: 20px 10px 10px;
+  border: 4px solid #d9a85a; border-radius: 22px;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8);
+  box-shadow: 0 5px 0 #b9822f, 0 10px 20px rgba(40,60,20,.22), inset 0 2px 0 #fff;
+}
+.panel-ribbon {
+  position: absolute; left: 50%; top: -15px; transform: translateX(-50%); white-space: nowrap;
+  padding: 4px 22px; font-size: 14px; font-weight: 900; letter-spacing: 1px; color: #fff;
+  background: linear-gradient(#a37cf4, #6a3fc4); border: 2px solid #f0c860; border-radius: 10px;
+  box-shadow: 0 3px 0 #4a2a94; text-shadow: 0 1px 0 #3d1f80;
+}
+.q-box {
+  min-height: 52px; padding: 2px 6px 8px; margin: 0;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 18px; font-weight: 900; line-height: 1.35; color: #3d2b1f; word-break: break-word;
+}
+.q-box.long { font-size: 15px; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opt-btn {
+  position: relative; display: flex; align-items: center; gap: 8px;
+  min-height: 50px; padding: 6px 10px; text-align: left;
+  font-size: 16px; font-weight: 900; color: #3d2b1f; line-height: 1.15;
+  border: 3px solid; border-radius: 14px;
+  transition: transform .1s, box-shadow .1s, filter .2s;
+}
+.opt-btn .ol {
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.25);
+}
+.opt-btn .ot { flex: 1; min-width: 0; word-break: break-word; }
+.opt-btn .mark {
+  position: absolute; right: -7px; top: -9px; width: 24px; height: 24px; border-radius: 50%;
+  display: none; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #fff; border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,.25);
+}
+.opt-btn.o0 { background: linear-gradient(180deg, #fff1ef, #ffd9d5); border-color: #f0a29a; box-shadow: 0 4px 0 #d27f76; }
+.opt-btn.o0 .ol { background: linear-gradient(#ff8a7a, #e0483a); }
+.opt-btn.o1 { background: linear-gradient(180deg, #fffbe6, #ffefb0); border-color: #ecc34f; box-shadow: 0 4px 0 #c99a1c; }
+.opt-btn.o1 .ol { background: linear-gradient(#ffd45a, #ec9a10); }
+.opt-btn.o2 { background: linear-gradient(180deg, #eef8ff, #cfe8ff); border-color: #82bdf0; box-shadow: 0 4px 0 #5b97cc; }
+.opt-btn.o2 .ol { background: linear-gradient(#6cc0ff, #2f86d8); }
+.opt-btn.o3 { background: linear-gradient(180deg, #f0fbea, #d3f0c6); border-color: #86cc72; box-shadow: 0 4px 0 #5ea24c; }
+.opt-btn.o3 .ol { background: linear-gradient(#9ae27c, #3aa83a); }
+/* 選項含顏色（紅色、red…）時：所有選項框改中性底色，避免「框的顏色」和「答案的顏色」互相矛盾 */
+.opts.neutral .opt-btn { background: linear-gradient(180deg, #fffef8, #fbeecb); border-color: #e0b86a; box-shadow: 0 4px 0 #c99a3c; }
+.opts.neutral .opt-btn .ol { background: linear-gradient(#b894f2, #7a4fc4); }
+.opts.neutral .opt-btn.correct { border-color: #3cb04a; box-shadow: 0 4px 0 #2a8a38, 0 0 16px rgba(80,210,90,.7); }
+.opts.neutral .opt-btn.wrong { border-color: #e05555; box-shadow: 0 4px 0 #a83333; }
+.sw { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(60,40,20,.35); box-shadow: inset 0 -3px 0 rgba(0,0,0,.14), 0 1px 0 #fff; }
+.opt-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.2); }
+.opt-btn:disabled { pointer-events: none; }
+.opt-btn.correct { filter: brightness(1.06); border-color: #3cb04a; box-shadow: 0 4px 0 #2a8a38, 0 0 16px rgba(80,210,90,.7); animation: correctGlow .5s ease; }
+.opt-btn.correct .mark { display: flex; background: #3cb04a; }
+.opt-btn.correct .mark::before { content: '✓'; }
+.opt-btn.wrong { border-color: #e05555; box-shadow: 0 4px 0 #a83333; animation: wrongShake .4s ease; }
+.opt-btn.wrong .mark { display: flex; background: #e05555; }
+.opt-btn.wrong .mark::before { content: '✕'; }
+.hint-btn {
+  grid-column: 1 / -1; min-height: 34px; padding: 4px 10px; border-radius: 12px;
+  font-size: 13px; font-weight: 900; color: #5a3a18;
+  background: linear-gradient(#ffe08a, #f5b43a); border: 2px solid #c98a1c; box-shadow: 0 3px 0 #a86f10;
+}
+.hint-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #a86f10; }
+@keyframes correctGlow { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes wrongShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.battle-hint { text-align: center; font-size: 10.5px; font-weight: 800; color: #9a7a4a; margin-top: 6px; }
+
+/* 技能列 */
+.skill-bar {
+  display: flex; align-items: center; gap: 6px; margin: 10px 8px calc(8px + var(--safe-b));
+  padding: 8px 10px 6px 8px; border-radius: 22px;
+  background: linear-gradient(180deg, #46589f, #27366f); border: 3px solid #f0c860;
+  box-shadow: 0 4px 0 #151d44, 0 8px 16px rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.18);
+}
+.energy-box { flex: none; width: 82px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.e-star { position: relative; width: 44px; height: 42px; display: flex; align-items: center; justify-content: center; }
+.e-star svg { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+.e-star b { position: relative; font-size: 12px; font-weight: 900; color: #fff; text-shadow: 0 1px 0 #a35a00, 0 0 3px #a35a00; margin-top: 3px; }
+.energy-bar { width: 100%; height: 11px; border-radius: 99px; overflow: hidden; background: #14204f; border: 2px solid #7f90d8; }
+.energy-bar > i { display: block; height: 100%; width: 0; border-radius: 99px; transition: width .3s; background: linear-gradient(90deg, #6cc8ff, #4aa0f0 45%, #ffd76a 80%, #ff9a3c); }
+.energy-lbl { font-size: 9.5px; font-weight: 900; color: #cfd8ff; letter-spacing: .5px; }
+.skill-dock { flex: 1; min-width: 0; display: flex; justify-content: space-around; align-items: flex-start; gap: 2px; }
+.skill-slot { width: 56px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.skill-btn {
+  position: relative; width: 50px; height: 50px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 3px solid #f0c860; font-size: 23px; color: #fff;
+  box-shadow: 0 3px 0 rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.4);
+  transition: transform .12s;
+}
+.skill-btn.c0 { background: radial-gradient(circle at 35% 30%, #ffb0a0, #e0453a 70%); }
+.skill-btn.c1 { background: radial-gradient(circle at 35% 30%, #ffe48a, #f08a10 70%); }
+.skill-btn.c2 { background: radial-gradient(circle at 35% 30%, #aee4ff, #2f86d8 70%); }
+.skill-btn.c3 { background: radial-gradient(circle at 35% 30%, #c4f4a8, #3aa83a 70%); }
+.skill-btn:active { transform: translateY(2px); }
+.skill-btn.locked { filter: grayscale(.75) brightness(.7); }
+.skill-btn.ready { animation: skillPulse 1.3s ease infinite; }
+.skill-btn.sel { transform: translateY(-4px) scale(1.08); border-color: #fff; box-shadow: 0 0 0 2px #ffd23a, 0 0 14px 2px rgba(255,210,60,.85), 0 3px 0 rgba(0,0,0,.35); }
+.sk-cost {
+  position: absolute; right: -5px; top: -5px; min-width: 18px; height: 18px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center; font-style: normal;
+  font-size: 11px; font-weight: 900; color: #fff; border-radius: 99px;
+  background: linear-gradient(#ff7a7a, #d83a3a); border: 2px solid #fff;
+}
+.skill-slot small { font-size: 10px; font-weight: 800; color: #e6ecff; text-align: center; line-height: 1.1; max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes skillPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.18); } }
+
+.shake { animation: shk .35s; }
+.lunge { animation: lng .4s; }
+@keyframes shk { 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+@keyframes lng { 35%{transform:translateX(18px) scale(1.08)} 100%{transform:translateX(0) scale(1)} }
+
+/* 浮動傷害（黃字＋棕色描邊，如宣傳圖的「168!」） */
+.fl {
+  position: absolute; left: 50%; top: -4px; transform: translateX(-50%);
+  font-weight: 900; font-size: 34px; color: #ffd23a; white-space: nowrap; pointer-events: none; z-index: 12;
+  -webkit-text-stroke: 3px #b5560a; paint-order: stroke fill;
+  text-shadow: 0 3px 0 #b5560a, 0 0 14px rgba(255,200,60,.85);
+  animation: flt 1s forwards;
+}
+.fl.crit { color: #ff9a2a; font-size: 38px; }
+.fl.miss { color: #dfe8f0; -webkit-text-stroke-color: #6b7c8c; text-shadow: 0 3px 0 #6b7c8c; font-size: 26px; }
+.fl.weak { color: #ff7aa8; -webkit-text-stroke-color: #a02050; text-shadow: 0 3px 0 #a02050; }
+.fl.super { color: #ffe84a; font-size: 34px; }
+.fl.pl { color: #ff6a6a; -webkit-text-stroke-color: #8a1818; text-shadow: 0 3px 0 #8a1818, 0 0 12px rgba(255,90,90,.6); }
+@keyframes flt {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.6); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(-6px) scale(1.25); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-54px) scale(1); }
+}
+
+@media (max-height: 700px) {
+  .battle-hint { display: none; }
+  .q-box { min-height: 40px; font-size: 16px; padding-bottom: 6px; }
+  .opt-btn { min-height: 44px; font-size: 15px; }
+  .battle-panel { margin-top: 14px; padding-top: 18px; }
+  .skill-bar { margin-top: 8px; }
+  .skill-btn { width: 44px; height: 44px; font-size: 20px; }
+}
+
+/* ===== 彈窗（同面板風格） ===== */
+#levelup, #pause-menu, #result-modal, #daily-modal {
+  display: none; position: fixed; inset: 0; z-index: 300; padding: 28px 16px 16px;
+  background: rgba(20,28,60,.72); backdrop-filter: blur(3px);
+  align-items: center; justify-content: center;
+}
+#levelup.active, #pause-menu.active, #result-modal.active, #daily-modal.active { display: flex; }
+.modal-box {
+  position: relative; width: 100%; max-width: 380px; padding: 30px 14px 14px;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8); border: 4px solid #d9a85a; border-radius: 24px;
+  box-shadow: 0 6px 0 #b9822f, 0 16px 40px rgba(0,0,0,.4), inset 0 2px 0 #fff;
+  animation: popIn .3s cubic-bezier(.2,1.3,.4,1); max-height: 88dvh;
+}
+@keyframes popIn { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: none; } }
+.modal-box > h2 {
+  position: absolute !important; left: 50%; top: -20px; transform: translateX(-50%); margin: 0 !important;
+  white-space: nowrap; padding: 6px 28px; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: #fff;
+  background: linear-gradient(#a37cf4, #6a3fc4); border: 2px solid #f0c860; border-radius: 12px;
+  box-shadow: 0 3px 0 #4a2a94; text-shadow: 0 1px 0 #3d1f80;
+}
+.modal-box p { margin: 4px 0; font-weight: 800; color: var(--ink); font-size: 14px; }
+.modal-box p.muted { color: var(--muted); font-size: 12px; }
+.rw-stars { font-size: 38px; letter-spacing: 6px; color: #ffc83a; text-shadow: 0 3px 0 #b5760a, 0 0 14px rgba(255,200,60,.6); line-height: 1.2; margin: 4px 0 6px; }
+.rw-stars s { text-decoration: none; color: #d9ccb0; text-shadow: 0 2px 0 #b9a883; }
+.rw-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0 4px; }
+.rw-row .bt-chip, .modal-box .bt-chip { height: 30px; font-size: 13px; }
+.skill-pick { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.skill-pick button {
+  text-align: left; padding: 12px 14px; border-radius: 16px; border: 3px solid #a37cf4;
+  background: linear-gradient(180deg, #fff, #f3eaff); font-weight: 800; color: var(--ink); box-shadow: 0 4px 0 #7a4fc4;
+}
+.skill-pick button:active { transform: translateY(3px); box-shadow: 0 1px 0 #7a4fc4; }
+.skill-pick button b { font-size: 15px; color: #4a2a94; }
+
+/* Toast：奶油金膠囊 */
+#toasts { position: fixed; top: 14%; left: 50%; transform: translateX(-50%); z-index: 400; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 92%; max-width: 380px; }
+.toast {
+  background: linear-gradient(180deg, #fffdf4, #fdeec8); color: #4a3320; padding: 9px 18px; border-radius: 99px;
+  border: 3px solid #d9a85a; box-shadow: 0 4px 0 #b9822f, 0 8px 16px rgba(0,0,0,.25);
+  font-weight: 900; font-size: 14px; text-align: center; animation: fadeUp 2.2s ease forwards;
+}
+@keyframes fadeUp { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ===== 清單 / 進度 / 標籤 ===== */
+.list-item {
+  display: flex; gap: 10px; align-items: center; padding: 10px; margin-bottom: 10px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 18px;
+  box-shadow: 0 3px 0 #d9b86a;
+}
+.list-item:last-child { margin-bottom: 2px; }
+.list-item > :first-child:not(.info) {
+  flex: none; width: 58px; height: 58px; border-radius: 16px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; font-size: 30px;
+  background: linear-gradient(180deg, #eaf6ff, #cfe8ff); border: 3px solid #8ec4ee;
+}
+.list-item > :first-child > div { margin: 0 auto; }
+.list-item .info { flex: 1; min-width: 0; }
+.list-item .info b { display: block; font-size: 15px; font-weight: 900; color: #4a3320; }
+.list-item .info small { display: block; color: var(--ink2); font-size: 11.5px; font-weight: 700; line-height: 1.4; }
+.progress { height: 12px; margin-top: 5px; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.progress > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(180deg, #8ad0ff, #3b8be0); transition: width .3s; }
+.tag {
+  flex: none; font-size: 11px; font-weight: 900; padding: 3px 10px; border-radius: 99px; white-space: nowrap;
+  background: linear-gradient(180deg, #fff6d6, #f0c860); color: #5a3a18; border: 2px solid #e0b86a;
+}
+.tag.ok { background: linear-gradient(180deg, #c9f2b8, #7fd36a); border-color: #4aa840; color: #1f5a1a; }
+select {
+  width: 100%; padding: 10px 12px; min-height: 46px; border-radius: 14px; border: 3px solid #a37cf4;
+  font-size: 14px; font-weight: 800; color: var(--ink); background: linear-gradient(180deg, #fff, #f3eaff);
+  box-shadow: 0 3px 0 #7a4fc4;
+}
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+/* ===== 首頁：場景英雄區 ===== */
+.home-scene {
+  position: relative; height: clamp(236px, 33vh, 310px); margin: 8px 0 14px; overflow: hidden;
+  border: 4px solid #d9a85a; border-radius: 24px;
+  box-shadow: 0 5px 0 #b9822f, 0 10px 20px rgba(40,60,20,.25);
+  --hs: clamp(120px, 20vh, 170px);
+}
+.hs-top { position: absolute; left: 8px; right: 8px; top: 8px; z-index: 6; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.hs-chap {
+  min-width: 0; height: 30px; padding: 0 12px; display: flex; align-items: center; gap: 4px;
+  font-size: 12.5px; font-weight: 900; color: #3f6a2c;
+  background: linear-gradient(180deg, #fffef2, #f4f0c8); border: 3px solid #fff; border-radius: 99px;
+  box-shadow: 0 3px 0 rgba(90,120,50,.45), 0 4px 10px rgba(0,0,0,.12);
+}
+.hs-chap b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hs-stage { position: absolute; left: 0; right: 0; bottom: 64px; z-index: 3; display: flex; justify-content: center; align-items: flex-end; padding-left: calc(var(--hs) * .35); }
+.hs-hero { position: relative; flex: none; width: var(--hs); height: var(--hs); filter: drop-shadow(0 4px 5px rgba(20,60,20,.3)); animation: floatY 3.4s ease-in-out infinite; }
+.hs-hero > div, .hs-hero img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.hs-hero::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 70%; height: 12px; border-radius: 50%; z-index: -1; background: radial-gradient(ellipse, rgba(20,70,20,.38), transparent 72%); }
+.hs-pet { position: absolute; left: calc(50% - var(--hs) * .98); bottom: 0; width: calc(var(--hs) * .44); height: calc(var(--hs) * .44); z-index: 4; animation: petBob 2.2s ease-in-out infinite; filter: drop-shadow(0 3px 3px rgba(20,60,20,.3)); }
+.hs-pet:empty { display: none; }
+.hs-pet > div, .hs-pet img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.hs-pet .art-fallback { text-align: center; transform: scaleX(-1); font-size: calc(var(--hs) * .32) !important; line-height: calc(var(--hs) * .44); }
+.hs-card {
+  position: absolute; left: 10px; right: 10px; bottom: 8px; z-index: 6; padding: 6px 10px 6px;
+  background: linear-gradient(180deg, #fffdf4, #fdeec8); border: 3px solid #d9a85a; border-radius: 16px;
+  box-shadow: 0 3px 0 #b9822f, 0 6px 12px rgba(40,60,20,.2);
+}
+.hs-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.hs-name { font-size: 15px; font-weight: 900; color: #6a35a8; }
+.hs-lv { font-size: 11px; font-weight: 900; color: #fff; padding: 1px 8px; border-radius: 99px; background: linear-gradient(#b894f2, #7a4fc4); margin-left: 6px; }
+.hs-exp { margin-top: 3px; }
+.hs-exp .bar span { font-size: 9px; }
+.hs-exp .bar { height: 14px; margin-top: 0; }
+.bar { position: relative; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.bar i { display: block; height: 100%; border-radius: 99px; transition: width .3s; background: linear-gradient(180deg, #8ad0ff, #3b8be0); }
+.bar span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 900; color: #fff; text-shadow: 0 1px 1px rgba(20,30,70,.65); }
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* 每日任務 */
+.daily-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.daily-card {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 16px; box-shadow: 0 3px 0 #d9b86a;
+}
+.daily-card .d-ico { flex: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; background: radial-gradient(circle at 35% 30%, #ffe48a, #f08a10 75%); border: 2px solid #fff; box-shadow: 0 2px 0 #b87310; }
+.daily-card .d-body { flex: 1; min-width: 0; }
+.daily-card .d-name { font-weight: 900; font-size: 14px; color: #4a3320; }
+.daily-card .d-prog { height: 10px; margin: 4px 0 2px; overflow: hidden; background: #e7dcc9; border: 2px solid #c9b48a; border-radius: 99px; }
+.daily-card .d-prog > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(180deg, #b6f09a, #3aa83a); }
+.daily-card .d-meta { font-size: 11px; color: var(--ink2); font-weight: 800; }
+.daily-card.done { border-color: #5bb85a; background: linear-gradient(180deg, #f3fff0, #d9f5cf); box-shadow: 0 3px 0 #4aa840; }
+.daily-card.done .d-ico { background: radial-gradient(circle at 35% 30%, #c4f4a8, #3aa83a 75%); box-shadow: 0 2px 0 #26772a; }
+
+/* 快速出發：寶石圖示磚 */
+.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.quick-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 18px;
+  box-shadow: 0 4px 0 #d9b86a; font-weight: 900; font-size: 12px; color: #4a3320; transition: transform .1s;
+}
+.quick-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #d9b86a; }
+.quick-btn .q-ico {
+  width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; line-height: 1;
+  border: 3px solid #f0c860; box-shadow: 0 3px 0 rgba(0,0,0,.3), inset 0 2px 0 rgba(255,255,255,.4);
+}
+.quick-btn:nth-child(1) .q-ico { background: radial-gradient(circle at 35% 30%, #ffb0a0, #e0453a 70%); }
+.quick-btn:nth-child(2) .q-ico { background: radial-gradient(circle at 35% 30%, #aee4ff, #2f86d8 70%); }
+.quick-btn:nth-child(3) .q-ico { background: radial-gradient(circle at 35% 30%, #ffe48a, #f08a10 70%); }
+.quick-btn:nth-child(4) .q-ico { background: radial-gradient(circle at 35% 30%, #c4f4a8, #3aa83a 70%); }
+.quick-btn:nth-child(5) .q-ico { background: radial-gradient(circle at 35% 30%, #ffd0e8, #e0509a 70%); }
+.quick-btn.purple { background: linear-gradient(180deg, #f9f3ff, #e6d8fb); border-color: #a37cf4; box-shadow: 0 4px 0 #7a4fc4; color: #4a2a94; }
+.quick-btn.purple .q-ico { background: radial-gradient(circle at 35% 30%, #d4b4ff, #6a3fc4 70%); }
+
+/* 數據磚 */
+.stat-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat-tile { padding: 8px 4px; text-align: center; background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 14px; box-shadow: 0 3px 0 #d9b86a; }
+.stat-tile b { display: block; font-size: 19px; font-weight: 900; color: #6a35a8; line-height: 1.2; }
+.stat-tile span { font-size: 10.5px; font-weight: 800; color: var(--ink2); }
+.subj-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; font-weight: 900; color: #4a3320; }
+.subj-row > span { flex: none; width: 42px; }
+.subj-row .progress { flex: 1; margin: 0; height: 14px; }
+.subj-row > b { flex: none; width: 84px; white-space: nowrap; text-align: right; font-size: 11.5px; color: #6a35a8; }
+.tip-box { margin-top: 12px; padding: 10px 12px; border-radius: 14px; font-size: 12px; font-weight: 800; line-height: 1.5; color: #4a3320; background: linear-gradient(180deg, #f3eaff, #e6d8fb); border: 3px solid #a37cf4; }
+
+/* ===== 冒險：章節卡 ===== */
+.chapter-card {
+  position: relative; margin-bottom: 14px; overflow: hidden; border-radius: 20px;
+  border: 3px solid #d9a85a; background: linear-gradient(180deg, #fffdf4, #fdeec8);
+  box-shadow: 0 4px 0 #b9822f, 0 8px 14px rgba(40,60,20,.18); transition: transform .1s;
+}
+.chapter-card:active { transform: translateY(2px); }
+.chapter-card.locked { filter: grayscale(.8) brightness(.9); }
+.chapter-card .ch-top {
+  position: relative; height: 96px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 125%, #86d65e 55%, transparent 56%),
+    radial-gradient(ellipse 80% 70% at 85% 130%, #5fba47 55%, transparent 56%),
+    linear-gradient(180deg, var(--zc, #7ccaf7) 0%, #dff3ff 100%);
+}
+.chapter-card .ch-top::before { content: ''; position: absolute; right: 70px; top: 10px; width: 46px; height: 16px; border-radius: 99px; background: #fff; opacity: .85; box-shadow: -18px 8px 0 -3px #fff, 14px 6px 0 -4px #fff; }
+.ch-chap { display: inline-block; padding: 1px 10px; font-size: 11px; font-weight: 900; color: #fff; border-radius: 99px; background: linear-gradient(#b894f2, #7a4fc4); box-shadow: 0 2px 0 #4c2f8f; }
+.ch-name { margin-top: 4px; font-size: 21px; font-weight: 900; color: #fff; -webkit-text-stroke: 3px #3f6a2c; paint-order: stroke fill; text-shadow: 0 3px 0 #3f6a2c; letter-spacing: 1px; }
+.chapter-card .ch-boss { position: relative; z-index: 2; width: 92px; height: 92px; margin-bottom: -6px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; filter: drop-shadow(0 4px 4px rgba(20,60,20,.35)); }
+.chapter-card .ch-boss > div, .chapter-card .ch-boss img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.chapter-card .ch-body { padding: 8px 12px 12px; padding-right: 92px; min-height: 64px; }
+.chapter-card .ch-title { font-size: 14px; font-weight: 900; color: #4a3320; }
+.chapter-card .ch-meta { font-size: 11.5px; color: var(--ink2); font-weight: 700; margin-top: 2px; }
+.chapter-card .ch-stars { margin-top: 3px; font-size: 18px; letter-spacing: 3px; color: #ffc83a; text-shadow: 0 2px 0 #b5760a; }
+.chapter-card .ch-go {
+  position: absolute; right: 12px; bottom: 12px; padding: 8px 20px; font-size: 14px; font-weight: 900; color: #fff;
+  background: linear-gradient(#9ae27c, #3aa83a); border: 3px solid #fff; border-radius: 14px;
+  box-shadow: 0 4px 0 #26772a, 0 6px 10px rgba(0,0,0,.18); text-shadow: 0 1px 0 rgba(0,0,0,.3);
+}
+.chapter-card .ch-go:active { transform: translateY(3px); box-shadow: 0 1px 0 #26772a; }
+
+/* ===== 地圖：連接路線 ===== */
+.map-world { display: flex; flex-direction: column; gap: 14px; padding: 2px 0; }
+.map-node {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; border-radius: 18px; box-shadow: 0 3px 0 #d9b86a;
+}
+.map-node:not(:last-child)::after { content: ''; position: absolute; left: 34px; top: 100%; height: 14px; border-left: 5px dotted #b9822f; opacity: .7; }
+.map-node.current { border-color: #a37cf4; box-shadow: 0 0 0 2px #ffd23a, 0 4px 0 #7a4fc4; background: linear-gradient(180deg, #fff, #f3eaff); }
+.map-node.locked { filter: grayscale(1) brightness(.85); opacity: .8; }
+.map-node .mn-num { flex: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #fff; background: radial-gradient(circle at 35% 30%, #d4b4ff, #6a3fc4 70%); border: 3px solid #f0c860; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
+.map-node .mn-icon { flex: none; width: 56px; height: 56px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 28px; background: linear-gradient(180deg, #eaf6ff, #cfe8ff); border: 3px solid #8ec4ee; }
+.map-node .mn-icon > div, .map-node .mn-icon img { width: 100% !important; height: 100% !important; object-fit: contain; }
+.map-node .mn-info { flex: 1; min-width: 0; }
+.map-node .mn-name { font-weight: 900; font-size: 14px; color: #4a3320; }
+.map-node .mn-meta { font-size: 11px; color: var(--ink2); font-weight: 700; }
+.map-node .mn-stars { color: #ffc83a; font-size: 14px; letter-spacing: 2px; text-shadow: 0 1px 0 #b5760a; }
+
+/* ===== 圖鑑 ===== */
+.codex-item {
+  position: relative; text-align: center; padding: 8px 4px 6px; border-radius: 16px; min-width: 0;
+  background: linear-gradient(180deg, #fff, #fdf3d6); border: 3px solid #e6cf9a; box-shadow: 0 3px 0 #d9b86a;
+}
+.codex-item.locked { background: linear-gradient(180deg, #e7e2da, #cfc8bc); border-color: #bdb5a5; box-shadow: 0 3px 0 #9d9484; }
+.codex-item.locked .c-icon { filter: brightness(0) opacity(.45); }
+.codex-item .c-icon { height: 58px; display: flex; align-items: center; justify-content: center; font-size: 36px; line-height: 1; filter: drop-shadow(0 3px 3px rgba(0,0,0,.15)); }
+.codex-item .c-icon > div { margin: 0 auto; }
+.codex-item .c-name { font-size: 11.5px; font-weight: 900; margin-top: 2px; color: #4a3320; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.codex-item .muted { font-size: 9.5px; }
+.codex-sum { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 13px; font-weight: 800; }
+.codex-sum .progress { flex: 1; margin: 0; height: 16px; }
+
+.task-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 3px solid #e6cf9a; border-radius: 14px; margin-bottom: 8px; }
+.task-item .prog { flex: 1; }
+
+/* 設定頁按鈕間距 */
+.off { font-style: normal; color: #d9ccb0 !important; text-shadow: 0 1px 0 #b9a883 !important; -webkit-text-stroke: 0 !important; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- TOP STATUS -->
+  <div id="top-status">
+    <div class="avatar-wrap" id="avatar-wrap">
+      <div id="avatar-ico">⚔️</div>
+      <span class="lv" id="avatar-lv">1</span>
+    </div>
+    <div class="player-info">
+      <div class="player-name" id="player-name">知識冒險家</div>
+      <div class="exp-bar"><i id="exp-fill" style="width:0%"></i></div>
+    </div>
+    <div class="currency-row">
+      <span class="currency">🪙 <span id="gold-label">0</span></span>
+      <span class="currency gem">💎 <span id="dia-label">0</span></span>
+    </div>
+    <span id="exp-label" hidden></span>
+  </div>
+
+  <div id="main">
+    <!-- HOME -->
+    <div class="panel active" id="panel-home">
+      <div class="home-scene">
+        <div class="bg-layer" id="home-bg"></div>
+        <div class="hs-top">
+          <div class="hs-chap">📍 <b id="home-chap">第一章 · 初心村</b></div>
+          <span class="bt-chip">⚔️ 戰力 <span id="home-power">100</span></span>
+        </div>
+        <div class="hs-stage">
+          <div class="hs-pet" id="home-pet"></div>
+          <div class="hs-hero" id="home-hero-art">⚔️</div>
+        </div>
+        <div class="hs-card">
+          <div class="hs-row"><div><span class="hs-name" id="home-hero-name">知識冒險家</span><span class="hs-lv">Lv.<span id="home-hero-lv">1</span></span></div></div>
+          <div class="hs-exp"><div class="bar"><i id="home-exp-fill" style="width:0%"></i><span id="home-exp-txt">EXP 0/30</span></div></div>
+        </div>
+      </div>
+
+      <button class="big-start" type="button" onclick="Game.quickStart()">⚔️ 開始冒險</button>
+
+      <div class="card">
+        <h3>📅 每日任務</h3>
+        <div id="daily-list" class="daily-grid"></div>
+        <button class="btn amber block" type="button" onclick="Game.claimDaily()">🎁 領取獎勵</button>
+      </div>
+
+      <div class="card">
+        <h3>🚀 快速出發</h3>
+        <div class="quick-grid">
+          <button class="quick-btn" type="button" onclick="Game.tab('adventure')"><span class="q-ico">⚔️</span><span>冒險</span></button>
+          <button class="quick-btn" type="button" onclick="Game.tab('map')"><span class="q-ico">🗺️</span><span>地圖</span></button>
+          <button class="quick-btn" type="button" onclick="Game.tab('pets')"><span class="q-ico">🐾</span><span>寵物</span></button>
+          <button class="quick-btn" type="button" onclick="Game.tab('codex')"><span class="q-ico">📖</span><span>圖鑑</span></button>
+          <button class="quick-btn" type="button" onclick="Game.tab('city')"><span class="q-ico">🏘</span><span>城市</span></button>
+          <button class="quick-btn purple" type="button" onclick="Game.startWeakBoss()"><span class="q-ico">👾</span><span>錯題魔王</span></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📊 今日概況</h3>
+        <div id="home-stats"></div>
+      </div>
+    </div>
+
+    <!-- ADVENTURE / STAGE SELECT -->
+    <div class="panel" id="panel-adventure">
+      <div class="card">
+        <h3>🎓 角色與題庫</h3>
+        <label class="muted">題庫等級（幼稚園～小六）</label>
+        <select id="grade-select" onchange="Game.setGrade(+this.value)"></select>
+        <div style="height:12px"></div>
+        <label class="muted">英雄職業</label>
+        <div class="grid3" id="class-grid"></div>
+      </div>
+      <div class="card">
+        <h3>⚔️ 選擇章節挑戰</h3>
+        <p class="muted" style="margin-bottom:12px">擊敗區域 Boss 解鎖下一章。通關可建設城市、養寵。</p>
+        <div id="stage-list"></div>
+      </div>
+    </div>
+
+    <!-- WORLD MAP -->
+    <div class="panel" id="panel-map">
+      <div class="card">
+        <h3>🗺️ 知識世界地圖</h3>
+        <p class="muted" style="margin-bottom:12px">已解鎖區域彩色顯示，擊敗 Boss 開啟下一章。</p>
+        <div id="map-list" class="map-world"></div>
+      </div>
+    </div>
+
+    <!-- CITY -->
+    <div class="panel" id="panel-city">
+      <div class="card">
+        <h3>🏘 城市建設</h3>
+        <p class="muted" id="city-summary" style="margin-bottom:10px"></p>
+        <div id="build-list"></div>
+      </div>
+    </div>
+
+    <!-- PETS -->
+    <div class="panel" id="panel-pets">
+      <div class="card">
+        <h3>🐾 寵物夥伴</h3>
+        <p class="muted" style="margin-bottom:10px">出戰寵物會在戰鬥中助攻。擊敗怪物可讓寵物成長、進化。</p>
+        <div id="pet-list"></div>
+      </div>
+    </div>
+
+    <!-- EQUIP -->
+    <div class="panel" id="panel-equip">
+      <div class="card">
+        <h3>🛡️ 裝備養成</h3>
+        <div id="equip-list"></div>
+      </div>
+    </div>
+
+    <!-- CODEX -->
+    <div class="panel" id="panel-codex">
+      <div class="card">
+        <h3>📖 怪物圖鑑</h3>
+        <div class="codex-sum" id="codex-summary"></div>
+        <div class="grid4" id="codex-list" style="gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- ACHIEVE -->
+    <div class="panel" id="panel-achieve">
+      <div class="card">
+        <h3>🏆 成就</h3>
+        <div id="achieve-list"></div>
+      </div>
+    </div>
+
+    <!-- PARENT -->
+    <div class="panel" id="panel-parent">
+      <div class="card">
+        <h3>👨‍👩‍👧 家長模式</h3>
+        <div id="parent-body"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="panel-settings">
+      <div class="card">
+        <h3>⚙️ 設定</h3>
+        <div class="stack">
+          <button class="btn purple block" type="button" onclick="Game.toggleSound()">🔊 音效：<span id="sound-label">開</span></button>
+          <button class="btn amber block" type="button" onclick="Game.exportSave()">📤 匯出存檔（複製）</button>
+          <button class="btn block" type="button" onclick="Game.importSave()">📥 匯入存檔</button>
+          <button class="btn red block" type="button" onclick="Game.resetSave()">🗑️ 清除存檔</button>
+        </div>
+        <p class="muted center" style="margin-top:14px">知識之城 RPG · 課綱題庫<br>缺圖時自動使用內建插圖 · 版本 2026.11</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" type="button" data-tab="home" onclick="Game.tab('home',this)"><span class="ico">🏠</span>首頁</button>
+    <button class="nav-btn" type="button" data-tab="adventure" onclick="Game.tab('adventure',this)"><span class="ico">⚔️</span>冒險</button>
+    <button class="nav-btn" type="button" data-tab="map" onclick="Game.tab('map',this)"><span class="ico">🗺️</span>地圖</button>
+    <button class="nav-btn" type="button" data-tab="codex" onclick="Game.tab('codex',this)"><span class="ico">📖</span>圖鑑</button>
+    <button class="nav-btn" type="button" data-tab="pets" onclick="Game.tab('pets',this)"><span class="ico">🐾</span>寵物</button>
+    <button class="nav-btn" type="button" data-tab="city" onclick="Game.tab('city',this)"><span class="ico">🏘</span>城市</button>
+    <button class="nav-btn" type="button" data-tab="achieve" onclick="Game.tab('achieve',this)"><span class="ico">🏆</span>成就</button>
+    <button class="nav-btn" type="button" data-tab="parent" onclick="Game.tab('parent',this)"><span class="ico">👨‍👩‍👧</span>家長</button>
+    <button class="nav-btn" type="button" data-tab="settings" onclick="Game.tab('settings',this)"><span class="ico">⚙️</span>設定</button>
+  </nav>
+</div>
+
+<!-- Battle -->
+<div id="battle">
+  <div class="battle-box">
+    <div class="battle-scene" id="battle-scene">
+      <div class="bg-layer bg-svg" id="bg-svg"></div>
+      <div class="bg-layer bg-img" id="bg-img"></div>
+
+      <div class="bt-top">
+        <button class="bt-pause" type="button" aria-label="暫停" onclick="Game.togglePause()">⏸</button>
+        <div class="bt-title">🌿 <b id="battle-title">戰鬥</b></div>
+        <span class="bt-chip">🪙 <span id="bt-gold">0</span></span>
+        <span class="bt-chip gem">💎 <span id="bt-dia">0</span></span>
+      </div>
+      <div class="bt-sub">
+        <span class="bt-chip hp">💗 <span id="bt-hp">0</span><small>回復中</small></span>
+        <div class="combo" id="combo-label">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 3 L58 14 L71 8 L74 22 L88 22 L85 36 L97 42 L89 54 L97 66 L84 71 L86 85 L72 84 L68 97 L56 90 L50 99 L44 90 L32 97 L28 84 L14 85 L16 71 L3 66 L11 54 L3 42 L15 36 L12 22 L26 22 L29 8 L42 14 Z" fill="#ffc83a" stroke="#fff3b0" stroke-width="5" stroke-linejoin="round"/></svg>
+          <span>COMBO</span><b id="combo-num">x2</b>
+        </div>
+        <span class="bt-chip">📜 任務 <span id="bt-quest">1/5</span></span>
+      </div>
+
+      <div class="battle-arena">
+        <div class="ba-player">
+          <div class="pet-sprite" id="sprite-pet"></div>
+          <div class="char-sprite" id="sprite-player"></div>
+        </div>
+        <div class="ba-enemy">
+          <div class="char-sprite" id="sprite-enemy"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="battle-lower">
+      <div class="battle-cards">
+        <div class="stat-card me" id="meta-player"></div>
+        <div class="stat-card foe" id="meta-enemy"></div>
+      </div>
+
+      <div class="battle-panel">
+        <div class="panel-ribbon">✦ 知識挑戰！ ✦</div>
+        <div class="q-box" id="q-box">準備出題…</div>
+        <div class="opts" id="opts"></div>
+        <p class="battle-hint" id="battle-hint"></p>
+      </div>
+
+      <div class="skill-bar">
+        <div class="energy-box">
+          <div class="e-star">
+            <svg viewBox="0 0 48 46" aria-hidden="true"><path d="M24 2 L30 16 L46 17 L34 27 L38 43 L24 34 L10 43 L14 27 L2 17 L18 16 Z" fill="#ffc83a" stroke="#fff3b0" stroke-width="2.5" stroke-linejoin="round"/></svg>
+            <b id="energy-star">0/5</b>
+          </div>
+          <div class="energy-bar"><i id="energy-fill"></i></div>
+          <span class="energy-lbl">能量 <span id="energy-text">0/100</span></span>
+        </div>
+        <div class="skill-dock" id="skill-dock"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Level up -->
+<div id="levelup">
+  <div class="modal-box">
+    <h2 class="center" style="margin:0 0 6px;">⬆️ 升級！</h2>
+    <p class="center muted" id="levelup-sub">選擇一項能力</p>
+    <div class="skill-pick" id="skill-picks"></div>
+  </div>
+</div>
+
+<!-- Result -->
+<div id="result-modal">
+  <div class="modal-box">
+    <h2 class="center" id="result-title">通關！</h2>
+    <div id="result-body" class="center"></div>
+    <div style="height:10px"></div>
+    <button class="btn green block" type="button" onclick="Game.closeResult()">太棒了</button>
+  </div>
+</div>
+
+<!-- Pause -->
+<div id="pause-menu">
+  <div class="modal-box">
+    <h2 class="center">⏸ 暫停中</h2>
+    <p class="muted center">戰鬥時間已停止，可先去看看城市或圖鑑。</p>
+    <button class="btn green block" type="button" onclick="Game.togglePause()">繼續遊戲</button>
+    <div style="height:8px"></div>
+    <button class="btn block" type="button" onclick="Game.fleeBattle()">退出戰鬥（不保存本關進度）</button>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* =========================================================
+   知識之城 RPG - 最終商業版 (無列車系統)
+   幼稚園～小六課綱題庫 · 八大區域 · 怪物圖鑑 · 寵物進化
+   ========================================================= */
+
+const Art = {
+  // 有放 img/*.png 就會自動用；沒有圖或載入失敗 → 用內建 SVG／emoji
+  // 不必改這個開關：每張圖各自嘗試載入
+  cache: {},
+  eye(x, y, r = 3.6) {
+    return `<g stroke="none"><ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 1.25}" fill="#2b1d12"/><circle cx="${x - r * .3}" cy="${y - r * .55}" r="${r * .42}" fill="#fff"/></g>`;
+  },
+  cheeks(y, off) {
+    return `<g stroke="none" fill="#ff8f9c" opacity=".55"><ellipse cx="${50 - off}" cy="${y}" rx="4" ry="2.6"/><ellipse cx="${50 + off}" cy="${y}" rx="4" ry="2.6"/></g>`;
+  },
+  wrap(inner) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%"><g stroke="#5a3a22" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">${inner}</g></svg>`;
+  },
+
+  hero(k) {
+    const hair = { warrior: '#7b4a2a', mage: '#f08bb4', archer: '#5fae4a', engineer: '#8a5a3a', scholar: '#4a6a8a' }[k] || '#7b4a2a';
+    const body = { warrior: '#3f7fd1', mage: '#7a4fc4', archer: '#4f9a4a', engineer: '#e8873a', scholar: '#5a7a9a' }[k] || '#3f7fd1';
+    // 披風／配件
+    let extra = '';
+    if (k === 'warrior') {
+      extra = `<path d="M30 62 L16 97 L84 97 L70 62Z" fill="#d9453a" opacity=".9"/>
+        <g transform="rotate(20 78 55)"><rect x="74" y="18" width="6" height="50" rx="2" fill="#e3eaf2"/><rect x="68" y="62" width="18" height="5" rx="2" fill="#d9ae3a"/></g>`;
+    } else if (k === 'mage') {
+      extra = `<path d="M33 26 L56 2 Q60 16 67 26Z" fill="#7a4fc4"/>
+        <rect x="78" y="28" width="5" height="55" rx="2" fill="#8b5a2b"/><circle cx="80.5" cy="24" r="8" fill="#ffd54a"/><circle cx="80.5" cy="24" r="3.5" fill="#fff6c8" stroke="none"/>`;
+    } else if (k === 'archer') {
+      extra = `<path d="M80 28 Q96 58 80 90" fill="none" stroke="#8b5a2b" stroke-width="4"/>
+        <path d="M34 64 L66 90" stroke="#8b5a2b" stroke-width="4" fill="none"/>
+        <path d="M27 44 Q22 10 50 10 Q78 10 73 44 Q66 28 50 30 Q34 28 27 44Z" fill="#3f8f3a"/>`;
+    } else if (k === 'engineer') {
+      extra = `<path d="M29 32 Q50 8 71 32Z" fill="#f2b233"/><rect x="27" y="30" width="46" height="5" rx="2" fill="#d99a1e"/>
+        <circle cx="42" cy="21" r="6" fill="#bfe6fb"/><circle cx="58" cy="21" r="6" fill="#bfe6fb"/>
+        <g transform="rotate(25 80 60)"><rect x="77" y="36" width="6" height="40" rx="2" fill="#aab4be"/><circle cx="80" cy="34" r="8" fill="#aab4be"/></g>`;
+    } else if (k === 'scholar') {
+      extra = `<path d="M29 30 Q50 8 71 30Z" fill="#3d5a80"/><rect x="26" y="28" width="48" height="6" rx="2" fill="#2a4365"/>
+        <rect x="72" y="48" width="18" height="22" rx="2" fill="#f5e6c8"/><path d="M81 48 L81 70" stroke="#c9a86c" stroke-width="1.5"/>`;
+    }
+    return extra +
+      `<path d="M28 97 Q28 64 50 62 Q72 64 72 97Z" fill="${body}"/>` +
+      `<circle cx="50" cy="40" r="20" fill="#ffe3c7"/>` +
+      `<path d="M29 42 Q26 14 50 14 Q74 14 71 42 Q64 28 50 30 Q36 28 29 42Z" fill="${hair}"/>` +
+      this.eye(43, 43) + this.eye(57, 43) + this.cheeks(49, 14) +
+      `<path d="M46 51 Q50 55 54 51" fill="none" stroke-width="2"/>`;
+  },
+
+  mon(id) {
+    const n = parseInt(String(id).replace(/\D/g, '')) || 1;
+    const pals = [
+      ['#7fd0f7', '#cfeefc'], ['#8fd98a', '#d4f0d0'], ['#f0a0a0', '#ffe0e0'],
+      ['#f0d070', '#fff0c0'], ['#c0a0f0', '#e8d8ff'], ['#f0a070', '#ffe0c0'],
+      ['#90caf9', '#e3f2fd'], ['#a5d6a7', '#e8f5e9']
+    ];
+    const [c1, c2] = pals[n % pals.length];
+    // 史萊姆造型（m01 等）加嫩芽
+    const sprout = (n % 6 === 1) ? `<path d="M50 28 Q46 18 50 12 Q54 18 50 28" fill="#7bc67e" stroke="#4a8a4a"/><circle cx="50" cy="12" r="3" fill="#8fd98a" stroke="none"/>` : '';
+    return sprout +
+      `<ellipse cx="50" cy="62" rx="34" ry="30" fill="${c1}"/>` +
+      `<ellipse cx="50" cy="52" rx="24" ry="20" fill="${c2}"/>` +
+      this.eye(40, 50) + this.eye(60, 50) + this.cheeks(60, 16) +
+      `<path d="M44 60 Q50 66 56 60" fill="none" stroke-width="2"/>` +
+      `<ellipse cx="38" cy="72" rx="6" ry="4" fill="${c1}" opacity=".7"/><ellipse cx="62" cy="72" rx="6" ry="4" fill="${c1}" opacity=".7"/>`;
+  },
+
+  pet(id, stage) {
+    const n = parseInt(String(id).replace(/\D/g, '')) || 1;
+    const pals = [
+      ['#f5c06a', '#ffe8b0'], ['#e8a070', '#ffd0a0'], ['#7fd0f7', '#cfeefc'],
+      ['#f0a0a0', '#ffe0e0'], ['#d0e8a0', '#f0f8d0'], ['#c0a0f0', '#e8d8ff'],
+      ['#8fd98a', '#d4f0d0'], ['#a0c0e8', '#d0e0f8']
+    ];
+    const [c1, c2] = pals[n % pals.length];
+    const s = stage || 0;
+    const scale = 1 + s * 0.12;
+    return `<g transform="translate(50 55) scale(${scale}) translate(-50 -55)">
+      <ellipse cx="50" cy="68" rx="28" ry="22" fill="${c1}"/>
+      <circle cx="50" cy="42" r="${16 + s}" fill="${c2}"/>
+      ${this.eye(42, 40)} ${this.eye(58, 40)} ${this.cheeks(50, 12)}
+      <path d="M45 52 Q50 56 55 52" fill="none" stroke-width="2"/>
+      <ellipse cx="36" cy="78" rx="7" ry="5" fill="${c1}"/><ellipse cx="64" cy="78" rx="7" ry="5" fill="${c1}"/>
+      </g>`;
+  },
+
+  // key 例：hero:warrior / mon:m01 / pet:p1:0
+  // 有 img/xxx.png 就顯示圖；失敗自動顯示 SVG
+  html(key, size, fallbackEmoji) {
+    size = size || 64;
+    const map = {
+      'hero:warrior': 'hero_warrior', 'hero:mage': 'hero_mage', 'hero:archer': 'hero_archer',
+      'hero:engineer': 'hero_engineer', 'hero:scholar': 'hero_scholar'
+    };
+    let png = '';
+    if (key.startsWith('hero:')) png = 'img/' + (map[key] || 'hero_warrior') + '.png';
+    else if (key.startsWith('mon:')) png = 'img/mon_' + key.slice(4) + '.png';
+    else if (key.startsWith('pet:')) {
+      const p = key.slice(4).split(':');
+      png = 'img/pet_' + p[0] + '_' + (p[1] || 0) + '.png';
+    } else if (key.startsWith('boss:')) png = 'img/boss_' + key.slice(5) + '.png';
+
+    let svg = '';
+    if (key.startsWith('hero:')) svg = this.wrap(this.hero(key.slice(5)));
+    else if (key.startsWith('mon:')) svg = this.wrap(this.mon(key.slice(4)));
+    else if (key.startsWith('pet:')) { svg = ''; }
+    else svg = '';
+
+    const emoji = fallbackEmoji || '❓';
+    // 雙層：img 成功就顯示；onerror 隱藏 img、顯示後面的 svg/emoji
+    if (png) {
+      const svgBlock = svg
+        ? `<div class="art-fallback" style="display:none;width:${size}px;height:${size}px;margin:0 auto">${svg}</div>`
+        : `<span class="art-fallback" style="display:none;font-size:${Math.round(size * 0.7)}px">${emoji}</span>`;
+      return `<div style="width:${size}px;height:${size}px;margin:0 auto;position:relative">
+        <img src="${png}" width="${size}" height="${size}" alt="" style="object-fit:contain;display:block;margin:0 auto"
+          onerror="this.style.display='none';var f=this.parentNode.querySelector('.art-fallback');if(f)f.style.display='block';" />
+        ${svgBlock}
+      </div>`;
+    }
+    if (svg) return `<div style="width:${size}px;height:${size}px;margin:0 auto">${svg}</div>`;
+    return `<span style="font-size:${Math.round(size * 0.7)}px">${emoji}</span>`;
+  }
+};
+
+/* ===== 戰鬥場景背景（內建 SVG：放了 img/bg_battle.png 會自動蓋過它） ===== */
+Art.battleScene = function (pf) {
+  pf = pf || 'b';
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const W = 430, H = 340;
+  const cloud = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity=".93"><ellipse cx="0" cy="0" rx="28" ry="10"/><ellipse cx="-15" cy="-6" rx="15" ry="10"/><ellipse cx="8" cy="-11" rx="18" ry="12"/><ellipse cx="23" cy="-2" rx="13" ry="8"/></g>`;
+  const tree = (x, y, s, c1 = '#3f9f4a', c2 = '#66c458') => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-2.5" y="-6" width="5" height="12" rx="2" fill="#8a5a34"/><circle cx="0" cy="-15" r="12" fill="${c1}"/><circle cx="-8" cy="-9" r="8.5" fill="${c1}"/><circle cx="8" cy="-9" r="8.5" fill="${c1}"/><circle cx="-3" cy="-19" r="6.5" fill="${c2}"/><circle cx="6" cy="-14" r="4" fill="${c2}" opacity=".8"/></g>`;
+  const island = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})">
+    <path d="M-40 0 Q-36 28 -9 42 Q0 50 9 42 Q36 28 40 0 Z" fill="#a0724e"/>
+    <path d="M-30 8 Q-20 24 -6 32" stroke="#7d5238" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/>
+    <path d="M-20 4 q-3 16 -1 24 M18 5 q3 14 0 22" stroke="#58b04e" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".8"/>
+    <ellipse cx="0" cy="0" rx="42" ry="9.5" fill="#79d058"/><ellipse cx="0" cy="-2" rx="37" ry="6.5" fill="#9ce473"/>
+    ${tree(-15, -4, .9)}${tree(13, -3, .68, '#4aa84e', '#74cc60')}
+  </g>`;
+  const sparkle = (x, y, s, o) => `<path transform="translate(${x} ${y}) scale(${s})" d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6Z" fill="#fff" opacity="${o}"/>`;
+
+  let sparkles = '';
+  [[40, 40, 1, .9], [150, 28, .8, .8], [250, 64, 1.1, .85], [395, 36, .9, .8], [110, 120, .7, .7], [370, 150, .8, .7], [20, 150, .7, .7]]
+    .forEach(a => sparkles += sparkle(...a));
+
+  let treeline = '';
+  for (let x = -10; x < W + 20; x += 22 + rnd() * 14) {
+    const y = 208 + Math.sin(x / 37) * 6 + rnd() * 4;
+    treeline += tree(x, y, .62 + rnd() * .3, rnd() > .5 ? '#46a44c' : '#3a9446', '#6ccb5c');
+  }
+  let flowers = '', tufts = '';
+  const fc = ['#ffffff', '#ffd0e4', '#ffe36e', '#ffb0c8', '#d9c6ff'];
+  for (let i = 0; i < 46; i++) {
+    const x = rnd() * W, y = 262 + rnd() * 72, r = 1.5 + rnd() * 1.2 + (y - 262) / 60;
+    flowers += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${fc[i % 5]}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * .38).toFixed(1)}" fill="#f2a63a"/>`;
+  }
+  for (let i = 0; i < 26; i++) {
+    const x = rnd() * W, y = 254 + rnd() * 80, k = .8 + (y - 254) / 70;
+    tufts += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} q${-2 * k} ${-6 * k} ${-4 * k} ${-8 * k} M${x.toFixed(1)} ${y.toFixed(1)} q0 ${-7 * k} 0 ${-9 * k} M${x.toFixed(1)} ${y.toFixed(1)} q${2 * k} ${-6 * k} ${4 * k} ${-8 * k}" stroke="#3b9a3c" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".7"/>`;
+  }
+  let streaks = '';
+  for (let i = 0; i < 6; i++) { const x = 302 + i * 4.2; streaks += `<path d="M${x} 118 L${x + (i % 2 ? 1 : -1)} 206" stroke="#fff" stroke-width="1.4" opacity=".75"/>`; }
+
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="${pf}Sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6cc4f6"/><stop offset=".55" stop-color="#b9e6fb"/><stop offset="1" stop-color="#e6f8e2"/></linearGradient>
+    <radialGradient id="${pf}Sun" cx="78%" cy="14%" r="55%"><stop offset="0" stop-color="#fffbe0" stop-opacity=".95"/><stop offset=".4" stop-color="#fff3b8" stop-opacity=".4"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${pf}Front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#95e360"/><stop offset="1" stop-color="#5fba47"/></linearGradient>
+    <linearGradient id="${pf}Fall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f8ff"/><stop offset="1" stop-color="#8fd4f5"/></linearGradient>
+  </defs>
+  <rect width="${W}" height="${H}" fill="url(#${pf}Sky)"/>
+  <rect width="${W}" height="${H}" fill="url(#${pf}Sun)"/>
+  ${sparkles}
+  ${cloud(70, 78, 1.1)}${cloud(330, 58, .9)}${cloud(205, 40, .7)}${cloud(400, 118, .75)}
+  <path d="M-20 222 L50 142 L96 188 L160 118 L232 206 L290 150 L350 196 L410 140 L450 176 L450 240 L-20 240Z" fill="#b8c9f3"/>
+  <path d="M160 118 L186 146 L172 142 L160 156 L148 142 L136 146Z M410 140 L428 156 L416 154 L410 164 L400 154 L390 156Z" fill="#fff" opacity=".7"/>
+  <path d="M-20 232 L40 178 L100 214 L170 168 L240 220 L320 176 L390 214 L450 190 L450 250 L-20 250Z" fill="#9db8ea"/>
+  ${island(70, 98, 1)}${island(352, 120, .72)}${island(215, 70, .5)}
+  <g>
+    <path d="M268 112 L352 112 L362 214 L258 214 Z" fill="#9c7752"/>
+    <path d="M268 112 L352 112 L356 122 L264 122Z" fill="#7bd25a"/>
+    <path d="M276 128 L286 214 M338 128 L346 214" stroke="#7d5a3a" stroke-width="3" opacity=".45"/>
+    <rect x="298" y="118" width="28" height="92" rx="4" fill="url(#${pf}Fall)"/>
+    ${streaks}
+    <ellipse cx="312" cy="210" rx="34" ry="8" fill="#fff" opacity=".7"/><ellipse cx="312" cy="206" rx="22" ry="5" fill="#fff" opacity=".85"/>
+    ${tree(284, 118, .6)}${tree(340, 118, .5, '#4aa84e', '#74cc60')}
+  </g>
+  <path d="M0 222 Q70 198 150 214 T300 208 T430 202 L430 340 L0 340Z" fill="#a4e078"/>
+  ${treeline}
+  <path d="M0 238 Q90 216 190 232 T430 226 L430 340 L0 340Z" fill="#86d65e"/>
+  <path d="M0 256 Q110 238 230 252 T430 244 L430 340 L0 340Z" fill="url(#${pf}Front)"/>
+  <ellipse cx="90" cy="292" rx="110" ry="16" fill="#b0f07a" opacity=".35"/><ellipse cx="330" cy="304" rx="130" ry="18" fill="#b0f07a" opacity=".3"/>
+  ${tufts}${flowers}
+  ${tree(22, 258, 1.1, '#3a9444', '#62bf55')}${tree(412, 252, 1.0, '#3a9444', '#62bf55')}
+  </svg>`;
+};
+
+/* 嘗試載入 img/bg_battle.png（Boss 用 bg_battle_boss.png）；沒有圖就維持內建場景 */
+Art._bgState = {};
+Art.battleBg = function (isBoss) {
+  const el = document.getElementById('bg-img'); if (!el) return;
+  const tryFiles = isBoss ? ['img/bg_battle_boss.png', 'img/bg_battle.png'] : ['img/bg_battle.png'];
+  el.classList.remove('on');
+  const next = (i) => {
+    if (i >= tryFiles.length) return;
+    const f = tryFiles[i];
+    if (Art._bgState[f] === false) return next(i + 1);
+    const im = new Image();
+    im.onload = () => { Art._bgState[f] = true; el.style.backgroundImage = `url("${f}")`; el.classList.add('on'); };
+    im.onerror = () => { Art._bgState[f] = false; next(i + 1); };
+    im.src = f;
+  };
+  next(0);
+};
+
+const SoundFX = {
+  enabled: true,
+  ctx: null,
+  ensure() { if (!this.ctx) try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} },
+  tone(freq, dur, type) {
+    if (!this.enabled) return;
+    this.ensure(); if (!this.ctx) return;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq; g.gain.value = 0.08;
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    o.stop(this.ctx.currentTime + dur);
+  },
+  playPiano(f, d) { this.tone(f, d || 0.12, 'triangle'); },
+  playWrongGentle() { this.tone(220, 0.15, 'sawtooth'); },
+  playWin() { this.tone(523, 0.1); setTimeout(() => this.tone(659, 0.1), 100); setTimeout(() => this.tone(784, 0.2), 200); }
+};
+
+/* ===== DATABASE ===== */
+const DB = {
+  classes: {
+    warrior:  { name: '戰士',   icon: '⚔️', desc: '傷害 +20%', skills: ['雙重斬擊', '旋風斬', '勇者衝鋒'] },
+    mage:     { name: '魔法師', icon: '🔮', desc: '範圍魔法傷害', skills: ['火球術', '冰霜風暴', '流星術'] },
+    archer:   { name: '弓箭手', icon: '🏹', desc: '暴擊率大幅提高', skills: ['連續射擊', '爆裂箭', '狙擊模式'] },
+    engineer: { name: '工程師', icon: '🔧', desc: '建設與資源獲取增加', skills: ['砲塔支援', '機器人助戰', '防禦工事'] },
+    scholar:  { name: '學者',   icon: '📚', desc: '經驗與學習加速', skills: ['博學', '靈感', '智慧之光'] }
+  },
+  zones: [
+    { id: 0, chap: '第一章', name: '初心村',     color: '#98d88e', minLv: 1, boss: { name: '初心守護木偶王', icon: '🪵', hp: 180 } },
+    { id: 1, chap: '第二章', name: '注音森林',   color: '#7bc67b', minLv: 2, boss: { name: '聲調精靈女王', icon: '🧚‍♀️', hp: 260 } },
+    { id: 2, chap: '第三章', name: '數學平原',   color: '#b8e082', minLv: 3, boss: { name: '四則運算巨像', icon: '🗿', hp: 360 } },
+    { id: 3, chap: '第四章', name: '閱讀峽谷',   color: '#e2c98d', minLv: 4, boss: { name: '古卷奇美拉', icon: '🦁', hp: 480 } },
+    { id: 4, chap: '第五章', name: '英文港口',   color: '#8fd3e8', minLv: 5, boss: { name: '深海字母克拉肯', icon: '🐙', hp: 600 } },
+    { id: 5, chap: '第六章', name: '科學研究所', color: '#c5cae9', minLv: 6, boss: { name: '知識機器人 Mk-II', icon: '🤖', hp: 750 } },
+    { id: 6, chap: '第七章', name: '知識王國',   color: '#f3d1dc', minLv: 7, boss: { name: '皇家博學黃金龍', icon: '🐉', hp: 920 } },
+    { id: 7, chap: '第八章', name: '智慧神殿',   color: '#ffe082', minLv: 8, boss: { name: '全知智慧大天使', icon: '👼', hp: 1200 } }
+  ],
+  monsters: [
+    { id: 'm01', name: '加法史萊姆', icon: '💧', zone: 0 },
+    { id: 'm02', name: '減法史萊姆', icon: '🟢', zone: 0 },
+    { id: 'm03', name: '色彩小蘑菇', icon: '🍄', zone: 0 },
+    { id: 'm04', name: '形狀方塊怪', icon: '🟦', zone: 0 },
+    { id: 'm05', name: '蘋果精靈', icon: '🍎', zone: 0 },
+    { id: 'm06', name: '初心小木靈', icon: '🌱', zone: 0 },
+    { id: 'm07', name: 'ㄅㄆㄇ樹精', icon: '🌳', zone: 1 },
+    { id: 'm08', name: '拼音松鼠', icon: '🐿️', zone: 1 },
+    { id: 'm09', name: '二聲飛鳥', icon: '🐦', zone: 1 },
+    { id: 'm10', name: '三聲跳跳蛙', icon: '🐸', zone: 1 },
+    { id: 'm11', name: '四聲閃電蜂', icon: '🐝', zone: 1 },
+    { id: 'm12', name: '輕聲棉花怪', icon: '☁️', zone: 1 },
+    { id: 'm13', name: '生字小書蟲', icon: '🐛', zone: 1 },
+    { id: 'm14', name: '乘法哥布林', icon: '👺', zone: 2 },
+    { id: 'm15', name: '除法騎士', icon: '🤺', zone: 2 },
+    { id: 'm16', name: '九九乘法狼', icon: '🐺', zone: 2 },
+    { id: 'm17', name: '時鐘貓頭鷹', icon: '🦉', zone: 2 },
+    { id: 'm18', name: '金幣寶箱怪', icon: '📦', zone: 2 },
+    { id: 'm19', name: '分數飛龍', icon: '🐉', zone: 2 },
+    { id: 'm20', name: '小數刺蝟', icon: '🦔', zone: 2 },
+    { id: 'm21', name: '閱讀蝙蝠', icon: '🦇', zone: 3 },
+    { id: 'm22', name: '成語石像鬼', icon: '🗿', zone: 3 },
+    { id: 'm23', name: '標點符號妖', icon: '❗', zone: 3 },
+    { id: 'm24', name: '修辭火狐', icon: '🦊', zone: 3 },
+    { id: 'm25', name: '詩詞仙鶴', icon: '🦢', zone: 3 },
+    { id: 'm26', name: '故事羊皮紙', icon: '📜', zone: 3 },
+    { id: 'm27', name: '寓言穿山甲', icon: '🦔', zone: 3 },
+    { id: 'm28', name: '英文企鵝', icon: '🐧', zone: 4 },
+    { id: 'm29', name: '單字海鷗', icon: '🐦', zone: 4 },
+    { id: 'm30', name: '文法寄居蟹', icon: '🦀', zone: 4 },
+    { id: 'm31', name: '句型海豚', icon: '🐬', zone: 4 },
+    { id: 'm32', name: 'ABC水母', icon: '🎐', zone: 4 },
+    { id: 'm33', name: '發音海豹', icon: '🦭', zone: 4 },
+    { id: 'm34', name: '航海燈塔怪', icon: '🗼', zone: 4 },
+    { id: 'm35', name: '自然機器人', icon: '🤖', zone: 5 },
+    { id: 'm36', name: '磁力線圈怪', icon: '🧲', zone: 5 },
+    { id: 'm37', name: '光學稜鏡獸', icon: '💎', zone: 5 },
+    { id: 'm38', name: '齒輪守衛', icon: '⚙️', zone: 5 },
+    { id: 'm39', name: '電流精靈', icon: '⚡', zone: 5 },
+    { id: 'm40', name: '重力浮游球', icon: '🌐', zone: 5 },
+    { id: 'm41', name: '化學燒瓶怪', icon: '🧪', zone: 5 },
+    { id: 'm42', name: '百分比巨龍', icon: '🐲', zone: 6 },
+    { id: 'm43', name: '歷史鎧甲兵', icon: '🛡️', zone: 6 },
+    { id: 'm44', name: '地理羅盤怪', icon: '🧭', zone: 6 },
+    { id: 'm45', name: '公民天秤獸', icon: '⚖️', zone: 6 },
+    { id: 'm46', name: '面積獅鷲', icon: '🦁', zone: 6 },
+    { id: 'm47', name: '速率飛馬', icon: '🐴', zone: 6 },
+    { id: 'm48', name: '應用題魔導師', icon: '🧙', zone: 7 },
+    { id: 'm49', name: '天文星象龍', icon: '✨', zone: 7 },
+    { id: 'm50', name: '邏輯斯芬克斯', icon: '🐱', zone: 7 },
+    { id: 'm51', name: '百科全書魔像', icon: '📚', zone: 7 },
+    { id: 'm52', name: '銀河智慧結晶', icon: '💠', zone: 7 }
+  ],
+  pets: [
+    { id: 'p1', stages: ['小貓', '劍士貓', '聖光獅王'], icons: ['🐱', '😼', '🦁'], bonusType: 'atk', desc: '攻擊力加成' },
+    { id: 'p2', stages: ['小狗', '巡邏犬', '皇家聖伯納'], icons: ['🐶', '🐕', '🦮'], bonusType: 'res', desc: '資源獲取加成' },
+    { id: 'p3', stages: ['企鵝', '紳士企鵝', '冰晶帝王企鵝'], icons: ['🐧', '🐧', '❄️'], bonusType: 'ice', desc: '防禦／擋傷機率' },
+    { id: 'p4', stages: ['狐狸', '九尾靈狐', '天狐仙子'], icons: ['🦊', '🦊', '✨'], bonusType: 'crit', desc: '暴擊率加成' },
+    { id: 'p5', stages: ['兔子', '月光兔', '星辰玉兔'], icons: ['🐰', '🐇', '🌙'], bonusType: 'exp', desc: '經驗加成' },
+    { id: 'p6', stages: ['貓頭鷹', '博士貓頭鷹', '智慧大賢梟'], icons: ['🦉', '🦉', '🎓'], bonusType: 'exp', desc: '學習加速' },
+    { id: 'p7', stages: ['小恐龍', '暴龍', '知識龍'], icons: ['🦕', '🦖', '🐉'], bonusType: 'atk', desc: '強力攻擊' },
+    { id: 'p8', stages: ['小書精靈', '知識精靈', '智慧大賢者'], icons: ['📖', '📘', '📕'], bonusType: 'res', desc: '知識與資源加成' }
+  ],
+  buildings: [
+    { id: 'b_house', name: '房屋', icon: '🏠', cost: { gold: 40, wood: 10, stone: 5, steel: 0 }, pop: 20, income: 8, desc: '增加人口與穩定收租' },
+    { id: 'b_shop', name: '商店', icon: '🏪', cost: { gold: 60, wood: 15, stone: 10, steel: 2 }, pop: 15, income: 18, desc: '商業繁榮，金幣收入提高' },
+    { id: 'b_school', name: '學校', icon: '🏫', cost: { gold: 80, wood: 20, stone: 15, steel: 5 }, pop: 30, income: 12, desc: '教育中心，經驗小幅提升' },
+    { id: 'b_library', name: '圖書館', icon: '📚', cost: { gold: 100, wood: 25, stone: 20, steel: 8 }, pop: 25, income: 15, desc: '知識寶庫，錯題複習更有效' },
+    { id: 'b_hospital', name: '醫院', icon: '🏥', cost: { gold: 90, wood: 15, stone: 25, steel: 10 }, pop: 20, income: 10, desc: '答對時回復生命' },
+    { id: 'b_park', name: '公園', icon: '🌳', cost: { gold: 50, wood: 30, stone: 10, steel: 0 }, pop: 35, income: 6, desc: '休閒空間，人口快樂成長' },
+    { id: 'b_lab', name: '研究所', icon: '🔬', cost: { gold: 150, wood: 20, stone: 40, steel: 25 }, pop: 40, income: 30, desc: '科技研發，鋼鐵產出提升' },
+    { id: 'b_museum', name: '博物館', icon: '🏛️', cost: { gold: 120, wood: 20, stone: 35, steel: 15 }, pop: 30, income: 22, desc: '展示知識成果' },
+    { id: 'b_amuse', name: '遊樂園', icon: '🎡', cost: { gold: 180, wood: 40, stone: 30, steel: 20 }, pop: 50, income: 28, desc: '快樂學習，連擊加成' },
+    { id: 'b_stadium', name: '體育館', icon: '🏟️', cost: { gold: 200, wood: 30, stone: 50, steel: 30 }, pop: 45, income: 25, desc: '體能與意志訓練' }
+  ],
+  cityRanks: [
+    { minPop: 0, name: '小村莊' }, { minPop: 50, name: '小鎮' }, { minPop: 120, name: '小城市' },
+    { minPop: 250, name: '知識城' }, { minPop: 400, name: '智慧都' }, { minPop: 600, name: '夢想之都' }
+  ],
+  equip: [
+    { id: 'weapon', name: '知識之劍', icon: '🗡️', desc: '每級攻擊力 +4' },
+    { id: 'armor', name: '智慧鎧甲', icon: '🛡️', desc: '每級生命上限 +14' },
+    { id: 'charm', name: '幸運護符', icon: '📿', desc: '每級爆擊率 +2%' }
+  ],
+  equipTier: ['新手','木製','銅製','鐵製','銀製','黃金','白金','鑽石','星辰','傳說','神話'],
+  achievements: [
+    { id: 'a_first', name: '初出茅廬', desc: '完成第一次關卡', check: s => Object.values(s.stageStars||{}).some(v => v > 0), reward: 50 },
+    { id: 'a_10q', name: '勤學小生', desc: '累計答對 50 題', check: s => (s.stats.correct||0) >= 50, reward: 100 },
+    { id: 'a_100q', name: '百題達人', desc: '累計答對 100 題', check: s => (s.stats.correct||0) >= 100, reward: 300 },
+    { id: 'a_combo', name: '連擊高手', desc: '單場連擊達 8', check: s => (s.stats.comboMax||0) >= 8, reward: 150 },
+    { id: 'a_boss', name: 'Boss 獵人', desc: '擊敗 3 個區域 Boss', check: s => Object.keys(s.stageStars||{}).filter(k => (s.stageStars[k]||0) > 0).length >= 3, reward: 250 },
+    { id: 'a_codex', name: '圖鑑收集家', desc: '收集 20 種怪物', check: s => Object.keys(s.codex||{}).length >= 20, reward: 400 },
+    { id: 'a_pet', name: '寵物夥伴', desc: '獲得 3 隻寵物', check: s => Object.keys(s.pets||{}).length >= 3, reward: 200 },
+    { id: 'a_city', name: '城市建設者', desc: '人口達到 100', check: s => (s.pop||0) >= 100, reward: 300 },
+    { id: 'a_level', name: '等級十', desc: '角色達到 Lv.10', check: s => (s.level||0) >= 10, reward: 200 },
+    { id: 'a_weak', name: '錯題剋星', desc: '擊敗錯題大魔王', check: s => !!s.achievements?.a_weak_done, reward: 350 }
+  ],
+  dailyTasks: [
+    { id: 'd_answer10', name: '答對 10 題', target: 10, key: 'correctToday', reward: { gold: 30, exp: 20 } },
+    { id: 'd_answer30', name: '答對 30 題', target: 30, key: 'correctToday', reward: { gold: 80, exp: 50 } },
+    { id: 'd_stage', name: '通關 1 次', target: 1, key: 'stagesToday', reward: { gold: 50, exp: 30 } },
+    { id: 'd_login', name: '今日登入', target: 1, key: 'loginToday', reward: { gold: 20, dia: 1 } }
+  ]
+};
+
+/* ===== 題庫等級標籤 ===== */
+const LV = [
+  ['幼稚園', '注音·認字·數量·顏色形狀'],
+  ['一年級', '國語·數學（基礎加減）'],
+  ['二年級', '國語·數學（加減乘）'],
+  ['三年級', '國語·數學·自然'],
+  ['四年級', '國語·數學·自然·社會'],
+  ['五年級', '國語·數學·自然·社會·英文'],
+  ['六年級', '國語·數學·自然·社會·英文（進階）']
+];
+
+/* ===== 題庫生成器（台灣課綱風格 · 大幅擴充版） ===== */
+/* ===== 題庫資料表（概念群：同一群內才是近/反義，干擾項只會從其他群抽） ===== */
+const QD = {
+  // 反義軸：A 與 B 互為反義。g = 最低出現年級（幼稚園=0）。幼稚園只會用單字詞
+  ANT: [
+    { g: 0, A: ['大'], B: ['小'] }, { g: 0, A: ['上'], B: ['下'] }, { g: 0, A: ['多'], B: ['少'] },
+    { g: 0, A: ['高'], B: ['矮', '低'] }, { g: 0, A: ['長'], B: ['短'] }, { g: 0, A: ['快', '快速', '迅速'], B: ['慢', '緩慢'] },
+    { g: 0, A: ['早', '早上', '早晨', '白天'], B: ['晚', '晚上', '夜晚'] }, { g: 0, A: ['黑'], B: ['白'] },
+    { g: 0, A: ['冷', '寒冷', '冰冷'], B: ['熱', '炎熱', '溫暖'] }, { g: 0, A: ['新'], B: ['舊'] },
+    { g: 0, A: ['前'], B: ['後'] }, { g: 0, A: ['開'], B: ['關'] }, { g: 0, A: ['來'], B: ['去'] },
+    { g: 0, A: ['胖'], B: ['瘦'] }, { g: 0, A: ['遠', '遠離'], B: ['近', '靠近'] }, { g: 0, A: ['輕'], B: ['重'] },
+    { g: 0, A: ['左'], B: ['右'] }, { g: 0, A: ['進'], B: ['出'] }, { g: 0, A: ['哭'], B: ['笑'] },
+    { g: 0, A: ['軟'], B: ['硬'] }, { g: 0, A: ['好'], B: ['壞'] }, { g: 0, A: ['買'], B: ['賣'] },
+    { g: 0, A: ['借'], B: ['還'] }, { g: 0, A: ['問'], B: ['答'] }, { g: 0, A: ['粗'], B: ['細'] },
+    { g: 0, A: ['深'], B: ['淺'] }, { g: 0, A: ['寬'], B: ['窄'] }, { g: 0, A: ['強'], B: ['弱'] },
+    { g: 0, A: ['醒'], B: ['睡'] }, { g: 0, A: ['坐'], B: ['站'] },
+    { g: 1, A: ['開心', '快樂', '高興'], B: ['難過', '傷心', '悲傷'] },
+    { g: 1, A: ['乾淨', '清潔'], B: ['骯髒', '髒亂'] },
+    { g: 1, A: ['安靜', '冷清', '寧靜'], B: ['吵鬧', '熱鬧', '喧嘩'] },
+    { g: 1, A: ['勇敢'], B: ['膽小'] }, { g: 1, A: ['開始'], B: ['結束'] }, { g: 1, A: ['喜歡', '喜愛'], B: ['討厭'] },
+    { g: 2, A: ['前進', '進步'], B: ['後退', '退步'] }, { g: 2, A: ['成功', '勝利'], B: ['失敗'] },
+    { g: 2, A: ['容易', '簡單'], B: ['困難', '複雜'] }, { g: 2, A: ['誠實'], B: ['說謊', '虛偽'] },
+    { g: 2, A: ['美麗', '漂亮'], B: ['醜陋', '難看'] }, { g: 2, A: ['出生'], B: ['死亡'] },
+    { g: 3, A: ['增加', '增多', '擴大', '上升'], B: ['減少', '減低', '縮小', '下降'] },
+    { g: 3, A: ['讚美', '稱讚'], B: ['批評', '責備'] }, { g: 3, A: ['豐富'], B: ['貧乏'] },
+    { g: 3, A: ['公開'], B: ['秘密', '隱密'] }, { g: 3, A: ['接受'], B: ['拒絕'] }, { g: 3, A: ['出現'], B: ['消失'] },
+    { g: 3, A: ['光明', '明亮'], B: ['黑暗', '昏暗'] }, { g: 3, A: ['清楚', '清晰'], B: ['模糊'] },
+    { g: 3, A: ['謙虛', '謙遜'], B: ['驕傲', '傲慢'] }, { g: 3, A: ['勤勞', '勤奮'], B: ['懶惰'] },
+    { g: 3, A: ['節省', '節約'], B: ['浪費'] }, { g: 3, A: ['出發'], B: ['抵達'] },
+    { g: 4, A: ['樂觀'], B: ['悲觀'] }, { g: 4, A: ['堅持'], B: ['放棄'] }, { g: 4, A: ['團結'], B: ['分裂'] },
+    { g: 4, A: ['主動'], B: ['被動'] }, { g: 4, A: ['優點'], B: ['缺點'] }, { g: 4, A: ['古代'], B: ['現代'] },
+    { g: 4, A: ['整齊', '整潔'], B: ['凌亂', '雜亂'] }, { g: 4, A: ['安全'], B: ['危險'] },
+    { g: 5, A: ['積極'], B: ['消極'] }, { g: 5, A: ['勤儉'], B: ['奢侈'] }, { g: 5, A: ['集中'], B: ['分散'] },
+    { g: 5, A: ['局部'], B: ['整體'] }, { g: 5, A: ['直接'], B: ['間接'] }, { g: 5, A: ['獨立'], B: ['依賴'] },
+    { g: 5, A: ['收入'], B: ['支出'] }, { g: 5, A: ['進口'], B: ['出口'] }, { g: 5, A: ['合理'], B: ['不合理', '荒謬'] },
+    { g: 6, A: ['繁榮'], B: ['衰敗', '蕭條'] }, { g: 6, A: ['保守'], B: ['開放'] }, { g: 6, A: ['謹慎'], B: ['魯莽'] },
+    { g: 6, A: ['慷慨'], B: ['吝嗇'] }, { g: 6, A: ['永恆', '永久'], B: ['短暫'] }, { g: 6, A: ['具體'], B: ['抽象'] },
+    { g: 6, A: ['主觀'], B: ['客觀'] }
+  ],
+
+  // 近義群：同群詞語意思接近，不同群彼此不近義
+  SYN: [
+    { g: 1, w: ['開心', '快樂', '高興'] }, { g: 1, w: ['漂亮', '美麗', '好看'] }, { g: 1, w: ['難過', '傷心'] },
+    { g: 1, w: ['生氣', '發怒'] }, { g: 1, w: ['安靜', '寧靜'] }, { g: 1, w: ['快速', '迅速', '飛快'] },
+    { g: 1, w: ['仔細', '小心', '細心'] }, { g: 1, w: ['聰明', '伶俐'] }, { g: 1, w: ['勇敢', '英勇'] },
+    { g: 1, w: ['孩子', '小孩', '兒童'] }, { g: 1, w: ['馬路', '道路', '街道'] }, { g: 1, w: ['爸爸', '父親'] },
+    { g: 1, w: ['媽媽', '母親'] }, { g: 1, w: ['朋友', '好友'] },
+    { g: 2, w: ['休息', '歇息'] }, { g: 2, w: ['等待', '等候'] }, { g: 2, w: ['努力', '用功'] },
+    { g: 2, w: ['明白', '了解', '懂得'] }, { g: 2, w: ['害怕', '恐懼'] }, { g: 2, w: ['房子', '房屋'] },
+    { g: 2, w: ['尋找', '搜尋', '找尋'] }, { g: 2, w: ['立刻', '馬上', '即刻'] }, { g: 2, w: ['忽然', '突然'] },
+    { g: 3, w: ['優秀', '傑出', '出色', '卓越'] }, { g: 3, w: ['辛苦', '辛勞'] }, { g: 3, w: ['誇獎', '稱讚', '讚美'] },
+    { g: 3, w: ['乾淨', '清潔', '整潔'] }, { g: 3, w: ['思念', '想念'] }, { g: 3, w: ['龐大', '巨大'] },
+    { g: 3, w: ['渺小', '微小', '細小'] }, { g: 3, w: ['希望', '盼望', '期望'] }, { g: 3, w: ['討論', '商量'] },
+    { g: 3, w: ['經常', '常常', '時常'] }, { g: 3, w: ['改善', '改進'] }, { g: 3, w: ['製造', '製作', '生產'] },
+    { g: 3, w: ['珍惜', '愛惜'] }, { g: 3, w: ['勤勞', '勤奮', '勤快'] },
+    { g: 4, w: ['疲倦', '疲勞', '疲憊'] }, { g: 4, w: ['鼓勵', '勉勵', '激勵'] }, { g: 4, w: ['保護', '守護', '維護'] },
+    { g: 4, w: ['珍貴', '寶貴'] }, { g: 4, w: ['謹慎', '慎重'] }, { g: 4, w: ['實施', '施行', '執行'] },
+    { g: 4, w: ['驚訝', '驚奇', '吃驚'] }, { g: 4, w: ['堅決', '果斷'] }, { g: 4, w: ['誠懇', '真誠'] },
+    { g: 5, w: ['繁榮', '興盛'] }, { g: 5, w: ['阻止', '制止'] }, { g: 5, w: ['授予', '頒發'] },
+    { g: 5, w: ['僅僅', '只是'] }, { g: 5, w: ['寬廣', '遼闊'] },
+    { g: 5, w: ['依然', '仍然'] }, { g: 5, w: ['詳細', '周密'] },
+    { g: 6, w: ['慷慨', '大方'] }, { g: 6, w: ['迫切', '急切'] }, { g: 6, w: ['簡潔', '精簡'] },
+    { g: 6, w: ['協助', '輔助', '幫忙'] }, { g: 6, w: ['權衡', '衡量'] }
+  ],
+
+  // 成語：meaning 彼此語意不重疊（同年級帶內）。g = 最低年級
+  IDIOM: [
+    { g: 2, w: '畫蛇添足', m: '做了多餘的事' }, { g: 2, w: '守株待兔', m: '不努力，只想等好運' },
+    { g: 2, w: '井底之蛙', m: '見識很狹小' }, { g: 2, w: '亡羊補牢', m: '出了問題，趕快補救' },
+    { g: 2, w: '一石二鳥', m: '做一件事，得到兩個好處' }, { g: 2, w: '對牛彈琴', m: '對不懂的人說話，白費力氣' },
+    { g: 2, w: '狐假虎威', m: '借別人的勢力來嚇人' }, { g: 2, w: '掩耳盜鈴', m: '自己騙自己' },
+    { g: 2, w: '刻舟求劍', m: '不知道隨情況改變做法' }, { g: 2, w: '愚公移山', m: '有恆心，困難的事也能完成' },
+    { g: 2, w: '拔苗助長', m: '太心急，反而把事情弄壞' },
+    { g: 3, w: '畫龍點睛', m: '在關鍵處加一筆，讓整體更生動' }, { g: 3, w: '塞翁失馬', m: '壞事也可能變成好事' },
+    { g: 3, w: '鶴立雞群', m: '在一群人中特別突出' }, { g: 3, w: '紙上談兵', m: '只會空談，不會實際做' },
+    { g: 3, w: '一鳴驚人', m: '平時不出名，一出手就讓人驚訝' }, { g: 3, w: '半途而廢', m: '做事做到一半就放棄' },
+    { g: 3, w: '三思而行', m: '多想幾次再行動' },
+    { g: 4, w: '溫故知新', m: '複習學過的東西，會有新的收穫' }, { g: 4, w: '舉一反三', m: '學到一件事，能推想出許多相關的事' },
+    { g: 4, w: '精益求精', m: '已經很好了，還要求更好' }, { g: 4, w: '有備無患', m: '事先準備好，就不怕出問題' },
+    { g: 4, w: '口是心非', m: '嘴上說的和心裡想的不一樣' }, { g: 4, w: '一絲不苟', m: '做事認真，一點也不馬虎' },
+    { g: 4, w: '集思廣益', m: '集合大家的想法，得到更多好意見' }, { g: 4, w: '事半功倍', m: '花的力氣少，成果卻很大' },
+    { g: 4, w: '循序漸進', m: '按照順序，一步一步來' },
+    { g: 5, w: '實事求是', m: '根據事實，找出正確的道理' }, { g: 5, w: '見賢思齊', m: '看到好榜樣，想向他學習' },
+    { g: 5, w: '不恥下問', m: '不覺得向比自己懂得少的人請教是丟臉的' }, { g: 5, w: '持之以恆', m: '長時間堅持下去' },
+    { g: 5, w: '同舟共濟', m: '大家同心合力渡過難關' }, { g: 5, w: '見義勇為', m: '看到正義的事，勇敢去做' },
+    { g: 5, w: '助人為樂', m: '以幫助別人為快樂' }, { g: 5, w: '大器晚成', m: '有才能的人，成就得比較晚' },
+    { g: 5, w: '青出於藍', m: '學生比老師更傑出' }, { g: 5, w: '全神貫注', m: '把精神集中在一件事上' },
+    { g: 5, w: '對症下藥', m: '針對問題，用對方法' }, { g: 5, w: '水到渠成', m: '條件成熟，事情自然成功' },
+    { g: 5, w: '一視同仁', m: '對每個人都一樣看待' },
+    { g: 6, w: '破釜沉舟', m: '下定決心，不留退路' }, { g: 6, w: '完璧歸趙', m: '把東西完整地還給原主' },
+    { g: 6, w: '草船借箭', m: '用聰明的方法得到需要的東西' }, { g: 6, w: '畫餅充飢', m: '用空想來安慰自己' },
+    { g: 6, w: '防微杜漸', m: '在壞事剛開始時就制止' }, { g: 6, w: '顧此失彼', m: '只顧到這邊，卻忽略了另一邊' },
+    { g: 6, w: '鞠躬盡瘁', m: '盡心盡力，直到最後' }, { g: 6, w: '相輔相成', m: '互相幫助，讓彼此更完整' }
+  ],
+
+  // 成語填空：[題目, 答案, [錯誤選項], 年級]。錯誤選項放進去都不會組成成語
+  FILL: [
+    ['畫蛇添（　）', '足', ['腳', '尾', '手'], 2], ['守株待（　）', '兔', ['鳥', '鹿', '鼠'], 2],
+    ['井底之（　）', '蛙', ['魚', '龜', '蝦'], 2], ['亡羊補（　）', '牢', ['圈', '籠', '棚'], 2],
+    ['一石二（　）', '鳥', ['魚', '雞', '蟲'], 2], ['對牛彈（　）', '琴', ['笛', '歌', '鼓'], 2],
+    ['狐假虎（　）', '威', ['勢', '力', '嚇'], 2], ['掩耳盜（　）', '鈴', ['鐘', '鼓', '錢'], 2],
+    ['刻舟求（　）', '劍', ['刀', '槍', '斧'], 2], ['愚公移（　）', '山', ['石', '土', '樹'], 2],
+    ['拔苗助（　）', '長', ['大', '高', '生'], 2],
+    ['畫龍點（　）', '睛', ['眼', '目', '珠'], 3], ['塞翁失（　）', '馬', ['牛', '羊', '鹿'], 3],
+    ['鶴立雞（　）', '群', ['窩', '籠', '舍'], 3], ['紙上談（　）', '兵', ['話', '戰', '將'], 3],
+    ['一鳴驚（　）', '人', ['天', '鳥', '世'], 3], ['三（　）而行', '思', ['想', '考', '慮'], 3],
+    ['半途而（　）', '廢', ['棄', '放', '退'], 3],
+    ['溫故知（　）', '新', ['識', '舊', '道'], 4], ['舉一反（　）', '三', ['二', '四', '十'], 4],
+    ['有備無（　）', '患', ['害', '憂', '慮'], 4], ['事半功（　）', '倍', ['加', '多', '雙'], 4],
+    ['集思廣（　）', '益', ['義', '議', '易'], 4], ['循序漸（　）', '進', ['近', '行', '前'], 4],
+    ['口是心（　）', '非', ['否', '不', '誤'], 4], ['精益求（　）', '精', ['好', '佳', '妙'], 4],
+    ['實事求（　）', '是', ['事', '實', '真'], 5], ['見賢思（　）', '齊', ['賢', '善', '好'], 5],
+    ['持之以（　）', '恆', ['久', '心', '衡'], 5], ['同舟共（　）', '濟', ['進', '渡', '船'], 5],
+    ['見義勇（　）', '為', ['敢', '行', '做'], 5], ['大器晚（　）', '成', ['熟', '就', '功'], 5],
+    ['水到渠（　）', '成', ['流', '開', '通'], 5], ['一視同（　）', '仁', ['人', '心', '情'], 5],
+    ['破釜沉（　）', '舟', ['船', '河', '江'], 6], ['完璧歸（　）', '趙', ['魏', '齊', '楚'], 6],
+    ['防微杜（　）', '漸', ['減', '慢', '斷'], 6], ['顧此失（　）', '彼', ['他', '你', '己'], 6],
+    ['鞠躬盡（　）', '瘁', ['力', '粹', '悴'], 6], ['相輔相（　）', '成', ['助', '合', '益'], 6]
+  ],
+
+  // 部首：同一部首的字；題目問「哪個字的部首是…」，干擾字取自其他部首
+  RADICAL: [
+    { r: '水（氵）', w: ['河', '海', '湖', '洗', '油', '汗', '泳'] },
+    { r: '木', w: ['桌', '椅', '樹', '林', '桃', '梨'] },
+    { r: '口', w: ['吃', '喝', '叫', '唱', '哭', '吹'] },
+    { r: '手（扌）', w: ['打', '拍', '推', '拉', '提', '抱'] },
+    { r: '足（⻊）', w: ['跑', '跳', '踢', '路', '跟'] },
+    { r: '心', w: ['想', '思', '念', '忘', '急'] },
+    { r: '艸（艹）', w: ['花', '草', '菜', '苗', '葉', '茶'] },
+    { r: '言（訁）', w: ['說', '話', '請', '謝', '讀', '語'] },
+    { r: '金（釒）', w: ['銀', '銅', '鐵', '鐘', '錢', '針'] },
+    { r: '日', w: ['時', '晴', '晚', '早', '星'] }
+  ],
+
+  // 英文單字（分類），給五、六年級用
+  ENG: {
+    animals: [['dog', '狗'], ['cat', '貓'], ['bird', '鳥'], ['fish', '魚'], ['rabbit', '兔子'], ['tiger', '老虎'], ['monkey', '猴子'], ['elephant', '大象'], ['horse', '馬'], ['duck', '鴨子']],
+    fruits: [['apple', '蘋果'], ['banana', '香蕉'], ['orange', '柳橙'], ['grape', '葡萄'], ['watermelon', '西瓜'], ['strawberry', '草莓'], ['lemon', '檸檬'], ['mango', '芒果']],
+    colors: [['red', '紅色'], ['blue', '藍色'], ['green', '綠色'], ['yellow', '黃色'], ['black', '黑色'], ['white', '白色'], ['purple', '紫色'], ['pink', '粉紅色'], ['brown', '咖啡色']],
+    family: [['father', '爸爸'], ['mother', '媽媽'], ['brother', '哥哥或弟弟'], ['sister', '姊姊或妹妹'], ['grandfather', '爺爺'], ['grandmother', '奶奶']],
+    school: [['teacher', '老師'], ['student', '學生'], ['book', '書'], ['pencil', '鉛筆'], ['desk', '書桌'], ['classroom', '教室'], ['homework', '功課'], ['library', '圖書館']],
+    body: [['head', '頭'], ['hand', '手'], ['foot', '腳'], ['eye', '眼睛'], ['ear', '耳朵'], ['mouth', '嘴巴'], ['nose', '鼻子']],
+    weather: [['sunny', '晴天的'], ['rainy', '下雨的'], ['cloudy', '多雲的'], ['windy', '有風的'], ['snowy', '下雪的']],
+    time: [['today', '今天'], ['tomorrow', '明天'], ['yesterday', '昨天'], ['morning', '早上'], ['afternoon', '下午'], ['evening', '晚上']],
+    verbs: [['run', '跑'], ['jump', '跳'], ['swim', '游泳'], ['read', '閱讀'], ['write', '寫'], ['sing', '唱歌'], ['dance', '跳舞'], ['eat', '吃'], ['drink', '喝'], ['sleep', '睡覺']],
+    adj: [['big', '大的'], ['small', '小的'], ['happy', '開心的'], ['sad', '難過的'], ['hot', '熱的'], ['cold', '冷的'], ['fast', '快的'], ['slow', '慢的'], ['tall', '高的'], ['short', '矮的'], ['old', '舊的；老的'], ['new', '新的']],
+    adv6: [['beautiful', '美麗的'], ['important', '重要的'], ['different', '不同的'], ['because', '因為'], ['although', '雖然'], ['environment', '環境'], ['knowledge', '知識'], ['adventure', '冒險'], ['challenge', '挑戰'], ['success', '成功'], ['problem', '問題'], ['solution', '解決方法'], ['history', '歷史'], ['science', '科學'], ['culture', '文化'], ['library', '圖書館'], ['festival', '節慶'], ['journey', '旅程'], ['energy', '能源'], ['recycle', '回收']]
+  }
+};
+
+/* ===== 知識題庫：每題 [題目, 正確答案, [人工指定的錯誤選項]] ===== */
+const QP = {
+  // 幼稚園：顏色（選項會顯示對應色點）
+  COLOR: [
+    ['晴天的天空是什麼顏色？', '藍色', ['紅色', '綠色', '紫色']], ['熟透的香蕉是什麼顏色？', '黃色', ['藍色', '紫色', '紅色']],
+    ['草地是什麼顏色？', '綠色', ['紅色', '紫色', '粉紅色']], ['紅蘿蔔是什麼顏色？', '橘色', ['藍色', '紫色', '白色']],
+    ['牛奶是什麼顏色？', '白色', ['紅色', '藍色', '綠色']], ['草莓是什麼顏色？', '紅色', ['藍色', '紫色', '黑色']],
+    ['烏鴉是什麼顏色？', '黑色', ['紅色', '黃色', '粉紅色']], ['雪是什麼顏色？', '白色', ['紅色', '黃色', '綠色']],
+    ['南瓜是什麼顏色？', '橘色', ['藍色', '紫色', '粉紅色']], ['檸檬是什麼顏色？', '黃色', ['藍色', '紫色', '紅色']],
+    ['巧克力是什麼顏色？', '咖啡色', ['藍色', '粉紅色', '綠色']], ['熟的番茄是什麼顏色？', '紅色', ['藍色', '紫色', '白色']],
+    ['茄子是什麼顏色？', '紫色', ['紅色', '黃色', '白色']], ['小黃瓜是什麼顏色？', '綠色', ['紅色', '紫色', '粉紅色']]
+  ],
+  SHAPE: [['盤子', '圓形'], ['車輪', '圓形'], ['時鐘', '圓形'], ['硬幣', '圓形'], ['披薩切下來的一片', '三角形'], ['三角旗', '三角形'],
+    ['三角板', '三角形'], ['門', '長方形'], ['課本', '長方形'], ['黑板', '長方形'], ['電視螢幕', '長方形'], ['骰子的一個面', '正方形'],
+    ['便利貼', '正方形'], ['棋盤', '正方形'], ['地磚', '正方形']],
+  K_FACT: [
+    ['太陽從哪一個方向升起？', '東邊', ['西邊', '南邊', '北邊']], ['下雨天出門要帶什麼？', '雨傘', ['太陽眼鏡', '泳圈', '風箏']],
+    ['晚上天空中最大最亮的是？', '月亮', ['太陽', '星星', '雲']], ['下面哪一個不是水果？', '高麗菜', ['蘋果', '香蕉', '西瓜']],
+    ['下面哪一個是蔬菜？', '高麗菜', ['蘋果', '香蕉', '西瓜']], ['寫字要用什麼？', '鉛筆', ['湯匙', '牙刷', '雨傘']],
+    ['吃飯前要先做什麼？', '洗手', ['看電視', '玩玩具', '跑步']], ['遇到紅燈要怎麼辦？', '停下來', ['快跑過去', '慢慢走過去', '跳起來']],
+    ['喝湯要用什麼？', '湯匙', ['筷子', '鉛筆', '剪刀']], ['刷牙要用什麼？', '牙刷', ['梳子', '鍋鏟', '鉛筆']],
+    ['夏天很熱，我們會穿什麼？', '短袖衣服', ['厚外套', '毛手套', '羽絨衣']], ['冬天很冷，我們會穿什麼？', '厚外套', ['短袖', '泳衣', '涼鞋']],
+    ['下面哪一個是交通工具？', '公車', ['鉛筆', '蘋果', '枕頭']], ['我們用身體的哪一部分來看東西？', '眼睛', ['耳朵', '鼻子', '嘴巴']],
+    ['我們用身體的哪一部分來聽聲音？', '耳朵', ['眼睛', '鼻子', '手']], ['我們用身體的哪一部分來聞味道？', '鼻子', ['耳朵', '眼睛', '腳']],
+    ['一個人有幾隻眼睛？', '2隻', ['1隻', '3隻', '4隻']], ['一隻手有幾根手指頭？', '5根', ['3根', '4根', '6根']],
+    ['晚上睡覺要睡在哪裡？', '床上', ['馬路上', '廚房的桌上', '操場']], ['下面哪一個會飛？', '小鳥', ['小狗', '烏龜', '大象']],
+    ['下面哪一個生活在水裡？', '魚', ['小鳥', '小狗', '兔子']], ['垃圾要丟到哪裡？', '垃圾桶', ['書包', '冰箱', '鞋櫃']],
+    ['下面哪一個是動物？', '小貓', ['石頭', '桌子', '雲']], ['過馬路時，要先做什麼？', '看看有沒有車', ['閉上眼睛', '用力衝過去', '一邊玩手機']]
+  ],
+  H1: [
+    ['早上起床後，要先做什麼？', '刷牙洗臉', ['直接去睡覺', '玩泥巴', '吃糖果']], ['上課時有問題，應該怎麼做？', '舉手發問', ['大聲吼叫', '離開座位亂跑', '趴在桌上睡覺']],
+    ['借了別人的東西，用完要？', '還給對方', ['藏起來', '送給別人', '丟掉']], ['別人幫助你的時候，要說什麼？', '謝謝', ['不要', '再見', '對不起']],
+    ['不小心撞到別人，要說什麼？', '對不起', ['謝謝', '不客氣', '再見']], ['在圖書館裡要怎麼樣？', '輕聲細語', ['大聲唱歌', '跑來跑去', '吃零食']],
+    ['打噴嚏的時候要怎麼做？', '用手肘或衛生紙遮住口鼻', ['對著別人打', '張大嘴巴', '用髒手摀住']], ['排隊的時候要？', '一個一個照順序', ['插隊', '推擠', '大聲吵鬧']],
+    ['搭公車遇到老奶奶，我們可以？', '讓座給她', ['假裝睡覺', '跟她搶位子', '把腳伸出去']], ['看到地上有垃圾，我們可以？', '撿起來丟進垃圾桶', ['踢到旁邊', '假裝沒看到', '再丟更多']],
+    ['睡覺前要先做什麼？', '刷牙', ['吃很多糖果', '跑步', '看很久的電視']], ['下課後想上廁所，應該？', '去廁所，用完要沖水', ['在教室裡解決', '憋著不去', '請同學代替']]
+  ],
+  Q: [['鉛筆', '枝', ['本', '朵', '隻']], ['書', '本', ['枝', '朵', '輛']], ['花', '朵', ['本', '輛', '件']], ['魚', '條', ['本', '朵', '輛']],
+    ['汽車', '輛', ['隻', '朵', '本']], ['房子', '間', ['輛', '朵', '本']], ['鞋子', '雙', ['本', '朵', '輛']], ['貓', '隻', ['本', '朵', '輛']],
+    ['紙', '張', ['條', '朵', '輛']], ['樹', '棵', ['件', '本', '隻']], ['雨傘', '把', ['隻', '朵', '本']], ['衣服', '件', ['棵', '雙', '輛']],
+    ['蘋果', '顆', ['枝', '輛', '本']], ['蛋糕', '塊', ['輛', '朵', '條']], ['項鍊', '條', ['本', '朵', '輛']], ['飛機', '架', ['朵', '本', '雙']]],
+  CHAR_ZY: [['山', 'ㄕㄢ'], ['水', 'ㄕㄨㄟˇ'], ['火', 'ㄏㄨㄛˇ'], ['日', 'ㄖˋ'], ['月', 'ㄩㄝˋ'], ['口', 'ㄎㄡˇ'], ['手', 'ㄕㄡˇ'],
+    ['木', 'ㄇㄨˋ'], ['大', 'ㄉㄚˋ'], ['小', 'ㄒㄧㄠˇ'], ['人', 'ㄖㄣˊ'], ['天', 'ㄊㄧㄢ'], ['地', 'ㄉㄧˋ'], ['上', 'ㄕㄤˋ'],
+    ['下', 'ㄒㄧㄚˋ'], ['中', 'ㄓㄨㄥ'], ['田', 'ㄊㄧㄢˊ'], ['牛', 'ㄋㄧㄡˊ'], ['羊', 'ㄧㄤˊ'], ['魚', 'ㄩˊ'], ['鳥', 'ㄋㄧㄠˇ'], ['花', 'ㄏㄨㄚ']],
+  TONE: [['媽', 1], ['麻', 2], ['馬', 3], ['罵', 4], ['巴', 1], ['拔', 2], ['把', 3], ['爸', 4], ['衣', 1], ['移', 2], ['椅', 3], ['意', 4],
+    ['書', 1], ['熟', 2], ['暑', 3], ['樹', 4], ['湯', 1], ['糖', 2], ['躺', 3], ['燙', 4]],
+  STRUCT: [['明', '左右結構'], ['林', '左右結構'], ['好', '左右結構'], ['休', '左右結構'], ['早', '上下結構'], ['花', '上下結構'], ['雲', '上下結構'],
+    ['思', '上下結構'], ['國', '包圍結構'], ['問', '包圍結構'], ['圓', '包圍結構'], ['同', '包圍結構'], ['木', '獨體字'], ['山', '獨體字'], ['大', '獨體字'], ['水', '獨體字']],
+  PUNCT: [['媽媽在廚房煮飯（　）', '。'], ['你叫什麼名字（　）', '？'], ['哎呀（　）我的杯子打破了', '！'], ['我喜歡吃蘋果（　）香蕉和橘子', '、'],
+    ['誰在敲門（　）', '？'], ['弟弟正在寫功課（　）', '。'], ['哇（　）你好厲害', '！'], ['小明（　）小華和小美都是我的好朋友', '、'],
+    ['你今天吃飽了嗎（　）', '？'], ['太好了（　）我們贏了', '！'], ['星期六我們全家去公園玩（　）', '。'], ['書桌上有鉛筆（　）橡皮擦和尺', '、']],
+  SCI2: [
+    ['哪一種動物會下蛋？', '小雞', ['小狗', '小貓', '小兔']], ['太陽從哪個方向下山？', '西邊', ['東邊', '南邊', '北邊']], ['下面哪一個是植物？', '玫瑰花', ['石頭', '小狗', '雲']],
+    ['冰塊放在太陽下面，會怎麼樣？', '融化變成水', ['變得更大', '變成石頭', '變成沙子']], ['下面哪一種動物身上有羽毛？', '小鳥', ['小魚', '小狗', '青蛙']],
+    ['種子發芽需要什麼？', '水', ['玩具', '糖果', '石頭']], ['下面哪一種動物有四隻腳？', '小狗', ['小鳥', '蛇', '魚']], ['下面哪一種動物沒有腳？', '蛇', ['小狗', '小貓', '兔子']],
+    ['夏天為什麼大家喜歡吃冰？', '天氣熱想涼快', ['天氣冷想暖和', '因為冰是熱的', '因為冰不會融化']], ['哪一種東西是用來看時間的？', '時鐘', ['溫度計', '尺', '體重計']],
+    ['哪一種東西是用來量溫度的？', '溫度計', ['時鐘', '尺', '體重計']], ['哪一種東西是用來量身高的？', '尺', ['時鐘', '溫度計', '雨傘']]],
+  SCI3: [
+    ['水在一般情況下，幾度會結冰？', '0℃', ['50℃', '100℃', '30℃']], ['水在一般情況下，幾度會沸騰？', '100℃', ['0℃', '50℃', '10℃']],
+    ['人需要吸進哪一種氣體才能活下去？', '氧氣', ['二氧化碳', '氫氣', '氦氣']], ['昆蟲有幾隻腳？', '6隻', ['4隻', '8隻', '10隻']],
+    ['蝴蝶的一生，正確的順序是？', '卵→幼蟲→蛹→成蟲', ['卵→蛹→幼蟲→成蟲', '幼蟲→卵→蛹→成蟲', '卵→成蟲→幼蟲→蛹']], ['青蛙小時候叫做？', '蝌蚪', ['幼蟲', '小魚', '蛹']],
+    ['磁鐵可以吸住下面哪一個？', '鐵釘', ['橡皮擦', '木尺', '塑膠杯']], ['木塊放進水裡通常會？', '浮起來', ['沈下去', '溶化', '變成氣體']],
+    ['鐵釘放進水裡會？', '沈下去', ['浮起來', '溶化', '變成氣體']], ['冰塊是固體，水是？', '液體', ['氣體', '固體', '粉末']],
+    ['水蒸氣遇冷變成小水珠，這個現象叫？', '凝結', ['蒸發', '融化', '凝固']], ['冰變成水，這個現象叫？', '融化', ['蒸發', '凝結', '凝固']],
+    ['濕衣服曬乾，是因為水發生了什麼變化？', '蒸發', ['融化', '凝結', '凝固']], ['月亮本身會發光嗎？', '不會，是反射太陽光', ['會', '會，但是比太陽暗', '只有滿月時會']],
+    ['聲音是怎麼產生的？', '物體振動', ['物體靜止', '物體變冷', '物體變重']], ['下面哪一種動物是哺乳類？', '海豚', ['鯊魚', '章魚', '烏龜']],
+    ['植物的哪一個部位主要負責吸收土裡的水分？', '根', ['葉', '花', '果實']]],
+  SCI4: [
+    ['電池、燈泡和導線連成一個完整的圈，燈泡會亮，這叫做？', '通路', ['斷路', '絕緣', '靜電']], ['下面哪一種材料容易導電？', '銅線', ['橡皮擦', '塑膠尺', '木筷']],
+    ['月亮從新月慢慢變到滿月，亮的部分會怎麼變？', '越來越多', ['越來越少', '一直不變', '變成紅色']], ['農曆十五左右的月亮是？', '滿月', ['新月', '上弦月', '下弦月']],
+    ['食物鏈的起點通常是？', '植物（生產者）', ['兔子', '老鷹', '蛇']], ['太空中沒有空氣，所以聲音會？', '無法傳播', ['傳得更快', '傳得更遠', '變得更大聲']],
+    ['太陽是？', '恆星', ['行星', '衛星', '彗星']], ['月亮是地球的什麼？', '衛星', ['行星', '恆星', '彗星']], ['地球是太陽系的什麼？', '行星', ['恆星', '衛星', '彗星']],
+    ['下面哪一種是可再生的能源？', '太陽能', ['煤炭', '石油', '天然氣']], ['花的哪一個部分之後會長成果實？', '子房', ['花瓣', '花萼', '雄蕊']],
+    ['影子是因為光被什麼擋住形成的？', '不透明的物體', ['空氣', '透明的玻璃', '清水']], ['動物吃植物、植物不吃動物，所以植物是？', '生產者', ['消費者', '分解者', '掠食者']]],
+  SCI5: [
+    ['醋的性質是？', '酸性', ['鹼性', '中性', '沒有性質']], ['肥皂水的性質是？', '鹼性', ['酸性', '中性', '沒有性質']], ['藍色石蕊試紙遇到酸性溶液會變成？', '紅色', ['藍色變得更深', '黃色', '黑色']],
+    ['地球內部由外到內依序是？', '地殼、地函、地核', ['地核、地函、地殼', '地函、地殼、地核', '地殼、地核、地函']], ['燃燒需要三個條件，下面哪一個不是？', '水', ['可燃物', '氧氣', '達到燃點的溫度']],
+    ['人體負責把血液送到全身的器官是？', '心臟', ['胃', '肺', '腎']], ['人體吸收食物養分的主要地方是？', '小腸', ['大腸', '氣管', '心臟']], ['氣體交換（吸氧氣、排二氧化碳）發生在？', '肺', ['胃', '心臟', '腎']],
+    ['日常用的剪刀、蹺蹺板都是利用什麼原理？', '槓桿原理', ['浮力原理', '磁力原理', '電路原理']], ['地球的自轉會造成什麼現象？', '白天和黑夜', ['四季變化', '月亮盈虧', '颱風']],
+    ['地球繞太陽公轉一圈大約需要？', '一年', ['一天', '一個月', '一星期']], ['溫度計的液柱上升，代表溫度？', '升高', ['降低', '不變', '不能確定']]],
+  SCI6: [
+    ['生態系中，把動植物遺體分解的是？', '分解者（如菌類）', ['生產者', '草食動物', '肉食動物']], ['全球暖化可能造成什麼結果？', '海平面上升', ['海平面下降', '北極冰變厚', '氣溫整體下降']],
+    ['色光的三原色是？', '紅、綠、藍', ['紅、黃、藍', '黑、白、灰', '紅、橙、黃']], ['地球上的水，大部分是？', '海水', ['河水', '湖水', '地下水']],
+    ['地震主要是因為什麼原因發生？', '地殼板塊運動', ['月亮的引力', '颱風經過', '太陽光太強']], ['地球暖化主要與哪一種氣體增加有關？', '二氧化碳', ['氧氣', '氮氣', '氫氣']],
+    ['下面哪一種做法最能節約能源？', '隨手關燈', ['整晚開冷氣', '短程也開車', '一直開著水龍頭']], ['空氣中含量最多的氣體是？', '氮氣', ['氧氣', '二氧化碳', '氫氣']],
+    ['物體從高處落下，是因為受到什麼力？', '重力', ['磁力', '浮力', '摩擦力']], ['能讓光線改變方向、成像的玻璃工具是？', '透鏡', ['木板', '鐵片', '海綿']]],
+  SOC4: [
+    ['台灣最高的山是？', '玉山', ['阿里山', '雪山', '太魯閣']], ['台灣最長的河流是？', '濁水溪', ['淡水河', '高屏溪', '基隆河']], ['日月潭位在哪一個縣市？', '南投縣', ['花蓮縣', '台東縣', '屏東縣']],
+    ['台灣位在地球的哪一洲？', '亞洲', ['歐洲', '非洲', '美洲']], ['中華民國的國慶日是？', '10月10日', ['1月1日', '5月1日', '12月25日']], ['台灣東邊的大洋是？', '太平洋', ['大西洋', '印度洋', '北冰洋']],
+    ['台灣和中國大陸之間的海峽叫什麼？', '台灣海峽', ['巴士海峽', '麻六甲海峽', '白令海峽']], ['台灣本島最南端的縣市是？', '屏東縣', ['宜蘭縣', '新竹縣', '苗栗縣']],
+    ['地圖上通常是上北下南，那麼右邊是哪個方向？', '東', ['西', '南', '北']], ['地圖上的「比例尺」可以讓我們知道什麼？', '實際距離有多遠', ['天氣冷不冷', '地方有多少人', '哪裡有好吃的']],
+    ['中華民國的國花是？', '梅花', ['玫瑰花', '櫻花', '荷花']], ['台灣面積最大的縣市是？', '花蓮縣', ['台北市', '彰化縣', '澎湖縣']], ['澎湖在台灣的哪一個方向附近海域？', '西邊', ['東邊', '北邊', '南邊']],
+    ['垃圾分類時，寶特瓶應該放進？', '資源回收', ['廚餘', '一般垃圾', '有害廢棄物']], ['吃剩的菜渣和果皮可以放進？', '廚餘', ['資源回收', '寶特瓶回收', '有害廢棄物']]],
+  SOC5: [
+    ['台灣冬天吹的季風主要是？', '東北季風', ['西南季風', '東南風', '西北風']], ['台灣夏秋兩季常出現的災害性天氣是？', '颱風', ['海嘯', '沙塵暴', '暴風雪']],
+    ['發生地震時，在教室裡應該怎麼做？', '躲在桌子下保護頭部', ['跑去搭電梯', '站在窗邊看', '衝到陽台']], ['地球上最大的海洋是？', '太平洋', ['大西洋', '印度洋', '北冰洋']],
+    ['七大洲中面積最大的是？', '亞洲', ['非洲', '歐洲', '大洋洲']], ['七大洲中面積最小的是？', '大洋洲', ['亞洲', '非洲', '北美洲']], ['世界上最高的山峰是？', '聖母峰', ['玉山', '富士山', '阿爾卑斯山']],
+    ['赤道附近的氣候通常是？', '炎熱', ['寒冷', '下雪', '乾冷']], ['台北、台中、高雄的共同點是？', '都是直轄市', ['都在東部', '都是離島', '都是山地']],
+    ['地圖上的圖例是用來？', '說明符號代表什麼', ['畫出山的高度', '顯示今天天氣', '標示時間']], ['等高線越密集的地方，坡度通常？', '越陡', ['越平緩', '一定是海洋', '沒有關係']]],
+  SOC6: [
+    ['聯合國總部位在哪一個城市？', '紐約', ['倫敦', '巴黎', '東京']], ['奧運會每幾年舉辦一次？', '4年', ['2年', '3年', '5年']], ['我國總統由誰選出？', '全體公民投票', ['立法委員', '行政院長', '法官']],
+    ['法律是由哪一個機關制定的？', '立法院', ['行政院', '司法院', '監察院']], ['下面哪一個做法最能節能減碳？', '搭乘大眾運輸工具', ['每天自己開車', '整晚開著冷氣', '用完電器不拔插頭']],
+    ['世界衛生組織的簡稱是？', 'WHO', ['UN', 'WTO', 'FIFA']], ['「少數服從多數」常用在哪種決定方式？', '投票表決', ['抽籤決定', '年紀大的人決定', '誰大聲誰決定']],
+    ['使用網路時，下面哪一個是正確的做法？', '不隨便透露個人資料', ['把密碼告訴朋友', '亂點不明連結', '隨意轉傳謠言']], ['去不同國家旅遊，我們應該？', '尊重當地的文化與習慣', ['嘲笑他們的習慣', '只照自己的習慣', '破壞當地文物']]],
+  RHET: [
+    ['月亮像一個大銀盤掛在天空。', '譬喻'], ['小花對著我微笑。', '擬人'], ['春天的風像媽媽的手，輕輕撫摸著我。', '譬喻'], ['風兒在樹林裡唱歌。', '擬人'],
+    ['太陽公公笑瞇瞇地看著大家。', '擬人'], ['彎彎的月亮好像一條小船。', '譬喻'], ['花兒們在微風中跳舞。', '擬人'], ['小明的臉紅得像顆蘋果。', '譬喻']],
+  RHET2: [
+    ['春天來了，花開了；夏天來了，蟬叫了；秋天來了，葉黃了。', '排比'], ['我肚子餓得可以吞下一頭牛。', '誇飾'], ['他的笑聲大到連天花板都快掀掉了。', '誇飾'],
+    ['書是智慧的鑰匙，書是知識的寶庫，書是心靈的朋友。', '排比'], ['這條路長得看不到盡頭。', '誇飾'], ['星星眨著眼睛，好奇地看著大地。', '擬人'], ['他的眼睛像兩顆黑葡萄。', '譬喻']],
+  EN_G: [
+    ['I (　) a student.', 'am', ['is', 'are', 'be']], ['She (　) my sister.', 'is', ['am', 'are', 'be']], ['They (　) happy.', 'are', ['am', 'is', 'be']],
+    ['He (　) to school every day.', 'goes', ['go', 'going', 'gone']], ['Yesterday I (　) to the park.', 'went', ['go', 'goes', 'going']], ['There are three (　) on the desk.', 'books', ['book', 'a book', 'bookes']],
+    ['(　) you like apples?', 'Do', ['Are', 'Is', 'Does']], ['(　) he play basketball?', 'Does', ['Do', 'Is', 'Are']], ['How (　) apples are there?', 'many', ['much', 'long', 'old']],
+    ['How (　) is the cake? It is 100 dollars.', 'much', ['many', 'long', 'old']], ['I (　) breakfast at seven yesterday.', 'had', ['have', 'has', 'having']], ['What time (　) it?', 'is', ['am', 'are', 'do']],
+    ['This book is (　) than that one.', 'thicker', ['thick', 'thickest', 'more thick']], ['She is the (　) girl in my class.', 'tallest', ['taller', 'tall', 'more tall']], ['I have two (　).', 'brothers', ['brother', 'a brother', 'brotheres']]],
+  EN_T: [
+    ['我喜歡吃蘋果。', 'I like apples.', ['I am like apples.', 'I likes apples.', 'I like eat apples.']], ['他是我的老師。', 'He is my teacher.', ['He am my teacher.', 'He are my teacher.', 'He is my teachers.']],
+    ['我每天七點起床。', 'I get up at seven every day.', ['I get up at seven yesterday.', 'I am get up at seven.', 'I gets up at seven.']], ['她正在看書。', 'She is reading a book.', ['She read a book now.', 'She is read a book.', 'She reading are a book.']],
+    ['這隻貓很可愛。', 'This cat is cute.', ['This cat are cute.', 'This cats is cute.', 'This cat cute is.']], ['昨天我去了公園。', 'I went to the park yesterday.', ['I go to the park yesterday.', 'I goed to the park yesterday.', 'I am went to the park.']]]
+};
+
+/* ===== 題庫生成器 v2（台灣課綱風格） =====
+ * 設計原則：
+ *  1. 每題只有一個正確答案：干擾項由人工指定或取自「不同概念群」，不再隨機亂湊。
+ *  2. 近義/反義/成語使用「概念群」，抽干擾項時只會從其他群抽，避免出現第二個正確答案。
+ *  3. 數學干擾項用常見錯誤（忘記進位、乘除搞混…），且不會出現負數或重複。
+ *  4. 對 Boss（hard=true）會用較大的數字／較難的題型。
+ */
+const QG = {
+  _hard: false,
+  R(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); },
+  // 難度偏移：Boss 取區間後 60%
+  N(lo, hi) { return this._hard ? this.R(lo + Math.floor((hi - lo) * 0.4), hi) : this.R(lo, hi); },
+  pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; },
+  shuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; },
+  sample(arr, n) { return this.shuffle(arr).slice(0, n); },
+  // 依權重抽題型：list = [[權重, 函式], ...]
+  weighted(list) {
+    let t = 0; list.forEach(x => t += x[0]);
+    let r = Math.random() * t;
+    for (const x of list) { r -= x[0]; if (r <= 0) return x[1]; }
+    return list[list.length - 1][1];
+  },
+
+  /* 組題：答案 + 干擾項 → 4 個不重複選項。
+   * 數字答案：不足會用「接近的數」補，且不會產生負數；文字答案：干擾項不夠就丟錯誤（由 lint 抓出來） */
+  mk(subj, q, ans, extra, unit, extraProps) {
+    unit = unit || '';
+    const key = x => String(x);
+    const seen = new Set([key(ans)]);
+    const pool = [];
+    (extra || []).forEach(x => { if (x === null || x === undefined) return; if (typeof x === 'number' && (!isFinite(x) || x < 0)) return; if (!seen.has(key(x))) { seen.add(key(x)); pool.push(x); } });
+    let wrong = this.shuffle(pool).slice(0, 3);
+    if (wrong.length < 3 && typeof ans === 'number') {
+      const step = Number.isInteger(ans) ? 1 : 0.1;
+      const fix = n => Number.isInteger(ans) ? n : Math.round(n * 100) / 100;
+      const lo = ans >= 1 ? 1 : 0;   // 答案 ≥1 時，補的干擾項也不出現 0
+      const cands = [1, -1, 2, -2, 3, -3, 10, -10, 4, 5].map(d => fix(ans + d * step));
+      for (const c of cands) { if (wrong.length >= 3) break; if (c >= lo && !seen.has(key(c))) { seen.add(key(c)); wrong.push(c); } }
+    }
+    if (wrong.length < 3) throw new Error('干擾項不足：' + q);
+    const opts = this.shuffle([ans, ...wrong]).map(x => key(x) + unit);
+    return Object.assign({ subj, q, a: key(ans) + unit, opts }, extraProps || {});
+  },
+
+  /* 知識題：item = [題目, 正確答案, [人工指定的錯誤選項…]] */
+  fact(subj, item, extraProps) {
+    return this.mk(subj, item[0], item[1], item[2], '', extraProps);
+  },
+  factFrom(subj, items, extraProps) { return this.fact(subj, this.pick(items), extraProps); },
+
+  /* 兩欄對應（例：英文單字 → 中文）。壞選項取自同表其他項目，且排除 sameGroup 判定為同義者 */
+  pairQ(subj, pairs, fmt, opts) {
+    opts = opts || {};
+    const p = this.pick(pairs);
+    const rev = opts.reverse && Math.random() < 0.5;
+    const ans = rev ? p[0] : p[1];
+    const others = pairs.filter(x => x !== p && (rev ? x[0] : x[1]) !== ans && (!opts.conflict || !opts.conflict(p, x)));
+    const wrong = this.sample(others, 3).map(x => rev ? x[0] : x[1]);
+    return this.mk(subj, fmt(p, rev), ans, wrong, '', opts.props);
+  },
+
+  /* 年級帶：只用「最近三個年級」的概念，避免高年級出現太簡單的字，也避免跨年級語意重疊 */
+  band(list, lv, width) {
+    const w = width === undefined ? 2 : width;
+    const inBand = list.filter(x => x.g <= lv && x.g >= lv - w);
+    const top = inBand.filter(x => x.g === lv);
+    return { all: inBand, top };
+  },
+  /* 近義：答案取同群另一詞，干擾取其他群（同年級帶內） */
+  synQ(lv, fmt) {
+    const { all, top } = this.band(QD.SYN, lv);
+    const grp = (top.length && Math.random() < 0.55) ? this.pick(top) : this.pick(all);
+    const [a, b] = this.sample(grp.w, 2);
+    const wrong = this.sample(all.filter(x => x !== grp), 3).map(x => this.pick(x.w));
+    return this.mk('國語', fmt(a), b, wrong);
+  },
+  /* 反義：答案取對側詞，干擾取其他軸。幼稚園只用單字詞 */
+  antQ(lv, fmt) {
+    const lenOk = w => lv === 0 ? w.length === 1 : true;
+    const usable = QD.ANT.filter(x => x.A.some(lenOk) && x.B.some(lenOk));
+    const { all, top } = this.band(usable, lv);
+    const ax = (top.length && Math.random() < 0.5) ? this.pick(top) : this.pick(all);
+    const flip = Math.random() < 0.5;
+    const from = this.pick((flip ? ax.A : ax.B).filter(lenOk)), to = this.pick((flip ? ax.B : ax.A).filter(lenOk));
+    const wrong = this.sample(all.filter(x => x !== ax), 3).map(x => this.pick([...x.A, ...x.B].filter(lenOk)));
+    return this.mk('國語', fmt(from), to, wrong);
+  },
+  /* 成語：意思 / 成語互查 */
+  idiomQ(lv, mode) {
+    const { all, top } = this.band(QD.IDIOM, lv, 1);
+    const it = (top.length && Math.random() < 0.6) ? this.pick(top) : this.pick(all);
+    const others = this.sample(all.filter(x => x !== it), 3);
+    if (mode === 'word') return this.mk('國語', `哪一個成語的意思是「${it.m}」？`, it.w, others.map(x => x.w));
+    return this.mk('國語', `成語「${it.w}」的意思是？`, it.m, others.map(x => x.m));
+  },
+  idiomFill(lv) {
+    const { all, top } = this.band(QD.FILL.map(x => ({ g: x[3], it: x })), lv, 1);
+    const pick = (top.length && Math.random() < 0.6) ? this.pick(top) : this.pick(all);
+    const it = pick.it;
+    return this.mk('國語', `成語填空：${it[0]}`, it[1], it[2]);
+  },
+  radicalQ() {
+    const grp = this.pick(QD.RADICAL);
+    const ans = this.pick(grp.w);
+    const wrong = this.sample(QD.RADICAL.filter(x => x !== grp), 3).map(x => this.pick(x.w));
+    return this.mk('國語', `下面哪一個字的部首是「${grp.r}」？`, ans, wrong);
+  },
+
+  P(list) { return list.filter(x => typeof x !== 'number' || x >= 1); },   // 只留 ≥1 的數字干擾項
+  // 應用題情境：[人物, 東西, 量詞]
+  CTX: [['小明', '蘋果', '顆'], ['小美', '貼紙', '張'], ['小華', '彈珠', '顆'], ['媽媽', '雞蛋', '顆'], ['老師', '鉛筆', '枝'],
+        ['爸爸', '氣球', '個'], ['弟弟', '餅乾', '片'], ['姊姊', '故事書', '本'], ['哥哥', '玩具車', '輛'], ['奶奶', '橘子', '顆']],
+  ctx() { return this.pick(this.CTX); },
+
+  make(lv, recent, hard) {
+    lv = Math.max(0, Math.min(6, lv | 0));
+    this._hard = !!hard;
+    const gens = [this.L0, this.L1, this.L2, this.L3, this.L4, this.L5, this.L6];
+    let q = null;
+    for (let i = 0; i < 60; i++) {
+      try { q = gens[lv].call(this); } catch (e) { q = null; continue; }
+      if (q && (!recent || !recent.includes(q.q))) break;
+    }
+    this._hard = false;
+    return q;
+  },
+
+  /* ---------- 幼稚園 ---------- */
+  L0() {
+    const g = this, R = (a, b) => g.R(a, b), pk = a => g.pick(a);
+    const INIT = ['ㄅ', 'ㄆ', 'ㄇ', 'ㄈ', 'ㄉ', 'ㄊ', 'ㄋ', 'ㄌ', 'ㄍ', 'ㄎ', 'ㄏ', 'ㄐ', 'ㄑ', 'ㄒ', 'ㄓ', 'ㄔ', 'ㄕ', 'ㄖ', 'ㄗ', 'ㄘ', 'ㄙ'];
+    const CI = [['爸', 'ㄅ'], ['皮', 'ㄆ'], ['媽', 'ㄇ'], ['飛', 'ㄈ'], ['大', 'ㄉ'], ['他', 'ㄊ'], ['牛', 'ㄋ'], ['來', 'ㄌ'], ['哥', 'ㄍ'], ['開', 'ㄎ'], ['花', 'ㄏ'],
+      ['家', 'ㄐ'], ['七', 'ㄑ'], ['小', 'ㄒ'], ['紙', 'ㄓ'], ['吃', 'ㄔ'], ['水', 'ㄕ'], ['日', 'ㄖ'], ['走', 'ㄗ'], ['菜', 'ㄘ'], ['四', 'ㄙ']];
+    const CV = [['爸', 'ㄚ'], ['波', 'ㄛ'], ['哥', 'ㄜ'], ['愛', 'ㄞ'], ['飛', 'ㄟ'], ['高', 'ㄠ'], ['狗', 'ㄡ'], ['看', 'ㄢ'], ['人', 'ㄣ'], ['上', 'ㄤ'], ['燈', 'ㄥ'], ['二', 'ㄦ']];
+    const SOUND = [['小狗', '汪汪'], ['小貓', '喵喵'], ['牛', '哞哞'], ['羊', '咩咩'], ['鴨子', '嘎嘎'], ['公雞', '喔喔'], ['小鳥', '啾啾'], ['小豬', '哼哼'],
+      ['青蛙', '呱呱'], ['蜜蜂', '嗡嗡'], ['蛇', '嘶嘶'], ['貓頭鷹', '咕咕']];
+    const PIC = [['🔥', '火'], ['💧', '水'], ['🌳', '木'], ['⛰️', '山'], ['☀️', '日'], ['🌙', '月'], ['👄', '口'], ['✋', '手'], ['🐟', '魚'], ['🐦', '鳥'], ['👂', '耳'], ['🐄', '牛'], ['🐑', '羊']];
+    return g.weighted([
+      [7, () => { const e = pk(['🍎', '⭐', '🐟', '🎈', '🍓', '🐥', '🌸', '🚗']), n = R(1, 10); return g.mk('數學', `數一數：${e.repeat(n)} 有幾個？`, n, g.P([n + 1, n - 1, n + 2, n - 2])); }],
+      [6, () => { const a = R(1, 8), b = R(1, 9 - a + 1 > 1 ? Math.min(10 - a, 9) : 1); return g.mk('數學', `${a} + ${b} = ？`, a + b, g.P([a + b + 1, a + b - 1, a + b + 2, Math.abs(a - b)])); }],
+      [5, () => { const a = R(3, 10), b = R(1, a - 1); return g.mk('數學', `${a} − ${b} = ？`, a - b, g.P([a - b + 1, a - b - 1, a + b > 10 ? a + b : a - b + 2])); }],
+      [4, () => { const s = g.sample(Array.from({ length: 20 }, (_, i) => i + 1), 4), big = Math.random() < .5, ans = big ? Math.max(...s) : Math.min(...s);
+        return g.mk('數學', `下面哪一個數字最${big ? '大' : '小'}？`, ans, s.filter(x => x !== ans)); }],
+      [3, () => { const a = R(1, 15), b = R(1, 15); if (a === b) return null; const ans = a > b ? a : b; return g.mk('數學', `${a} 和 ${b}，哪一個比較大？`, ans, [Math.min(a, b), '一樣大', '都不是']); }],
+      [3, () => { const a = R(1, 9), b = R(1, 9), e = pk(['🍎', '🐟', '⭐', '🎈']); const ans = a > b ? '左邊' : a < b ? '右邊' : '一樣多';
+        return g.mk('數學', `左邊有 ${a} 個${e}，右邊有 ${b} 個${e}，哪一邊比較多？`, ans, ['左邊', '右邊', '一樣多', '都沒有']); }],
+      [3, () => { const s = R(1, 8); return g.mk('數學', `接下來是什麼？ ${s}、${s + 1}、${s + 2}、（　）`, s + 3, g.P([s + 4, s + 2, s + 5, s + 1])); }],
+      [3, () => { const [w, t, u] = g.ctx(), a = R(1, 6), b = R(1, 9 - a + 1); return g.mk('數學', `${w}有 ${a} ${u}${t}，又拿到 ${b} ${u}，現在有幾${u}？`, a + b, g.P([a + b + 1, a + b - 1, a, b])); }],
+      [3, () => { const [w, t, u] = g.ctx(), a = R(4, 10), b = R(1, a - 1); return g.mk('數學', `${w}有 ${a} ${u}${t}，送給別人 ${b} ${u}，還剩幾${u}？`, a - b, g.P([a - b + 1, a - b - 1, a + b, a])); }],
+      [6, () => { const it = pk(QP.COLOR); return g.fact('常識', it, { swatch: true }); }],
+      [3, () => { const it = pk(QP.SHAPE), names = ['圓形', '三角形', '長方形', '正方形']; return g.mk('常識', `${it[0]}的形狀最像哪一個？`, it[1], names.filter(x => x !== it[1])); }],
+      [2, () => g.fact('常識', pk([['有三條邊、三個角的形狀是？', '三角形', ['圓形', '長方形', '正方形']], ['沒有角、圓圓的形狀是？', '圓形', ['三角形', '長方形', '正方形']],
+        ['四個邊都一樣長的形狀是？', '正方形', ['圓形', '三角形', '長方形']]]))],
+      [5, () => { const p = pk(CI); return g.mk('注音', `「${p[0]}」的注音，是從哪一個開頭？`, p[1], g.sample(CI.filter(x => x[1] !== p[1]), 3).map(x => x[1])); }],
+      [4, () => { const p = pk(CI); return g.mk('注音', `哪一個字的注音是用「${p[1]}」開頭？`, p[0], g.sample(CI.filter(x => x[1] !== p[1]), 3).map(x => x[0])); }],
+      [3, () => { const i = R(0, INIT.length - 4); return g.mk('注音', `注音順序：${INIT[i]}、${INIT[i + 1]}、${INIT[i + 2]}、（　）`, INIT[i + 3], g.sample(INIT.filter((x, k) => k !== i + 3 && k > i + 3 || k < i), 3)); }],
+      [4, () => { const p = pk(CV), wrong = g.sample(['ㄚ', 'ㄛ', 'ㄜ', 'ㄝ', 'ㄞ', 'ㄟ', 'ㄠ', 'ㄡ', 'ㄢ', 'ㄣ', 'ㄤ', 'ㄥ'].filter(x => x !== p[1]), 3); return g.mk('注音', `「${p[0]}」這個字，最後的韻母是哪一個？`, p[1], wrong); }],
+      [4, () => g.antQ(0, f => `「${f}」的相反是？`)],
+      [3, () => { const p = pk(SOUND); return g.mk('常識', `${p[0]}的叫聲是？`, p[1], g.sample(SOUND.filter(x => x !== p), 3).map(x => x[1])); }],
+      [3, () => { const p = pk(SOUND); return g.mk('常識', `「${p[1]}」是誰的叫聲？`, p[0], g.sample(SOUND.filter(x => x !== p), 3).map(x => x[0])); }],
+      [3, () => { const p = pk(PIC); return g.mk('國語', `${p[0]} 這個圖，要寫成哪一個字？`, p[1], g.sample(PIC.filter(x => x !== p), 3).map(x => x[1])); }],
+      [8, () => g.factFrom('常識', QP.K_FACT)]
+    ])();
+  },
+
+  /* ---------- 一年級 ---------- */
+  L1() {
+    const g = this, R = (a, b) => g.R(a, b), N = (a, b) => g.N(a, b), pk = a => g.pick(a);
+    const WD = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
+    return g.weighted([
+      [6, () => { const m = g._hard ? 70 : 20, a = N(3, m - 3), b = R(1, m - a); return g.mk('數學', `${a} + ${b} = ？`, a + b, g.P([a + b + 1, a + b - 1, a + b + 10, a + b - 10])); }],
+      [6, () => { const m = g._hard ? 99 : 20, a = N(5, m), b = R(1, a - 1); return g.mk('數學', `${a} − ${b} = ？`, a - b, g.P([a - b + 1, a - b - 1, a - b + 10, a + b <= 99 ? a + b : a - b + 2])); }],
+      [4, () => { const a = R(2, 9), b = R(2, 10); return g.mk('數學', `${a} + （　） = ${a + b}`, b, g.P([b + 1, b - 1, a + b, a])); }],
+      [4, () => { const a = R(10, 30), b = R(10, 30), c = R(10, 30), ans = a + b > c ? '＞' : a + b < c ? '＜' : '＝'; return g.mk('數學', `${a} + ${b} ○ ${c}，○ 裡要填什麼？`, ans, ['＞', '＜', '＝', '都可以']); }],
+      [3, () => { const s = pk([2, 5, 10]), k = R(1, 5), arr = [1, 2, 3, 4].map(i => s * (k + i)); return g.mk('數學', `${arr.join('、')}、（　）`, s * (k + 5), g.P([s * (k + 5) + s, s * (k + 5) - s, s * (k + 5) + 1, s * (k + 4) + 1])); }],
+      [3, () => { const n = R(1, 99), odd = n % 2 === 1; return g.mk('數學', `${n} 是單數還是雙數？`, odd ? '單數' : '雙數', [odd ? '雙數' : '單數', '都是', '都不是']); }],
+      [3, () => { const h = R(1, 12), half = Math.random() < .5;
+        if (!half) return g.mk('數學', `時鐘的短針指著 ${h}，長針指著 12，現在是幾點？`, `${h}點`, [`${h % 12 + 1}點`, `${(h + 10) % 12 + 1}點`, `${h}點半`]);
+        return g.mk('數學', `時鐘的短針在 ${h} 和 ${h % 12 + 1} 的中間，長針指著 6，現在是幾點？`, `${h}點半`, [`${h % 12 + 1}點半`, `${h}點`, `${h % 12 + 1}點`]); }],
+      [3, () => { const a = R(1, 6), b = R(1, 9), c = R(1, 4); return g.mk('數學', `${a} 個 10 元、${c} 個 5 元、${b} 個 1 元，一共是多少元？`, a * 10 + c * 5 + b, g.P([a * 10 + c * 5 + b + 5, a * 10 + b + c, a + c + b, a * 10 + c * 5])); }],
+      [4, () => { const [w, t, u] = g.ctx(), a = N(5, 12), b = R(3, 9); return g.mk('數學', `${w}有 ${a} ${u}${t}，又買了 ${b} ${u}，一共有幾${u}？`, a + b, g.P([a + b + 1, a + b - 1, a, a - b])); }],
+      [3, () => { const [w, t, u] = g.ctx(), a = N(10, 18), b = R(3, 9); return g.mk('數學', `${w}有 ${a} ${u}${t}，分給朋友 ${b} ${u}，還剩幾${u}？`, a - b, g.P([a - b + 1, a - b - 1, a + b, a])); }],
+      [3, () => { const a = R(8, 20), b = R(2, a - 3); return g.mk('數學', `小明有 ${a} 顆糖，小美有 ${b} 顆糖，小明比小美多幾顆？`, a - b, g.P([a - b + 1, a - b - 1, a + b, b])); }],
+      [3, () => { const t = R(1, 9), o = R(0, 9); return g.mk('數學', `${t} 個十和 ${o} 個一，合起來是多少？`, t * 10 + o, g.P([t + o, o * 10 + t === t * 10 + o ? t * 10 + o + 1 : o * 10 + t, t * 10 + o + 10, t * 10 + o - 1])); }],
+      [3, () => { const d = R(0, 6), nx = R(0, 1) === 0; return g.mk('數學', `${WD[d]}的${nx ? '後' : '前'}一天是？`, WD[(d + (nx ? 1 : 6)) % 7], g.sample(WD.filter((x, i) => i !== (d + (nx ? 1 : 6)) % 7 && i !== d), 3)); }],
+      [4, () => { const it = pk(QP.Q); return g.mk('國語', `一（　）${it[0]}，空格要填哪一個量詞？`, it[1], it[2]); }],
+      [4, () => { const p = pk(QP.CHAR_ZY); return g.mk('注音', `「${p[0]}」的注音是？`, p[1], g.sample(QP.CHAR_ZY.filter(x => x[1] !== p[1]), 3).map(x => x[1])); }],
+      [3, () => { const p = pk(QP.CHAR_ZY); return g.mk('注音', `注音「${p[1]}」是哪一個字？`, p[0], g.sample(QP.CHAR_ZY.filter(x => x[1] !== p[1]), 3).map(x => x[0])); }],
+      [3, () => { const p = pk(QP.TONE), T = ['第一聲', '第二聲', '第三聲', '第四聲']; return g.mk('注音', `「${p[0]}」要唸第幾聲？`, T[p[1] - 1], T.filter((x, i) => i !== p[1] - 1)); }],
+      [2, () => { const T = [['（沒有符號）', '第一聲'], ['ˊ', '第二聲'], ['ˇ', '第三聲'], ['ˋ', '第四聲']], k = pk(T.slice(1)); return g.mk('注音', `注音符號「${k[0]}」表示第幾聲？`, k[1], T.filter(x => x !== k).map(x => x[1])); }],
+      [3, () => { const it = pk(QP.STRUCT), S = ['左右結構', '上下結構', '包圍結構', '獨體字']; return g.mk('國語', `「${it[0]}」這個字是哪一種結構？`, it[1], S.filter(x => x !== it[1])); }],
+      [4, () => g.antQ(1, f => `「${f}」的相反詞是？`)],
+      [3, () => g.synQ(1, f => `和「${f}」意思最接近的是？`)],
+      [4, () => g.factFrom('常識', QP.H1)],
+      [3, () => g.factFrom('常識', QP.K_FACT)]
+    ])();
+  },
+
+  /* ---------- 二年級 ---------- */
+  L2() {
+    const g = this, R = (a, b) => g.R(a, b), N = (a, b) => g.N(a, b), pk = a => g.pick(a);
+    return g.weighted([
+      [7, () => { const a = R(2, 9), b = R(2, 9), p = a * b; return g.mk('數學', `${a} × ${b} = ？`, p, g.P([p + a, p - a, p + b, a + b, p + 10])); }],
+      [3, () => { const a = R(3, 9), b = R(3, 9), p = a * b; return g.mk('數學', `（　） × ${b} = ${p}`, a, g.P([a + 1, a - 1, p - b, p / 1 === a ? 1 : b])); }],
+      [5, () => { const a = N(15, 79), b = R(10, 99 - a > 10 ? 99 - a : 10), s = a + b; return g.mk('數學', `${a} + ${b} = ？`, s, g.P([s + 10, s - 10, s + 1, s - 1])); }],
+      [5, () => { const a = N(40, 99), b = R(11, a - 5), d = a - b; return g.mk('數學', `${a} − ${b} = ？`, d, g.P([d + 10, d - 10, d + 1, d - 1])); }],
+      [4, () => { const a = R(2, 9), b = R(2, 9), p = a * b; return g.mk('數學', `${p} ÷ ${a} = ？`, b, g.P([b + 1, b - 1, p - a, a])); }],
+      [3, () => { const a = R(2, 9), b = R(3, 9), p = a * b; return g.mk('數學', `${p} 顆糖平分給 ${a} 個人，每人分到幾顆？`, b, g.P([b + 1, b - 1, p - a, a])); }],
+      [3, () => { const a = R(3, 9), b = R(3, 9), p = a * b; return g.mk('數學', `教室有 ${a} 排座位，每排 ${b} 個人，一共有幾個座位？`, p, g.P([p + a, p - b, a + b, p + 10])); }],
+      [3, () => { const n = R(2, 9); return g.mk('數學', `${n} 公尺是幾公分？`, n * 100, [n * 10, n * 1000, n + 100]); }],
+      [2, () => { const n = R(2, 9); return g.mk('數學', `${n * 100} 公分是幾公尺？`, n, g.P([n * 10, n + 1, n * 100, n - 1])); }],
+      [3, () => { const h = R(1, 10), m = pk([0, 10, 20, 30, 40]), k = pk([10, 20, 30, 40]); let t = h * 60 + m + k; const H = Math.floor(t / 60), M = t % 60, f = (a, b) => `${a}點${b}分`;
+        return g.mk('數學', `現在是 ${f(h, m)}，${k} 分鐘後是幾點幾分？`, f(H, M), [f(H, (M + 10) % 60), f(H + 1, M), f(H - 1, M)]); }],
+      [3, () => { const p = R(2, 8) * 10 + 5 * R(0, 1), pay = pk([100, 100, 50]), cost = pay === 50 ? R(2, 4) * 10 + 5 : p; if (cost >= pay) return null;
+        return g.mk('數學', `買一個${pk(['麵包', '玩具', '文具盒'])}要 ${cost} 元，付 ${pay} 元，要找回多少元？`, pay - cost, g.P([pay + cost, pay - cost + 10, pay - cost - 10, cost])); }],
+      [3, () => { const a = R(100, 899), b = R(100, 899); if (a === b) return null; const big = a > b; return g.mk('數學', `${a} 和 ${b}，哪一個數比較大？`, big ? a : b, [big ? b : a, '一樣大', '不能比']); }],
+      [3, () => { const n = R(100, 999), p = ['百', '十', '個'][R(0, 2)], d = p === '百' ? Math.floor(n / 100) : p === '十' ? Math.floor(n / 10) % 10 : n % 10; const ds = String(n).split('').map(Number);
+        return g.mk('數學', `${n} 的${p}位數字是多少？`, d, g.sample([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter(x => x !== d), 3)); }],
+      [3, () => { const [n, a] = pk([['長方形', 4], ['正方形', 4], ['三角形', 3]]), t = pk(['邊', '角']); return g.mk('數學', `${n}有幾個${t}？`, a, g.P([a + 1, a - 1, a + 2, a + 3])); }],
+      [3, () => g.fact('數學', pk([['正方形的四個邊，長度怎麼樣？', '都一樣長', ['都不一樣長', '只有兩個一樣長', '沒有邊']], ['長方形的對邊，長度怎麼樣？', '一樣長', ['不一樣長', '都是 0', '沒有關係']]]))],
+      [4, () => g.idiomQ(2, 'meaning')], [3, () => g.idiomQ(2, 'word')], [3, () => g.idiomFill(2)],
+      [3, () => g.synQ(2, f => `和「${f}」意思最接近的是？`)], [3, () => g.antQ(2, f => `「${f}」的相反詞是？`)],
+      [3, () => { const it = pk(QP.PUNCT); return g.mk('國語', `句子「${it[0]}」，括號裡要填哪一個標點符號？`, it[1], ['。', '？', '！', '、'].filter(x => x !== it[1])); }],
+      [2, () => g.radicalQ()],
+      [3, () => g.factFrom('自然', QP.SCI2)],
+      [2, () => g.factFrom('常識', QP.H1)],
+      [2, () => { const it = pk(QP.Q); return g.mk('國語', `一（　）${it[0]}，空格要填哪一個量詞？`, it[1], it[2]); }]
+    ])();
+  },
+
+  /* ---------- 三年級 ---------- */
+  L3() {
+    const g = this, R = (a, b) => g.R(a, b), N = (a, b) => g.N(a, b), pk = a => g.pick(a);
+    return g.weighted([
+      [5, () => { const a = N(120, 780), b = R(100, 999 - a), s = a + b; return g.mk('數學', `${a} + ${b} = ？`, s, g.P([s + 10, s - 10, s + 100, s - 100])); }],
+      [5, () => { const a = N(300, 999), b = R(110, a - 50), d = a - b; return g.mk('數學', `${a} − ${b} = ？`, d, g.P([d + 10, d - 10, d + 100, d - 100])); }],
+      [5, () => { const a = N(12, 49), b = R(2, 9), p = a * b; return g.mk('數學', `${a} × ${b} = ？`, p, g.P([p + 10, p - 10, p + b, p - b])); }],
+      [4, () => { const b = R(3, 9), q = N(5, 30), r = R(1, b - 1), p = b * q + r;
+        return g.mk('數學', `${p} ÷ ${b} = ？`, `${q}餘${r}`, [`${q + 1}餘${r}`, `${q - 1}餘${r}`, `${q}餘${r === b - 1 ? r - 1 : r + 1}`, `${q + r}餘${r}`].filter(x => !x.startsWith('-') && !x.includes('餘0'))); }],
+      [3, () => { const a = R(3, 20), b = R(2, 15); if (a === b) return null; return g.mk('數學', `長方形長 ${a} 公分、寬 ${b} 公分，周長是幾公分？`, 2 * (a + b), g.P([a * b, a + b, 2 * a + b, a + 2 * b])); }],
+      [2, () => { const a = R(3, 25); return g.mk('數學', `正方形邊長 ${a} 公分，周長是幾公分？`, 4 * a, g.P([a * a, 2 * a, a + 4, 3 * a])); }],
+      [3, () => { const h = R(1, 8), m = pk([0, 10, 20, 30, 40, 50]), h2 = h + R(1, 3), m2 = pk([0, 10, 20, 30, 40, 50]), d = (h2 * 60 + m2) - (h * 60 + m); if (d <= 0) return null;
+        return g.mk('數學', `從 ${h}點${m}分 到 ${h2}點${m2}分，經過了幾分鐘？`, d, g.P([d + 10, d - 10, d + 60, d - 5])); }],
+      [4, () => { const n = R(2, 9), t = pk([['公斤', '公克', 1000], ['公升', '毫升', 1000], ['公里', '公尺', 1000], ['公尺', '公分', 100]]);
+        return g.mk('數學', `${n} ${t[0]}是幾${t[1]}？`, n * t[2], [n * t[2] * 10, n * t[2] / 10, n * 100 === n * t[2] ? n * 1000 : n * 100, n + t[2]]); }],
+      [4, () => { const d = R(5, 12), a = R(1, 4), b = R(1, d - a - 1 > 1 ? d - a - 1 : 1); if (a + b >= d) return null; return g.mk('數學', `${a}/${d} + ${b}/${d} = ？`, `${a + b}/${d}`, [`${a + b}/${d * 2}`, `${a + b + 1}/${d}`, `${a * b}/${d}`, `${a + b}/${d + 1}`]); }],
+      [3, () => { const d = R(5, 12), a = R(1, d - 1), b = R(1, d - 1); if (a === b) return null; return g.mk('數學', `${a}/${d} 和 ${b}/${d}，哪一個比較大？`, a > b ? `${a}/${d}` : `${b}/${d}`, [a > b ? `${b}/${d}` : `${a}/${d}`, '一樣大', '不能比']); }],
+      [3, () => { const a = R(1, 9), b = R(1, 9), s = (a + b) / 10, f = x => Math.round(x * 10) / 10; return g.mk('數學', `0.${a} + 0.${b} = ？`, s, [f(s + .1), f(s - .1), f(s + 1), f((a + b) / 100)]); }],
+      [3, () => { const k = R(3, 9), n = R(12, 48); return g.mk('數學', `一盒有 ${n} 個，${k} 盒一共有幾個？`, n * k, g.P([n * k + 10, n * k - 10, n + k, n * k + k])); }],
+      [3, () => { const k = R(3, 9), q = R(12, 60), p = k * q; return g.mk('數學', `${p} 個橘子平分給 ${k} 個人，每人幾個？`, q, g.P([q + 1, q - 1, q + 10, q - 10])); }],
+      [3, () => { const n = R(2, 8) * 1000 + R(1, 9) * 100; return g.mk('數學', `${n} 的千位數字是多少？`, Math.floor(n / 1000), g.sample([1, 2, 3, 4, 5, 6, 7, 8, 9].filter(x => x !== Math.floor(n / 1000)), 3)); }],
+      [4, () => g.idiomQ(3, 'meaning')], [3, () => g.idiomQ(3, 'word')], [3, () => g.idiomFill(3)],
+      [3, () => g.synQ(3, f => `和「${f}」意思最接近的是？`)], [3, () => g.antQ(3, f => `「${f}」的相反詞是？`)],
+      [3, () => { const it = pk(QP.RHET), O = ['譬喻', '擬人', '排比', '誇飾']; return g.mk('國語', `「${it[0]}」用了哪一種修辭？`, it[1], O.filter(x => x !== it[1])); }],
+      [2, () => g.radicalQ()], [2, () => g.factFrom('國語', QP.STRUCT.map(x => [`「${x[0]}」是哪一種結構的字？`, x[1], ['左右結構', '上下結構', '包圍結構', '獨體字'].filter(y => y !== x[1])]))],
+      [5, () => g.factFrom('自然', QP.SCI3)], [2, () => g.factFrom('自然', QP.SCI2)]
+    ])();
+  },
+
+  /* ---------- 四年級 ---------- */
+  L4() {
+    const g = this, R = (a, b) => g.R(a, b), N = (a, b) => g.N(a, b), pk = a => g.pick(a);
+    const gcd = (a, b) => b ? gcd(b, a % b) : a, f1 = x => Math.round(x * 10) / 10;
+    return g.weighted([
+      [4, () => { const a = N(12000, 59000), b = R(1000, 39000), s = a + b; return g.mk('數學', `${a} + ${b} = ？`, s, g.P([s + 1000, s - 1000, s + 100, s - 100])); }],
+      [4, () => { const a = N(30000, 99000), b = R(1000, 29000), d = a - b; return g.mk('數學', `${a} − ${b} = ？`, d, g.P([d + 1000, d - 1000, d + 100, d - 100])); }],
+      [6, () => { const a = N(12, 49), b = R(11, 39), p = a * b; return g.mk('數學', `${a} × ${b} = ？`, p, g.P([p + 10, p - 10, p + 100, p - 100, a * (b - 1)])); }],
+      [4, () => { const b = R(3, 9), q = N(40, 190), r = R(1, b - 1), p = b * q + r; return g.mk('數學', `${p} ÷ ${b} = ？`, `${q}餘${r}`, [`${q + 1}餘${r}`, `${q - 1}餘${r}`, `${q}餘${r === b - 1 ? r - 1 : r + 1}`, `${q + 10}餘${r}`]); }],
+      [3, () => { const b = R(11, 29), q = N(12, 49), p = b * q; return g.mk('數學', `${p} ÷ ${b} = ？`, q, g.P([q + 1, q - 1, q + 10, q - 10])); }],
+      [3, () => { const a = R(1, 9); return g.mk('數學', `${a}/10 等於多少？`, a / 10, [a / 100, a, f1(a / 10 + 0.1), a * 10]); }],
+      [3, () => { const w = R(1, 5), d = R(3, 9), n = R(1, d - 1); return g.mk('數學', `${w}又${n}/${d} 化成假分數是？`, `${w * d + n}/${d}`, [`${w * n + d}/${d}`, `${w + n}/${d}`, `${w * d + n}/${w}`, `${w * d - n}/${d}`, `${w * d + n + 1}/${d}`]); }],
+      [3, () => { const a = R(5, 40), b = R(5, 30); return g.mk('數學', `長 ${a} 公尺、寬 ${b} 公尺的長方形，面積是幾平方公尺？`, a * b, g.P([2 * (a + b), a + b, a * b + a, a * b - b])); }],
+      [3, () => { const a = R(30, 90), b = R(30, 90); if (a + b >= 170) return null; return g.mk('數學', `三角形的兩個角分別是 ${a}° 和 ${b}°，第三個角是幾度？`, 180 - a - b, g.P([360 - a - b, 90 - a, 180 - a, a + b])); }],
+      [3, () => { const n = R(1000, 9999), k = pk([10, 100]), nm = k === 10 ? '十' : '百', d = Math.round(n / k) * k, lo = Math.floor(n / k) * k, hi = lo + k;
+        if (lo === d && hi === d) return null; return g.mk('數學', `${n} 四捨五入到${nm}位，是多少？`, d, [lo === d ? hi : lo, d + k, d - k, Math.round(n / (k * 10)) * k * 10]); }],
+      [3, () => { const a = R(2, 9), b = R(1, 9) * 100 + R(0, 9) * 10; return g.mk('數學', `${a} 公里 ${b} 公尺，等於幾公尺？`, a * 1000 + b, [a * 100 + b, a * 10000 + b, a + b, a * 1000 + b * 10]); }],
+      [3, () => { const d = R(2, 6), p = R(1, 3) * 20 + R(0, 3) * 5, pa = R(2, 7); return g.mk('數學', `${pa} 個人，每人付 ${p * d} 元，一共是多少元？`, pa * p * d, g.P([pa * p * d + 100, pa * p * d - 100, p * d + pa, pa * p])); }],
+      [4, () => g.idiomQ(4, 'meaning')], [3, () => g.idiomQ(4, 'word')], [3, () => g.idiomFill(4)],
+      [3, () => g.synQ(4, f => `和「${f}」意思最接近的是？`)], [3, () => g.antQ(4, f => `「${f}」的相反詞是？`)],
+      [3, () => { const it = pk([...QP.RHET, ...QP.RHET2]), O = ['譬喻', '擬人', '排比', '誇飾']; return g.mk('國語', `「${it[0]}」用了哪一種修辭？`, it[1], O.filter(x => x !== it[1])); }],
+      [2, () => g.radicalQ()],
+      [5, () => g.factFrom('社會', QP.SOC4)], [5, () => g.factFrom('自然', QP.SCI4)], [2, () => g.factFrom('自然', QP.SCI3)]
+    ])();
+  },
+
+  /* ---------- 五年級 ---------- */
+  L5() {
+    const g = this, R = (a, b) => g.R(a, b), N = (a, b) => g.N(a, b), pk = a => g.pick(a), ENG = QD.ENG;
+    const gcd = (a, b) => b ? gcd(b, a % b) : a, lcm = (a, b) => a / gcd(a, b) * b, r2 = x => Math.round(x * 100) / 100;
+    const fr = (n, d) => { const k = gcd(n, d); n /= k; d /= k; return d === 1 ? String(n) : `${n}/${d}`; };
+    const engPool = () => { const k = pk(['animals', 'fruits', 'colors', 'school', 'body', 'verbs', 'adj', 'time', 'weather', 'family']); return ENG[k]; };
+    return g.weighted([
+      [4, () => { const a = R(11, 99) / 10, b = R(2, 9), p = r2(a * b); return g.mk('數學', `${a} × ${b} = ？`, p, [r2(p + 1), r2(p - 1), r2(p * 10), r2(p / 10)]); }],
+      [3, () => { const q = R(12, 90) / 10, d = R(2, 9), p = r2(q * d); return g.mk('數學', `${p} ÷ ${d} = ？`, q, [r2(q * 10), r2(q / 10), r2(q + 1), r2(q - 1)]); }],
+      [4, () => { const da = pk([2, 3, 4, 5]), db = pk([3, 4, 5, 6]); if (da === db) return null; const a = 1, b = R(1, db - 1), n = a * db + b * da, d = da * db; const ans = fr(n, d);
+        return g.mk('數學', `${a}/${da} + ${b}/${db} = ？`, ans, [`${a + b}/${da + db}`, `${a + b}/${da * db}`, fr(n + 1, d), fr(Math.abs(a * db - b * da) || 1, d)]); }],
+      [3, () => { const a = R(2, 12) * 2, b = R(2, 12) * 3; if (a === b) return null; return g.mk('數學', `${a} 和 ${b} 的最大公因數是？`, gcd(a, b), g.P([gcd(a, b) * 2, lcm(a, b), Math.max(1, gcd(a, b) - 1) === gcd(a, b) ? gcd(a, b) + 3 : gcd(a, b) - 1, a * b])); }],
+      [3, () => { const a = R(2, 9), b = R(2, 9); if (a === b || gcd(a, b) === a || gcd(a, b) === b) return null; const l = lcm(a, b); return g.mk('數學', `${a} 和 ${b} 的最小公倍數是？`, l, g.P([a * b === l ? l + a : a * b, l * 2, a + b, gcd(a, b)])); }],
+      [4, () => { const a = R(60, 95), b = R(60, 95), c = R(60, 95), s = a + b + c, x = s - (s % 3) + 3 * 1, nums = [a, b, c + (x - s)]; const avg = x / 3;
+        return g.mk('數學', `三次考試分數是 ${nums.join('、')}，平均是幾分？`, avg, g.P([avg + 1, avg - 1, avg + 3, x])); }],
+      [4, () => { const p = pk([10, 20, 25, 50, 40]), n = R(1, 9) * (p === 25 ? 4 : 10) * 2, a = n * p / 100; if (!Number.isInteger(a)) return null; return g.mk('數學', `${n} 的 ${p}% 是多少？`, a, g.P([a * 10, n - a, a + 10, n + a])); }],
+      [3, () => { const a = R(3, 12), b = R(3, 10), h = R(2, 9); return g.mk('數學', `長方體的長 ${a} 公分、寬 ${b} 公分、高 ${h} 公分，體積是幾立方公分？`, a * b * h, g.P([a * b + h, 2 * (a * b + b * h + a * h), a + b + h, a * b * h + a * b])); }],
+      [3, () => { const v = R(4, 12) * 10, t = R(2, 6); return g.mk('數學', `汽車時速 ${v} 公里，開了 ${t} 小時，共行駛幾公里？`, v * t, g.P([v + t, v * t + v, v * t - t * 10, Math.round(v / t) === v * t ? 1 : Math.round(v / t)])); }],
+      [3, () => { const x = R(3, 20), a = R(2, 15); return g.mk('數學', `x + ${a} = ${x + a}，x 是多少？`, x, g.P([x + 1, x - 1, x + a, x + a + a])); }],
+      [3, () => { const x = R(2, 15), a = R(2, 9); return g.mk('數學', `${a} × x = ${a * x}，x 是多少？`, x, g.P([x + 1, x - 1, a * x - a, a + x])); }],
+      [4, () => g.idiomQ(5, 'meaning')], [3, () => g.idiomQ(5, 'word')], [3, () => g.idiomFill(5)],
+      [3, () => g.synQ(5, f => `和「${f}」意思最接近的是？`)], [3, () => g.antQ(5, f => `「${f}」的相反詞是？`)],
+      [2, () => { const it = pk([...QP.RHET, ...QP.RHET2]), O = ['譬喻', '擬人', '排比', '誇飾']; return g.mk('國語', `「${it[0]}」用了哪一種修辭？`, it[1], O.filter(x => x !== it[1])); }],
+      [4, () => g.factFrom('社會', QP.SOC5)], [4, () => g.factFrom('自然', QP.SCI5)],
+      [4, () => { const e = pk(engPool()), pool = engPool(); const others = pool.filter(x => x[1] !== e[1]); if (others.length < 3) return null; return g.mk('英文', `"${e[0]}" 的中文意思是？`, e[1], others.map(x => x[1])); }],
+      [3, () => { const pool = engPool(), e = pk(pool), others = pool.filter(x => x[0] !== e[0]); if (others.length < 3) return null; return g.mk('英文', `「${e[1]}」的英文是？`, e[0], others.map(x => x[0])); }],
+      [4, () => g.factFrom('英文', QP.EN_G)]
+    ])();
+  },
+
+  /* ---------- 六年級 ---------- */
+  L6() {
+    const g = this, R = (a, b) => g.R(a, b), N = (a, b) => g.N(a, b), pk = a => g.pick(a), ENG = QD.ENG;
+    const gcd = (a, b) => b ? gcd(b, a % b) : a, r2 = x => Math.round(x * 100) / 100;
+    const fr = (n, d) => { const k = gcd(n, d); n /= k; d /= k; return d === 1 ? String(n) : `${n}/${d}`; };
+    const isP = n => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+    return g.weighted([
+      [4, () => { const p = R(1, 5), q = R(p + 1, 7); if (gcd(p, q) !== 1) return null; const k = R(2, 9); return g.mk('數學', `${p * k}：${q * k} 化成最簡整數比是？`, `${p}：${q}`, [`${q}：${p}`, `${p * k}：${q}`, `${p}：${q * k}`, `${p + 1}：${q + 1}`]); }],
+      [3, () => { const a = R(1, 5), b = R(a + 1, 8), k = R(2, 7); return g.mk('數學', `${a}：${b} = ${a * k}：（　）`, b * k, g.P([b * k + a, b * k - 1, b + k, a * b * k])); }],
+      [4, () => { const r = R(2, 12), c = r2(2 * 3.14 * r); return g.mk('數學', `圓的半徑是 ${r} 公分，圓周是幾公分？（π＝3.14）`, c, [r2(3.14 * r), r2(3.14 * r * r), r2(2 * 3.14 * r * r), r2(c + 3.14)]); }],
+      [4, () => { const r = R(2, 12), a = r2(3.14 * r * r); return g.mk('數學', `圓的半徑是 ${r} 公分，圓面積是幾平方公分？（π＝3.14）`, a, [r2(2 * 3.14 * r), r2(3.14 * r), r2(3.14 * 2 * r * r), r2(a + 3.14)]); }],
+      [3, () => { const a = R(1, 5), b = R(a + 1, 7), c = R(1, 5), d = R(c + 1, 7); if (a / b === c / d) return null; const n = a * d, dd = b * c; return g.mk('數學', `${a}/${b} ÷ ${c}/${d} = ？`, fr(n, dd), [fr(a * c, b * d), fr(b * c, a * d), fr(a * d + 1, dd), `${a * d}/${b * d}`].filter(x => x !== fr(n, dd))); }],
+      [4, () => { const p = R(2, 9) * 100, z = pk([5, 6, 7, 8, 9]); return g.mk('數學', `原價 ${p} 元的商品，打 ${z} 折（就是原價的 ${z}0%），要付多少元？`, p * z / 10, g.P([p * z, p - p * z / 10 === p * z / 10 ? p * z / 10 + 10 : p - p * z / 10, p * (10 - z) / 10 + 10, p * z / 100])); }],
+      [3, () => { const a = R(6, 40), h = R(2, 12); return g.mk('數學', `一個角柱的底面積是 ${a} 平方公分，高 ${h} 公分，體積是幾立方公分？`, a * h, g.P([a + h, a * h * 2, a * h / 2 === Math.floor(a * h / 2) ? a * h / 2 : a * h + 1, a * h + a])); }],
+      [3, () => { const ps = [], cs = []; for (let i = 2; i < (g._hard ? 100 : 60); i++) (isP(i) ? ps : cs).push(i); return g.mk('數學', '下面哪一個數是質數？', pk(ps), g.sample(cs, 3)); }],
+      [3, () => { const n = pk([12, 18, 20, 24, 30, 36, 45, 48]), fs = []; let m = n; for (let p = 2; m > 1; p++) while (m % p === 0) { fs.push(p); m /= p; } const ans = fs.join('×');
+        const wrong = [fs.slice(0, -1).concat([fs[fs.length - 1] + 1]).join('×'), `${fs[0]}×${n / fs[0]}`, [...fs, 2].join('×')].filter(x => x !== ans && x !== `${fs[0]}×${n / fs[0]}` || fs.length > 2);
+        return g.mk('數學', `把 ${n} 分解成質因數相乘（連乘）是？`, ans, [fs.slice(0, -1).concat([fs[fs.length - 1] + 1]).join('×'), [...fs, 2].join('×'), `${fs[0] + 1}×${Math.round(n / (fs[0] + 1))}`]); }],
+      [3, () => { const a = R(2, 9) * 10, v = R(2, 9); const t = R(3, 8); return g.mk('數學', `小明每小時走 ${v} 公里，走了 ${t} 小時後，再走 ${a / 10} 公里，一共走幾公里？`, v * t + a / 10, g.P([v * t, v + t + a / 10, v * t + a, v * t - a / 10])); }],
+      [4, () => g.idiomQ(6, 'meaning')], [3, () => g.idiomQ(6, 'word')], [3, () => g.idiomFill(6)],
+      [3, () => g.synQ(6, f => `和「${f}」意思最接近的是？`)], [3, () => g.antQ(6, f => `「${f}」的相反詞是？`)],
+      [3, () => { const it = pk([...QP.RHET, ...QP.RHET2]), O = ['譬喻', '擬人', '排比', '誇飾']; return g.mk('國語', `「${it[0]}」用了哪一種修辭？`, it[1], O.filter(x => x !== it[1])); }],
+      [4, () => g.factFrom('社會', QP.SOC6)], [2, () => g.factFrom('社會', QP.SOC5)], [4, () => g.factFrom('自然', QP.SCI6)], [2, () => g.factFrom('自然', QP.SCI5)],
+      [4, () => { const e = pk(ENG.adv6), others = ENG.adv6.filter(x => x[1] !== e[1]); return g.mk('英文', `"${e[0]}" 的中文意思是？`, e[1], others.map(x => x[1])); }],
+      [3, () => { const e = pk(ENG.adv6), others = ENG.adv6.filter(x => x[0] !== e[0]); return g.mk('英文', `「${e[1]}」的英文是？`, e[0], others.map(x => x[0])); }],
+      [4, () => g.factFrom('英文', QP.EN_G)], [3, () => g.factFrom('英文', QP.EN_T.map(x => [`「${x[0]}」的英文是？`, x[1], x[2]]))]
+    ])();
+  }
+};
+
+const SKILLS = {
+  // 通用（所有職業可學）
+  common: [
+    { id: 'exp', name: '📚 勤學', desc: '戰鬥經驗 +25%', exp: 0.25 },
+    { id: 'gold', name: '🪙 財運', desc: '戰鬥金幣 +25%', gold: 0.25 },
+    { id: 'heal', name: '💚 回復', desc: '答對時回復 8% 最大生命', heal: 0.08 },
+    { id: 'hint', name: '💡 小提示', desc: '每關可使用 1 次提示', hint: 1 },
+    { id: 'combo', name: '🔗 連擊之心', desc: '連擊傷害加成提高', combo: 1 },
+    { id: 'pet', name: '🐾 寵物連結', desc: '寵物助攻傷害 +30%', pet: 0.3 }
+  ],
+  // 戰士專屬
+  warrior: [
+    { id: 'w_double', name: '⚔️ 雙重斬擊', desc: '答對時額外 +18% 傷害', atk: 0.18 },
+    { id: 'w_spin', name: '🌀 旋風斬', desc: '答對時額外 +22% 傷害', atk: 0.22 },
+    { id: 'w_charge', name: '💥 勇者衝鋒', desc: '爆擊率 +10%，傷害 +10%', atk: 0.10, crit: 0.10 },
+    { id: 'w_guard', name: '🛡️ 鐵壁', desc: '答錯時 25% 機率擋下反擊', proc: 0.25 },
+    { id: 'w_rage', name: '🔥 戰意', desc: '連擊時傷害更高', combo: 1.2, atk: 0.08 }
+  ],
+  // 魔法師專屬
+  mage: [
+    { id: 'm_fire', name: '🔥 火球術', desc: '答對時額外 +20% 傷害', atk: 0.20 },
+    { id: 'm_ice', name: '❄️ 冰霜風暴', desc: '答對時 30% 機率怪物跳過反擊', proc: 0.30 },
+    { id: 'm_meteor', name: '☄️ 流星術', desc: '答對時額外 +25% 傷害', atk: 0.25 },
+    { id: 'm_mana', name: '✨ 魔力湧現', desc: '經驗 +15%，傷害 +8%', exp: 0.15, atk: 0.08 },
+    { id: 'm_shield', name: '🔮 魔法護盾', desc: '答錯時 20% 機率擋下反擊', proc: 0.20 }
+  ],
+  // 弓箭手專屬
+  archer: [
+    { id: 'a_multi', name: '🏹 連續射擊', desc: '答對時額外 +15% 傷害，爆擊 +8%', atk: 0.15, crit: 0.08 },
+    { id: 'a_burst', name: '💥 爆裂箭', desc: '答對時額外 +22% 傷害', atk: 0.22 },
+    { id: 'a_snipe', name: '🎯 狙擊模式', desc: '爆擊率 +18%', crit: 0.18 },
+    { id: 'a_focus', name: '👁️ 專注', desc: '連擊傷害加成提高，爆擊 +5%', combo: 1, crit: 0.05 },
+    { id: 'a_trap', name: '🕸️ 陷阱', desc: '答錯時 22% 機率擋下反擊', proc: 0.22 }
+  ],
+  // 工程師專屬
+  engineer: [
+    { id: 'e_turret', name: '🔫 砲塔支援', desc: '答對時額外 +16% 傷害', atk: 0.16 },
+    { id: 'e_robot', name: '🤖 機器人助戰', desc: '寵物助攻 +40%，傷害 +8%', pet: 0.4, atk: 0.08 },
+    { id: 'e_fort', name: '🏰 防禦工事', desc: '答錯時 28% 機率擋下反擊', proc: 0.28 },
+    { id: 'e_scrap', name: '⚙️ 資源回收', desc: '戰鬥金幣 +30%，資源感提升', gold: 0.30 },
+    { id: 'e_repair', name: '🔧 緊急維修', desc: '答對時回復 10% 生命', heal: 0.10 }
+  ],
+  // 學者專屬
+  scholar: [
+    { id: 's_learn', name: '📖 博學', desc: '戰鬥經驗 +30%', exp: 0.30 },
+    { id: 's_inspire', name: '💡 靈感', desc: '經驗 +15%，金幣 +10%', exp: 0.15, gold: 0.10 },
+    { id: 's_wisdom', name: '🌟 智慧之光', desc: '答對時額外 +12% 傷害，經驗 +12%', atk: 0.12, exp: 0.12 },
+    { id: 's_review', name: '📝 錯題洞察', desc: '每關可使用 1 次提示（可疊加邏輯）', hint: 1 },
+    { id: 's_calm', name: '🧘 沉著', desc: '答錯時 18% 機率擋下反擊', proc: 0.18 }
+  ]
+};
+
+function allSkillsFlat() {
+  const out = [];
+  Object.values(SKILLS).forEach(arr => arr.forEach(s => out.push(s)));
+  return out;
+}
+
+function skillsForClass(heroClass) {
+  const own = SKILLS[heroClass] || [];
+  const common = SKILLS.common || [];
+  // 職業專屬優先，再加通用
+  const map = {};
+  [...own, ...common].forEach(s => { map[s.id] = s; });
+  return Object.values(map);
+}
+
+function findSkill(id) {
+  return allSkillsFlat().find(x => x.id === id);
+}
+
+/* ===== GAME ===== */
+const SWATCH = { '紅色': '#e8413c', '橘色': '#f58a1f', '黃色': '#ffd21f', '綠色': '#3fae49', '藍色': '#2f7fe0', '紫色': '#8a4fd0',
+  '白色': '#ffffff', '黑色': '#2b2b2b', '咖啡色': '#8a5a34', '粉紅色': '#ff9cc2', '灰色': '#9aa0a6' };
+const COLOR_RE = /(紅|橘|黃|綠|藍|紫|粉紅|咖啡|灰|金|銀|黑|白)色|^(red|orange|yellow|green|blue|purple|pink|brown|black|white|gray|grey)$/i;
+
+const Game = {
+  state: null,
+  battle: null,
+  paused: false,
+  sound: true,
+  saveKey: 'knowledge_city_rpg_v2',
+
+  defaultState() {
+    return {
+      grade: 0, heroClass: 'warrior', level: 1, exp: 0, expTo: 30,
+      hp: 100, maxHp: 100, atk: 18, gold: 100, dia: 5,
+      wood: 25, stone: 15, steel: 5, pop: 10,
+      skills: [], pendingLv: 0, equip: {}, buildings: {},
+      pets: {}, codex: {}, stageStars: {}, unlockedZones: [0],
+      wrongLog: [], achievements: {},
+      stats: { answered: 0, correct: 0, comboMax: 0, playMinutes: 0 },
+      subjStats: {},
+      daily: { date: '', correctToday: 0, stagesToday: 0, loginToday: 1, claimed: false },
+      sound: true
+    };
+  },
+
+  init() {
+    this.load();
+    this.ensureDaily();
+    this.sound = this.state.sound !== false;
+    SoundFX.enabled = this.sound;
+    document.getElementById('sound-label').textContent = this.sound ? '開' : '關';
+    this.renderAll();
+    setInterval(() => { if (this.state) { this.state.stats.playMinutes = (this.state.stats.playMinutes || 0) + 0.5; } }, 30000);
+  },
+
+  load() {
+    try {
+      const raw = localStorage.getItem(this.saveKey);
+      if (raw) {
+        const d = JSON.parse(raw);
+        this.state = Object.assign(this.defaultState(), d);
+        this.state.grade = Math.max(0, Math.min(6, +this.state.grade || 0));
+        if (!this.state.unlockedZones || !this.state.unlockedZones.length) this.state.unlockedZones = [0];
+        if (!this.state.daily) this.state.daily = this.defaultState().daily;
+        // 遷移：過濾不符合目前職業的技能（修正戰士火球術等問題）
+        try {
+          const allowed = new Set(skillsForClass(this.state.heroClass || 'warrior').map(x => x.id));
+          this.state.skills = (this.state.skills || []).filter(id => allowed.has(id));
+        } catch (_) {}
+      } else this.state = this.defaultState();
+    } catch (e) { this.state = this.defaultState(); }
+  },
+
+  save() {
+    try { localStorage.setItem(this.saveKey, JSON.stringify(this.state)); } catch (e) {}
+  },
+
+  ensureDaily() {
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.state.daily.date !== today) {
+      this.state.daily = { date: today, correctToday: 0, stagesToday: 0, loginToday: 1, claimed: false };
+      this.save();
+    }
+  },
+
+  toast(msg) {
+    const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 2200);
+  },
+
+  tab(name, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('panel-' + name);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+    else {
+      const b = document.querySelector(`.nav-btn[data-tab="${name}"]`);
+      if (b) b.classList.add('active');
+    }
+    this.renderAll();
+  },
+
+  goAdventure() { this.tab('adventure'); },
+
+  setGrade(g) {
+    this.state.grade = Math.max(0, Math.min(6, g));
+    this.save(); this.toast('已切換：' + LV[g][0] + ' · ' + LV[g][1]); this.renderAll();
+  },
+
+  classMult() {
+    const c = this.state.heroClass;
+    return {
+      atk: c === 'warrior' ? 1.2 : 1,
+      crit: c === 'archer' ? 0.15 : 0.05,
+      gold: c === 'engineer' ? 1.15 : 1,
+      exp: c === 'scholar' ? 1.2 : 1
+    };
+  },
+
+  skillBonus() {
+    const b = { atk: 0, crit: 0, gold: 0, exp: 0, heal: 0, ice: 0, pet: 0, combo: 0 };
+    (this.state.skills || []).forEach(id => {
+      const sk = findSkill(id); if (!sk) return;
+      if (sk.atk) b.atk += sk.atk; if (sk.crit) b.crit += sk.crit;
+      if (sk.gold) b.gold += sk.gold; if (sk.exp) b.exp += sk.exp;
+      if (sk.heal) b.heal += sk.heal; if (sk.proc) b.ice += sk.proc;
+      if (sk.pet) b.pet += sk.pet; if (sk.combo) b.combo += (typeof sk.combo === 'number' ? sk.combo : 1);
+    });
+    return b;
+  },
+
+  petBonus() {
+    const b = { atk: 0, res: 0, ice: 0, crit: 0, exp: 0 };
+    const a = Object.entries(this.state.pets).find(([, p]) => p.active);
+    if (!a) return b;
+    const d = DB.pets.find(x => x.id === a[0]), k = (a[1].stage || 0) + 1;
+    if (!d) return b;
+    if (d.bonusType === 'ice') b.ice = 0.05 * k;
+    else b[d.bonusType] = (d.bonusType === 'crit' ? 0.04 : 0.08) * k;
+    return b;
+  },
+
+  renderTop() {
+    const s = this.state, cls = DB.classes[s.heroClass] || { icon: '⚔️', name: '英雄' };
+    document.getElementById('avatar-ico').innerHTML = Art.html('hero:' + s.heroClass, 46, cls.icon);
+    document.getElementById('avatar-lv').textContent = s.level;
+    document.getElementById('player-name').textContent = cls.name + ' · Lv.' + s.level;
+    document.getElementById('gold-label').textContent = (s.gold | 0).toLocaleString();
+    document.getElementById('dia-label').textContent = (s.dia | 0).toLocaleString();
+    const pct = s.expTo ? Math.min(100, s.exp / s.expTo * 100) : 0;
+    document.getElementById('exp-fill').style.width = pct + '%';
+  },
+
+  topZone() {
+    const u = this.state.unlockedZones || [0];
+    return Math.max(0, Math.min(DB.zones.length - 1, Math.max.apply(null, u)));
+  },
+
+  quickStart() { this.startStage(this.topZone()); },
+
+  renderHome() {
+    const s = this.state, d = s.daily;
+    const cls = DB.classes[s.heroClass] || { name: '英雄', icon: '⚔️' };
+
+    // 場景
+    const hb = document.getElementById('home-bg');
+    if (hb && !hb.firstChild) hb.innerHTML = Art.battleScene('h');
+    const z = DB.zones[this.topZone()];
+    document.getElementById('home-chap').textContent = z.chap + ' · ' + z.name;
+    document.getElementById('home-hero-art').innerHTML = Art.html('hero:' + s.heroClass, 170, cls.icon);
+    const petEl = document.getElementById('home-pet');
+    const ap = Object.entries(s.pets || {}).find(([, p]) => p.active);
+    if (ap) {
+      const pdef = DB.pets.find(x => x.id === ap[0]), st = ap[1].stage || 0;
+      petEl.innerHTML = Art.html('pet:' + ap[0] + ':' + st, 70, (pdef && pdef.icons[st]) || '🐾');
+    } else petEl.innerHTML = '';
+    document.getElementById('home-hero-name').textContent = cls.name;
+    document.getElementById('home-hero-lv').textContent = s.level;
+    document.getElementById('home-power').textContent = Math.round((s.atk || 10) * 12 + (s.maxHp || 100) * 0.8 + s.level * 15);
+    const pct = s.expTo ? Math.min(100, s.exp / s.expTo * 100) : 0;
+    document.getElementById('home-exp-fill').style.width = pct + '%';
+    document.getElementById('home-exp-txt').textContent = `EXP ${s.exp | 0}/${s.expTo | 0}`;
+
+    // 每日任務
+    const list = document.getElementById('daily-list');
+    list.innerHTML = DB.dailyTasks.map(t => {
+      const cur = d[t.key] || 0, done = cur >= t.target;
+      const pct2 = Math.min(100, cur / t.target * 100);
+      return `<div class="daily-card${done ? ' done' : ''}">
+        <div class="d-ico">${done ? '✅' : '📌'}</div>
+        <div class="d-body">
+          <div class="d-name">${t.name}</div>
+          <div class="d-prog"><i style="width:${pct2}%"></i></div>
+          <div class="d-meta">${Math.min(cur, t.target)}/${t.target}　獎勵 🪙${t.reward.gold || 0} ✨${t.reward.exp || 0}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // 概況
+    const rate = s.stats.answered ? Math.round(s.stats.correct / s.stats.answered * 100) : 0;
+    const tile = (v, l) => `<div class="stat-tile"><b>${v}</b><span>${l}</span></div>`;
+    document.getElementById('home-stats').innerHTML = `<div class="stat-tiles">
+      ${tile(s.stats.answered | 0, '累計答題')}${tile(rate + '%', '正確率')}${tile(s.stats.comboMax | 0, '最高連擊')}
+      ${tile(d.correctToday | 0, '今日答對')}${tile(d.stagesToday | 0, '今日通關')}${tile(s.wrongLog.length, '錯題本')}</div>`;
+  },
+
+  claimDaily() {
+    const d = this.state.daily;
+    if (d.claimed) { this.toast('今日獎勵已領取'); return; }
+    let gold = 0, exp = 0, dia = 0;
+    DB.dailyTasks.forEach(t => {
+      if ((d[t.key] || 0) >= t.target) {
+        gold += t.reward.gold || 0; exp += t.reward.exp || 0; dia += t.reward.dia || 0;
+      }
+    });
+    if (gold + exp + dia === 0) { this.toast('尚未完成任何每日任務'); return; }
+    this.state.gold += gold; this.state.dia += dia; this.gainExp(exp);
+    d.claimed = true; this.save(); this.toast(`領取 🪙${gold} ✨${exp} 💎${dia}`); this.renderAll();
+  },
+
+  renderAdventure() {
+    const s = this.state;
+    const sel = document.getElementById('grade-select');
+    sel.innerHTML = LV.map((g, i) => `<option value="${i}" ${s.grade === i ? 'selected' : ''}>${g[0]} · ${g[1]}</option>`).join('');
+    const cg = document.getElementById('class-grid');
+    cg.innerHTML = '';
+    Object.entries(DB.classes).forEach(([k, c]) => {
+      const el = document.createElement('button'); el.type = 'button'; el.className = 'class-card' + (s.heroClass === k ? ' sel' : '');
+      el.innerHTML = `${Art.html('hero:' + k, 60, c.icon)}<b>${c.name}</b><small>${c.desc}</small>`;
+      el.onclick = () => {
+        this.state.heroClass = k;
+        // 換職業時，只保留新職業可用的技能（避免戰士身上掛火球術）
+        const allowed = new Set(skillsForClass(k).map(x => x.id));
+        this.state.skills = (this.state.skills || []).filter(id => allowed.has(id));
+        this.save(); this.renderAll(); this.toast('選擇職業：' + c.name);
+      };
+      cg.appendChild(el);
+    });
+    const list = document.getElementById('stage-list'); list.innerHTML = '';
+    DB.zones.forEach((z, i) => {
+      const unlocked = s.unlockedZones.includes(i);
+      const stars = s.stageStars[i] || 0;
+      const el = document.createElement('div');
+      el.className = 'chapter-card' + (unlocked ? '' : ' locked');
+      const bossArt = unlocked ? Art.html('boss:' + i, 92, z.boss.icon) : `<span style="font-size:40px">🔒</span>`;
+      el.innerHTML = `
+        <div class="ch-top" style="--zc:${z.color}">
+          <div><span class="ch-chap">${z.chap}</span><div class="ch-name">${z.name}</div></div>
+          <div class="ch-boss">${bossArt}</div>
+        </div>
+        <div class="ch-body">
+          <div class="ch-title">${unlocked ? '可挑戰' : '未解鎖'}</div>
+          <div class="ch-meta">${unlocked ? `Boss：${z.boss.name} · 推薦 Lv.${z.minLv}+` : '需先擊敗前一章 Boss'}</div>
+          <div class="ch-stars">${'★'.repeat(stars)}<i class="off">${'★'.repeat(3 - stars)}</i></div>
+          ${unlocked ? `<button class="ch-go" type="button">出發</button>` : ''}
+        </div>`;
+      if (unlocked) {
+        const go = el.querySelector('.ch-go');
+        if (go) go.onclick = (e) => { e.stopPropagation(); this.startStage(i); };
+        el.onclick = () => this.startStage(i);
+      } else {
+        el.onclick = () => this.toast('請先通關前一區域');
+      }
+      list.appendChild(el);
+    });
+  },
+
+  renderMap() {
+    const s = this.state, list = document.getElementById('map-list'); list.innerHTML = '';
+    DB.zones.forEach((z, i) => {
+      const unlocked = s.unlockedZones.includes(i);
+      const stars = s.stageStars[i] || 0;
+      const el = document.createElement('div');
+      el.className = 'map-node' + (unlocked ? '' : ' locked') + (unlocked && i === this.topZone() ? ' current' : '');
+      el.innerHTML = `
+        <div class="mn-num">${i + 1}</div>
+        <div class="mn-icon">${unlocked ? Art.html('boss:' + i, 50, z.boss.icon) : '🔒'}</div>
+        <div class="mn-info">
+          <div class="mn-name">${z.chap} · ${z.name}</div>
+          <div class="mn-meta">${unlocked ? `Boss：${z.boss.name}` : '尚未解鎖'}</div>
+          <div class="mn-stars">${unlocked ? '★'.repeat(stars) + '<i class="off">' + '★'.repeat(3 - stars) + '</i>' : '—'}</div>
+        </div>
+        ${unlocked ? `<button class="btn green sm" type="button">挑戰</button>` : ''}`;
+      if (unlocked) {
+        const btn = el.querySelector('button');
+        if (btn) btn.onclick = (e) => { e.stopPropagation(); this.startStage(i); };
+        el.onclick = () => this.startStage(i);
+      }
+      list.appendChild(el);
+    });
+  },
+
+  monstersForZone(zi) {
+    return DB.monsters.filter(m => m.zone === zi).slice(0, 4);
+  },
+
+  bossForZone(zi) {
+    const z = DB.zones[zi] || DB.zones[0];
+    return Object.assign({}, z.boss, { zone: z.id, id: 'boss_' + z.id });
+  },
+
+  makeFighter(src, isBoss) {
+    const z = src.zone != null ? src.zone : 0;
+    const hp = isBoss ? Math.round((src.hp || 150) * 0.55) : 36 + z * 14;
+    let art = null;
+    if (isBoss) {
+      // 支援 img/boss_0.png ~ boss_7.png、boss_weak.png（有圖就顯示，沒有則自動退回 emoji）
+      if (src.id && String(src.id).startsWith('boss_')) art = 'boss:' + String(src.id).replace('boss_', '');
+      else art = 'boss:' + z;
+    } else {
+      art = 'mon:' + src.id;
+    }
+    return {
+      id: src.id, name: src.name, maxHp: hp, hp,
+      atk: isBoss ? 10 + z * 2 : 6 + z * 1.5, isBoss: !!isBoss,
+      emoji: src.icon || (isBoss ? '👑' : '👾'),
+      art
+    };
+  },
+
+  startStage(zi) {
+    if (this.battle) return;
+    const q = this.monstersForZone(zi).map(m => this.makeFighter(m, false));
+    q.push(this.makeFighter(this.bossForZone(zi), true));
+    this.beginBattle(zi, q, `${DB.zones[zi].chap} · ${DB.zones[zi].name}`, false);
+  },
+
+  startWeakBoss() {
+    if (this.battle) return;
+    const w = this.state.wrongLog || [];
+    if (w.length < 3) { this.toast('錯題還不夠多（至少 3 題），先去挑戰關卡吧！'); return; }
+    const hp = 60 + w.length * 6;
+    this.beginBattle(-1, [{ id: 'boss_weak', name: '錯題大魔王', maxHp: hp, hp, atk: 12, isBoss: true, emoji: '👿', art: 'boss:weak' }], '錯題複習戰', true);
+  },
+
+  beginBattle(zoneId, queue, title, weak) {
+    this.paused = false;
+    document.getElementById('pause-menu').classList.remove('active');
+    this.state.hp = this.state.maxHp;
+    this.battle = {
+      zoneId, queue, index: 0, combo: 0, correct: 0, total: 0, weak,
+      recent: [], waiting: false, over: false, hintUsed: false,
+      rewards: { gold: 0, exp: 0, wood: 0, stone: 0, steel: 0 },
+      energy: 0, selectedSkill: 0, bossShield: 0, bossRage: false
+    };
+    // 隱藏主介面，避免戰鬥時透出下方頁面
+    const app = document.getElementById('app');
+    if (app) app.style.visibility = 'hidden';
+    document.getElementById('battle').classList.add('active');
+    // 戰鬥場景背景：內建 SVG 場景；有 img/bg_battle.png 會自動覆蓋
+    (function(){
+      const bgEl = document.getElementById('bg-svg');
+      if (bgEl && !bgEl.firstChild) bgEl.innerHTML = Art.battleScene();
+      const sc = document.getElementById('battle-scene');
+      if (sc) sc.classList.remove('boss');
+    })();
+    document.getElementById('battle-title').textContent = title;
+    this.showFighters();
+    this.nextQuestion();
+  },
+
+  later(B, fn, ms) {
+    setTimeout(() => {
+      if (this.battle !== B || B.over) return;
+      if (this.paused) B.resume = fn; else fn();
+    }, ms);
+  },
+
+  currentEnemy() {
+    const B = this.battle; if (!B) return null;
+    return B.queue[B.index] || null;
+  },
+
+  showFighters() {
+    const s = this.state, e = this.currentEnemy(), B = this.battle;
+    const cls = DB.classes[s.heroClass] || { name: '英雄', icon: '⚔️' };
+
+    // 頂部貨幣 / 任務
+    const bg = document.getElementById('bt-gold');
+    const bd = document.getElementById('bt-dia');
+    const bh = document.getElementById('bt-hp');
+    const bq = document.getElementById('bt-quest');
+    if (bg) bg.textContent = (s.gold | 0).toLocaleString();
+    if (bd) bd.textContent = (s.dia | 0).toLocaleString();
+    if (bh) bh.textContent = (s.hp | 0) + '/' + (s.maxHp | 0);
+    if (bq && B) bq.textContent = Math.min(B.index + 1, B.queue.length) + '/' + B.queue.length;
+
+    // 場景：Boss 戰換色調 / 換背景圖
+    const scene = document.getElementById('battle-scene');
+    if (scene && B) {
+      const bossNow = !!(e && e.isBoss);
+      scene.classList.toggle('boss', bossNow);
+      if (B.bgBoss !== bossNow) { B.bgBoss = bossNow; Art.battleBg(bossNow); }
+    }
+
+    const bar = (k, v, m) =>
+      `<div class="bar ${k}"><i style="width:${m ? Math.max(0, Math.min(100, v / m * 100)) : 0}%"></i><span>${k === 'hp' ? 'HP' : 'MP'} ${v | 0}/${m | 0}</span></div>`;
+
+    // 玩家
+    const sp = document.getElementById('sprite-player');
+    sp.className = 'char-sprite';
+    sp.innerHTML = Art.html('hero:' + s.heroClass, 150, cls.icon);
+    const mp = Math.min(100, (B && B.energy) || 0);
+    document.getElementById('meta-player').innerHTML =
+      `<div class="sc-head">
+        <div class="sc-portrait">${Art.html('hero:' + s.heroClass, 32, cls.icon)}</div>
+        <div class="sc-id"><span class="sc-name">${cls.name}</span><span class="sc-lv">Lv.${s.level}</span></div>
+      </div>
+      ${bar('hp', s.hp, s.maxHp)}${bar('mp', mp, 100)}
+      <div class="sc-stats"><span>⚔️ 攻擊 ${s.atk | 0}</span><span>🛡️ 防禦 ${Math.round((s.maxHp || 100) / 8)}</span></div>`;
+
+    // 出戰寵物：站在主角身旁
+    const petEl = document.getElementById('sprite-pet');
+    if (petEl) {
+      const activePet = Object.entries(s.pets || {}).find(([, p]) => p.active);
+      if (activePet) {
+        const [pid, pdata] = activePet;
+        const pdef = DB.pets.find(x => x.id === pid);
+        const stage = pdata.stage || 0;
+        const icon = (pdef && pdef.icons && pdef.icons[stage]) ? pdef.icons[stage] : '🐾';
+        petEl.innerHTML = Art.html('pet:' + pid + ':' + stage, 60, icon);
+        petEl.style.display = 'flex';
+      } else {
+        petEl.innerHTML = '';
+        petEl.style.display = 'none';
+      }
+    }
+
+    // 敵人
+    if (e) {
+      const se = document.getElementById('sprite-enemy');
+      se.className = 'char-sprite' + (e.isBoss ? ' boss' : '');
+      if (se.parentNode) se.parentNode.classList.toggle('boss', !!e.isBoss);
+      se.innerHTML = e.art ? Art.html(e.art, 150, e.emoji)
+        : `<div style="font-size:84px;line-height:1;display:flex;align-items:flex-end;justify-content:center">${e.emoji}</div>`;
+      document.getElementById('meta-enemy').innerHTML =
+        `<div class="sc-head">
+          <div class="sc-portrait">${e.art ? Art.html(e.art, 32, e.emoji) : e.emoji}</div>
+          <div class="sc-id"><span class="sc-name">${e.name}</span><span class="sc-lv${e.isBoss ? ' boss' : ''}">${e.isBoss ? 'BOSS' : 'Lv.' + Math.max(1, (B.zoneId | 0) + 1)}</span></div>
+        </div>
+        ${bar('hp', e.hp, e.maxHp)}
+        <div class="sc-stats"><span>⚔️ 攻擊 ${Math.round(e.atk)}</span><span>👾 ${Math.min(B.index + 1, B.queue.length)}/${B.queue.length}</span></div>`;
+    }
+
+    // COMBO
+    const cl = document.getElementById('combo-label'), c = B ? B.combo : 0;
+    if (c >= 2) {
+      document.getElementById('combo-num').textContent = 'x' + c;
+      cl.classList.add('show');
+      cl.classList.toggle('t2', c >= 5 && c < 10); cl.classList.toggle('t3', c >= 10);
+      if (cl.dataset.c !== String(c)) { cl.classList.remove('pop'); void cl.offsetWidth; cl.classList.add('pop'); }
+      cl.dataset.c = c;
+    } else { cl.classList.remove('show', 'pop'); delete cl.dataset.c; }
+
+    this.renderSkillDock();
+    this.renderEnergy();
+  },
+
+  renderEnergy() {
+    const B = this.battle; if (!B) return;
+    const maxE = 100, e = Math.min(maxE, B.energy | 0);
+    const fill = document.getElementById('energy-fill');
+    const tx = document.getElementById('energy-text');
+    const st = document.getElementById('energy-star');
+    if (fill) fill.style.width = (e / maxE * 100) + '%';
+    if (tx) tx.textContent = e + '/' + maxE;
+    if (st) st.textContent = Math.floor(e / 20) + '/5';
+  },
+
+  // 職業固定 4 技能槽（顯示用 + 能量施放）
+  classSkillSlots() {
+    const map = {
+      warrior: [
+        { id: 'basic', icon: '⚔️', name: '普通攻擊', cost: 0, atk: 1 },
+        { id: 'w_double', icon: '🗡️', name: '雙重斬擊', cost: 40, atk: 1.6 },
+        { id: 'w_spin', icon: '🌀', name: '旋風斬', cost: 60, atk: 2.0 },
+        { id: 'w_charge', icon: '💥', name: '勇者衝鋒', cost: 100, atk: 2.8, crit: true }
+      ],
+      mage: [
+        { id: 'basic', icon: '✨', name: '魔力彈', cost: 0, atk: 1 },
+        { id: 'm_fire', icon: '🔥', name: '火球術', cost: 40, atk: 1.7 },
+        { id: 'm_ice', icon: '❄️', name: '冰霜', cost: 55, atk: 1.5, ice: true },
+        { id: 'm_meteor', icon: '☄️', name: '流星術', cost: 100, atk: 2.9, crit: true }
+      ],
+      archer: [
+        { id: 'basic', icon: '🏹', name: '射擊', cost: 0, atk: 1 },
+        { id: 'a_multi', icon: '🎯', name: '連射', cost: 40, atk: 1.55 },
+        { id: 'a_burst', icon: '💥', name: '爆裂箭', cost: 60, atk: 2.0 },
+        { id: 'a_snipe', icon: '👁️', name: '狙擊', cost: 100, atk: 2.7, crit: true }
+      ],
+      engineer: [
+        { id: 'basic', icon: '🔧', name: '打擊', cost: 0, atk: 1 },
+        { id: 'e_turret', icon: '🔫', name: '砲塔', cost: 45, atk: 1.65 },
+        { id: 'e_robot', icon: '🤖', name: '機器人', cost: 65, atk: 2.0 },
+        { id: 'e_fort', icon: '🏰', name: '防禦砲', cost: 100, atk: 2.5, crit: true }
+      ],
+      scholar: [
+        { id: 'basic', icon: '📖', name: '知識彈', cost: 0, atk: 1 },
+        { id: 's_learn', icon: '📚', name: '博學', cost: 40, atk: 1.4 },
+        { id: 's_inspire', icon: '💡', name: '靈感', cost: 55, atk: 1.7 },
+        { id: 's_wisdom', icon: '🌟', name: '智慧之光', cost: 100, atk: 2.6, crit: true }
+      ]
+    };
+    return map[this.state.heroClass] || map.warrior;
+  },
+
+  renderSkillDock() {
+    const B = this.battle, dock = document.getElementById('skill-dock');
+    if (!dock || !B) return;
+    const slots = this.classSkillSlots();
+    const energy = B.energy | 0;
+    dock.innerHTML = slots.map((sk, i) => {
+      const ready = energy >= sk.cost;
+      const isBasic = sk.cost === 0;
+      let cls = 'skill-btn c' + (i % 4);
+      if (!isBasic && ready) cls += ' ready';
+      if (!isBasic && !ready) cls += ' locked';
+      if ((B.selectedSkill || 0) === i) cls += ' sel';
+      return `<div class="skill-slot">
+        <button type="button" class="${cls}" data-si="${i}" onclick="Game.pickSkill(${i})">${sk.icon}${isBasic ? '' : `<em class="sk-cost">${Math.ceil(sk.cost / 20)}</em>`}</button>
+        <small>${sk.name}</small>
+      </div>`;
+    }).join('');
+  },
+
+  pickSkill(i) {
+    const B = this.battle; if (!B || B.waiting === false && B.over) return;
+    const slots = this.classSkillSlots();
+    const sk = slots[i];
+    if (!sk) return;
+    if (sk.cost > 0 && (B.energy|0) < sk.cost) {
+      this.toast('能量不足（需要 ' + sk.cost + '）');
+      return;
+    }
+    B.selectedSkill = i;
+    this.renderSkillDock();
+    this.toast(sk.cost === 0 ? '一般攻擊' : '下一次答對將施放：' + sk.name);
+  },
+
+  fx(who, txt, crit) {
+    const box = document.getElementById(who === 'enemy' ? 'sprite-enemy' : 'sprite-player');
+    if (!box) return;
+    const other = document.getElementById(who === 'enemy' ? 'sprite-player' : 'sprite-enemy');
+    box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+    if (who === 'enemy' && other) { other.classList.remove('lunge'); void other.offsetWidth; other.classList.add('lunge'); }
+    let cls = 'fl';
+    const t = String(txt || '');
+    if (crit || /CRITICAL|💥|暴擊/.test(t)) cls += ' crit';
+    else if (/MISS|未命中/.test(t)) cls += ' miss';
+    else if (/WEAK|弱點/.test(t)) cls += ' weak';
+    else if (/SUPER|效果拔群/.test(t)) cls += ' super';
+    if (who === 'player') cls += ' pl';
+    const f = document.createElement('span');
+    f.className = cls;
+    f.textContent = t;
+    box.appendChild(f);
+    setTimeout(() => f.remove(), 950);
+  },
+
+  
+  nextQuestion() {
+    const B = this.battle;
+    if (!B || B.over || this.paused) return;
+    const e = this.currentEnemy();
+    if (!e) { this.finishStage(true); return; }
+    const s = this.state;
+    let q;
+    if (B.weak && s.wrongLog.length) {
+      const w = QG.pick(s.wrongLog);
+      q = { subj: w.subj, q: w.q, a: w.a, opts: QG.shuffle(w.opts), wrongRef: w, swatch: w.sw };
+    } else q = QG.make(s.grade, B.recent, !!e.isBoss);
+    B.recent.push(q.q); if (B.recent.length > 15) B.recent.shift();
+    B.curQ = q; B.waiting = true;
+    const qb = document.getElementById('q-box'); qb.textContent = q.q; qb.classList.toggle('long', String(q.q).length > 26);
+    const opts = document.getElementById('opts'); opts.innerHTML = '';
+    opts.className = 'opts' + (q.opts.some(o => COLOR_RE.test(o)) ? ' neutral' : '');
+    q.opts.forEach((o, oi) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'opt-btn o' + (oi % 4); b.dataset.v = o;
+      const ol = document.createElement('span'); ol.className = 'ol'; ol.textContent = String.fromCharCode(65 + oi);
+      const ot = document.createElement('span'); ot.className = 'ot'; ot.textContent = o;
+      const mk = document.createElement('span'); mk.className = 'mark';
+      if (q.swatch && SWATCH[o]) { const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = SWATCH[o]; b.append(ol, sw, ot, mk); }
+      else b.append(ol, ot, mk);
+      b.onclick = () => Game.answer(o, b);
+      opts.appendChild(b);
+    });
+    if (s.skills.includes('hint') && !B.hintUsed) {
+      const h = document.createElement('button');
+      h.type = 'button'; h.className = 'hint-btn'; h.textContent = '💡 提示（每關 1 次）';
+      h.onclick = () => {
+        if (!B.waiting) return;
+        B.hintUsed = true;
+        const wrongs = Array.from(opts.querySelectorAll('.opt-btn')).filter(x => x.dataset.v !== q.a);
+        if (wrongs.length) QG.pick(wrongs).style.visibility = 'hidden';
+        h.remove();
+      };
+      opts.appendChild(h);
+    }
+    document.getElementById('battle-hint').textContent = `${LV[s.grade][0]} · ${q.subj} · 答對即可攻擊`;
+    this.showFighters();
+  },
+
+  answer(opt, btn) {
+    const B = this.battle;
+    if (!B || !B.waiting || this.paused) return;
+    B.waiting = false;
+    const s = this.state, q = B.curQ, ok = opt === q.a, e = this.currentEnemy();
+    B.total++; s.stats.answered++;
+    document.querySelectorAll('#opts .opt-btn').forEach(x => {
+      x.disabled = true; if (x.dataset.v === q.a) x.classList.add('correct');
+    });
+    if (!ok) btn.classList.add('wrong');
+    const st = s.subjStats[q.subj] = s.subjStats[q.subj] || { total: 0, correct: 0, wrong: 0 };
+    st.total++;
+    const m = this.classMult(), sk = this.skillBonus(), pb = this.petBonus();
+    let txt, who;
+    if (ok) {
+      st.correct++; s.stats.correct++; B.correct++; B.combo++;
+      s.daily.correctToday = (s.daily.correctToday || 0) + 1;
+      s.stats.comboMax = Math.max(s.stats.comboMax || 0, B.combo);
+      if (q.wrongRef) s.wrongLog = s.wrongLog.filter(w => w !== q.wrongRef);
+      // 答對：回能量 + 依選中技能攻擊
+      B.energy = Math.min(100, (B.energy | 0) + 20 + Math.min(15, B.combo * 3));
+      const slots = this.classSkillSlots();
+      let si = B.selectedSkill | 0;
+      let skill = slots[si] || slots[0];
+      // 能量不足則退回普通攻擊
+      if (skill.cost > 0 && B.energy < skill.cost) { si = 0; skill = slots[0]; B.selectedSkill = 0; }
+      if (skill.cost > 0) B.energy -= skill.cost;
+      let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk) * (skill.atk || 1)
+        * (1 + Math.min(0.55, B.combo * 0.05 * (1 + (sk.combo || 0) * 0.5)));
+      let crit = Math.random() < m.crit + sk.crit + pb.crit || !!skill.crit;
+      if (crit) dmg *= 1.55;
+      // Boss 護盾
+      if (e.isBoss && B.bossShield > 0) {
+        B.bossShield--;
+        dmg = Math.round(dmg * 0.35);
+        this.toast('🛡️ Boss 護盾減傷！');
+      }
+      dmg = Math.round(dmg);
+      if (Object.values(s.pets).some(p => p.active) && Math.random() < 0.35)
+        dmg += Math.round(dmg * 0.25 * (1 + sk.pet));
+      e.hp = Math.max(0, e.hp - dmg);
+      const heal = Math.round(s.maxHp * sk.heal) + (s.buildings.b_hospital || 0);
+      if (heal) s.hp = Math.min(s.maxHp, s.hp + heal);
+      if (skill.ice) B._iceNext = true;
+      txt = (crit ? 'CRITICAL! -' : (skill.cost > 0 ? skill.icon + ' -' : '-')) + dmg;
+      who = 'enemy';
+      B.selectedSkill = 0; // 施放後回到普通
+      try { SoundFX.playPiano(523.25 + Math.min(B.combo, 8) * 40, 0.12); } catch (_) {}
+    } else {
+      st.wrong++; B.combo = 0;
+      s.wrongLog = s.wrongLog.filter(w => w.q !== q.q);
+      s.wrongLog.push({ subj: q.subj, q: q.q, a: q.a, opts: q.opts.slice(), sw: !!q.swatch, t: Date.now() });
+      if (s.wrongLog.length > 80) s.wrongLog.shift();
+      if (Math.random() < sk.ice + pb.ice) { txt = '❄️ 擋下！'; who = 'enemy'; }
+      else {
+        const d = Math.max(3, Math.round(e.atk * (e.isBoss ? 1.2 : 1)));
+        s.hp = Math.max(0, s.hp - d); txt = '-' + d; who = 'player';
+      }
+      try { SoundFX.playWrongGentle(); } catch (_) {}
+    }
+    this.showFighters(); this.fx(who, txt, /💥/.test(txt)); this.save();
+    // Boss 狂暴：血量低於 30%
+    if (e && e.isBoss && e.hp > 0 && e.hp / e.maxHp < 0.3 && !B.bossRage) {
+      B.bossRage = true; e.atk = Math.round(e.atk * 1.4);
+      this.toast('💢 Boss 狂暴！攻擊上升');
+    }
+    this.later(B, () => {
+      if (s.hp <= 0) this.finishStage(false);
+      else if (e.hp <= 0) this.onEnemyDown();
+      else this.nextQuestion();
+    }, 750);
+  },
+
+  onEnemyDown() {
+    const B = this.battle, e = this.currentEnemy(), s = this.state;
+    if (!e) return;
+    const z = Math.max(0, B.zoneId), sk = this.skillBonus(), m = this.classMult(), pb = this.petBonus();
+    const base = (e.isBoss ? 40 : 12) * (1 + z * 0.25), r = B.rewards;
+    r.gold += Math.round(base * (1 + sk.gold + pb.res) * m.gold);
+    r.exp += Math.round(base * 0.9 * (1 + sk.exp + pb.exp) * m.exp);
+    r.wood += Math.round((e.isBoss ? 8 : 2) * (1 + pb.res));
+    r.stone += Math.round((e.isBoss ? 6 : 2) * (1 + pb.res));
+    r.steel += e.isBoss ? 4 + z : (Math.random() < 0.3 ? 1 : 0);
+    if (e.art) s.codex[e.id] = (s.codex[e.id] || 0) + 1;
+    this.petGrow();
+    this.toast(`🎉 打倒 ${e.name}！`);
+    B.index++;
+    // 下一隻若是 Boss：給護盾 + 可能狂暴
+    const next = B.queue[B.index];
+    if (next && next.isBoss) {
+      B.bossShield = 2 + Math.max(0, B.zoneId | 0);
+      B.bossRage = false;
+      this.toast('👑 Boss 出現！護盾 ×' + B.bossShield);
+    }
+    if (B.index >= B.queue.length) this.finishStage(true);
+    else this.later(B, () => this.nextQuestion(), 450);
+  },
+
+  petGrow() {
+    const a = Object.entries(this.state.pets).find(([, p]) => p.active);
+    if (!a) return;
+    const p = a[1]; p.exp = (p.exp || 0) + 1;
+    if (p.stage < 2 && p.exp >= [10, 30][p.stage]) {
+      p.stage++;
+      this.toast('✨ 寵物進化成「' + DB.pets.find(x => x.id === a[0]).stages[p.stage] + '」！');
+    }
+  },
+
+  cityIncome() {
+    return Math.round(DB.buildings.reduce((t, b) => t + b.income * (this.state.buildings[b.id] || 0), 0) / 4);
+  },
+
+  finishStage(win) {
+    const B = this.battle, s = this.state;
+    if (!B || B.over) return;
+    B.over = true; this.battle = null; this.paused = false;
+    document.getElementById('battle').classList.remove('active');
+    document.getElementById('pause-menu').classList.remove('active');
+    const app = document.getElementById('app');
+    if (app) app.style.visibility = '';
+    const r = B.rewards, f = win ? 1 : 0.3;
+    const acc = B.total ? B.correct / B.total : 0;
+    const stars = win ? (acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1) : 0;
+    const city = win ? this.cityIncome() : 0;
+    s.gold += Math.round(r.gold * f) + city;
+    s.wood += Math.round(r.wood * f); s.stone += Math.round(r.stone * f); s.steel += Math.round(r.steel * f);
+    this.gainExp(Math.round(r.exp * f));
+    if (win && B.zoneId >= 0) {
+      s.stageStars[B.zoneId] = Math.max(s.stageStars[B.zoneId] || 0, stars);
+      const nz = B.zoneId + 1;
+      if (nz < DB.zones.length && !s.unlockedZones.includes(nz)) {
+        s.unlockedZones.push(nz); this.toast('🔓 解鎖新章節！');
+      }
+      s.daily.stagesToday = (s.daily.stagesToday || 0) + 1;
+      if (Math.random() < 0.22) this.tryUnlockPet();
+    }
+    if (win && B.weak) {
+      s.achievements = s.achievements || {};
+      s.achievements.a_weak_done = true;
+    }
+    s.hp = s.maxHp;
+    if (win) try { SoundFX.playWin(); } catch (_) {}
+    this.checkAchievements();
+    this.showResult(win, B, stars, { r, f, city });
+    this.save(); this.renderAll();
+  },
+
+  showResult(win, B, stars, x) {
+    document.getElementById('result-title').textContent = win ? '🎊 挑戰成功！' : '💨 再試一次吧';
+    const f = x.f, chip = (i, v) => `<span class="bt-chip">${i} +${Math.round(v * f)}</span>`;
+    document.getElementById('result-body').innerHTML =
+      (win ? `<div class="rw-stars">${'★'.repeat(stars)}<s>${'★'.repeat(3 - stars)}</s></div>` : '<p class="muted" style="margin:6px 0">別灰心，可降低題庫等級或先打錯題魔王複習！</p>') +
+      `<p>答對 ${B.correct}/${B.total}</p>
+       <div class="rw-row">${chip('🪙', x.r.gold)}${chip('✨', x.r.exp)}${chip('🪵', x.r.wood)}${chip('🪨', x.r.stone)}${chip('⚙️', x.r.steel)}</div>` +
+      (win && x.city ? `<p class="muted">城市收租 🪙${x.city}</p>` : '');
+    document.getElementById('result-modal').classList.add('active');
+  },
+
+  closeResult() {
+    document.getElementById('result-modal').classList.remove('active');
+    this.openLevelUp();
+  },
+
+  gainExp(n) {
+    const s = this.state; s.exp += n;
+    while (s.exp >= s.expTo) {
+      s.exp -= s.expTo; s.level++; s.expTo = Math.round(30 + s.level * 18);
+      s.maxHp += 8; s.atk += 2; s.hp = s.maxHp; s.pendingLv = (s.pendingLv || 0) + 1;
+    }
+  },
+
+  openLevelUp() {
+    const s = this.state;
+    if (!s.pendingLv || this.battle) return;
+    // 只從「本職業專屬 + 通用」抽，戰士絕不會抽到火球術
+    let pool = skillsForClass(s.heroClass).filter(k => !(s.skills || []).includes(k.id));
+    if (pool.length < 3) {
+      // 已學完則改為能力強化選項
+      pool = skillsForClass(s.heroClass).slice();
+    }
+    const picks = QG.shuffle(pool).slice(0, 3), box = document.getElementById('skill-picks');
+    box.innerHTML = '';
+    const clsName = (DB.classes[s.heroClass] || {}).name || '英雄';
+    document.getElementById('levelup-sub').textContent = `${clsName} Lv.${s.level} · 還有 ${s.pendingLv} 次能力可選（僅本職業技能）`;
+    picks.forEach(sk => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = `<b>${sk.name}</b><br><small class="muted">${sk.desc}</small>`;
+      b.onclick = () => {
+        if ((s.skills || []).includes(sk.id)) { s.atk += 3; s.maxHp += 10; this.toast('已擁有，改為能力強化 +3 攻擊 +10 生命'); }
+        else { s.skills = s.skills || []; s.skills.push(sk.id); this.toast('獲得技能：' + sk.name); }
+        s.pendingLv--;
+        document.getElementById('levelup').classList.remove('active');
+        this.save(); this.renderAll();
+        if (s.pendingLv > 0) this.openLevelUp();
+      };
+      box.appendChild(b);
+    });
+    document.getElementById('levelup').classList.add('active');
+  },
+
+  tryUnlockPet() {
+    const locked = DB.pets.filter(p => !this.state.pets[p.id]);
+    if (!locked.length) return;
+    const p = QG.pick(locked);
+    this.state.pets[p.id] = { stage: 0, exp: 0, active: false };
+    this.toast('🐾 新寵物：' + p.stages[0]);
+  },
+
+  togglePause() {
+    if (!this.battle) return;
+    this.paused = !this.paused;
+    document.getElementById('pause-menu').classList.toggle('active', this.paused);
+    if (!this.paused && this.battle.resume) { const f = this.battle.resume; this.battle.resume = null; f(); }
+  },
+
+  fleeBattle() {
+    if (this.battle) this.battle.over = true;
+    this.battle = null; this.paused = false;
+    document.getElementById('pause-menu').classList.remove('active');
+    document.getElementById('battle').classList.remove('active');
+    const app = document.getElementById('app');
+    if (app) app.style.visibility = '';
+    this.state.hp = this.state.maxHp;
+    this.toast('已退出戰鬥'); this.save(); this.renderAll();
+  },
+
+  renderCity() {
+    const s = this.state, rank = DB.cityRanks.slice().reverse().find(r => s.pop >= r.minPop) || DB.cityRanks[0];
+    document.getElementById('city-summary').textContent = `${rank.name} · 人口 ${s.pop} · 每次通關收租 🪙${this.cityIncome()}`;
+    const list = document.getElementById('build-list'); list.innerHTML = '';
+    DB.buildings.forEach(b => {
+      const lv = s.buildings[b.id] || 0, k = lv + 1;
+      const c = { gold: b.cost.gold * k, wood: b.cost.wood * k, stone: b.cost.stone * k, steel: b.cost.steel * k };
+      const el = document.createElement('div'); el.className = 'list-item';
+      el.innerHTML = `<div>${b.icon}</div><div class="info"><b>${b.name} Lv.${lv}</b><small>${b.desc}</small>
+        <small>🪙${c.gold} 🪵${c.wood} 🪨${c.stone} ⚙️${c.steel}　+${b.pop}人口 +${b.income}收租</small></div>
+        <button class="btn green sm" type="button">${lv ? '升級' : '建造'}</button>`;
+      el.querySelector('button').onclick = () => {
+        const t = this.state;
+        if (t.gold < c.gold || t.wood < c.wood || t.stone < c.stone || t.steel < c.steel) { this.toast('資源不足'); return; }
+        t.gold -= c.gold; t.wood -= c.wood; t.stone -= c.stone; t.steel -= c.steel;
+        t.buildings[b.id] = k; t.pop += b.pop;
+        this.toast('完成：' + b.name + ' Lv.' + k); this.checkAchievements(); this.save(); this.renderAll();
+      };
+      list.appendChild(el);
+    });
+  },
+
+  renderPets() {
+    const s = this.state, list = document.getElementById('pet-list'); list.innerHTML = '';
+    DB.pets.forEach(p => {
+      const st = s.pets[p.id], el = document.createElement('div'); el.className = 'list-item';
+      if (!st) {
+        el.innerHTML = `<div style="opacity:.35">${Art.html('pet:' + p.id + ':0', 52, p.icons[0])}</div>
+          <div class="info"><b>${p.stages[0]}</b><small>尚未獲得 · ${p.desc}</small></div>`;
+      } else {
+        const need = [10, 30][st.stage], pct = st.stage >= 2 ? 100 : Math.min(100, (st.exp || 0) / need * 100);
+        el.innerHTML = `<div>${Art.html('pet:' + p.id + ':' + st.stage, 52, p.icons[st.stage])}</div>
+          <div class="info"><b>${p.stages[st.stage]}</b><small>${p.desc}（${['幼年', '成長', '完全體'][st.stage]}）</small>
+          <div class="progress"><i style="width:${pct}%"></i></div></div>
+          <button class="btn sm ${st.active ? 'green' : 'amber'}" type="button">${st.active ? '出戰中' : '出戰'}</button>`;
+        el.querySelector('button').onclick = () => {
+          Object.values(this.state.pets).forEach(x => x.active = false);
+          this.state.pets[p.id].active = true;
+          this.toast('出戰：' + p.stages[this.state.pets[p.id].stage]); this.save(); this.renderAll();
+        };
+      }
+      list.appendChild(el);
+    });
+  },
+
+  renderEquip() {
+    const s = this.state, box = document.getElementById('equip-list'); if (!box) return;
+    box.innerHTML = '<p class="muted">用金幣與鋼鐵強化裝備（鋼鐵由打倒 BOSS 取得）。最高 Lv.10。</p>';
+    DB.equip.forEach(q => {
+      const lv = s.equip[q.id] || 0, cg = 50 * (lv + 1), cs = 2 * (lv + 1);
+      const el = document.createElement('div'); el.className = 'list-item';
+      el.innerHTML = `<div>${q.icon}</div><div class="info">
+        <b>${DB.equipTier[lv]}${q.name} Lv.${lv}</b><small>${q.desc}</small>
+        ${lv < 10 ? `<small>強化：🪙${cg} ⚙️${cs}</small>` : '<small>已滿級</small>'}</div>
+        <button class="btn amber sm" type="button" ${lv >= 10 ? 'disabled' : ''}>強化</button>`;
+      el.querySelector('button').onclick = () => {
+        const t = this.state;
+        if (t.gold < cg || t.steel < cs) { this.toast('資源不足'); return; }
+        t.gold -= cg; t.steel -= cs; t.equip[q.id] = lv + 1;
+        if (q.id === 'weapon') t.atk += 4;
+        if (q.id === 'armor') { t.maxHp += 14; t.hp += 14; }
+        this.toast('強化成功：' + q.name); this.checkAchievements(); this.save(); this.renderAll();
+      };
+      box.appendChild(el);
+    });
+  },
+
+  renderCodex() {
+    const s = this.state, got = Object.keys(s.codex || {}).length;
+    const pct = Math.round(got / 52 * 100);
+    document.getElementById('codex-summary').innerHTML =
+      `<span>已收集 <b>${got}/52</b></span><div class="progress"><i style="width:${pct}%"></i></div><b>${pct}%</b>`;
+    const list = document.getElementById('codex-list'); list.innerHTML = '';
+    DB.monsters.forEach(m => {
+      const owned = !!s.codex[m.id];
+      const cnt = s.codex[m.id] || 0;
+      const el = document.createElement('div');
+      el.className = 'codex-item' + (owned ? '' : ' locked');
+      el.innerHTML = `
+        <div class="c-icon">${Art.html('mon:' + m.id, 56, m.icon)}</div>
+        <div class="c-name">${owned ? m.name : '???'}</div>
+        <div class="muted" style="font-size:9px">${owned ? `擊敗 ${cnt} 次` : '未發現'}</div>`;
+      list.appendChild(el);
+    });
+  },
+
+  renderAchieve() {
+    const s = this.state;
+    document.getElementById('achieve-list').innerHTML = DB.achievements.map(a => {
+      const done = !!s.achievements[a.id];
+      return `<div class="list-item"><div>${done ? '🏅' : '🔒'}</div>
+        <div class="info"><b>${a.name}</b><small>${a.desc}　獎勵 🪙${a.reward}</small></div>
+        <span class="tag${done ? ' ok' : ''}">${done ? '已達成' : '未完成'}</span></div>`;
+    }).join('');
+  },
+
+  checkAchievements() {
+    const s = this.state;
+    DB.achievements.forEach(a => {
+      if (!s.achievements[a.id] && a.check(s)) {
+        s.achievements[a.id] = true; s.gold += a.reward;
+        this.toast('🏅 成就：' + a.name + ' +' + a.reward + '🪙');
+      }
+    });
+  },
+
+  renderParent() {
+    const s = this.state, t = s.stats, rate = t.answered ? Math.round(t.correct / t.answered * 100) : 0;
+    const tile = (v, l) => `<div class="stat-tile"><b>${v}</b><span>${l}</span></div>`;
+    const rows = Object.entries(s.subjStats).map(([k, v]) => {
+      const p = v.total ? Math.round(v.correct / v.total * 100) : 0;
+      return `<div class="subj-row"><span>${k}</span><div class="progress"><i style="width:${p}%"></i></div><b>${v.correct}/${v.total} · ${p}%</b></div>`;
+    }).join('') || '<p class="muted center" style="margin-top:8px">尚無資料，先去冒險吧！</p>';
+    document.getElementById('parent-body').innerHTML =
+      `<p class="muted" style="margin-bottom:8px">目前題庫：<b style="color:#6a35a8">${LV[s.grade][0]} · ${LV[s.grade][1]}</b></p>
+       <div class="stat-tiles">
+         ${tile(t.answered | 0, '累計答題')}${tile(rate + '%', '正確率')}${tile(t.comboMax | 0, '最高連擊')}
+         ${tile(s.level, '等級')}${tile(Math.round(t.playMinutes || 0) + '分', '遊玩時間')}${tile(s.wrongLog.length, '錯題')}
+       </div>
+       <p style="margin:14px 0 2px;font-weight:900;color:#4a3320">📚 科目表現</p>${rows}
+       <div class="tip-box">💡 建議：正確率穩定超過 85% 就升一級題庫，每天打一次錯題魔王。</div>
+       <button class="btn purple block" type="button" style="margin-top:12px" onclick="Game.startWeakBoss()">👾 開始錯題複習戰</button>`;
+  },
+
+  toggleSound() {
+    this.sound = !this.sound; this.state.sound = this.sound; SoundFX.enabled = this.sound;
+    document.getElementById('sound-label').textContent = this.sound ? '開' : '關'; this.save();
+  },
+
+  exportSave() {
+    const t = JSON.stringify(this.state);
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(t).then(() => this.toast('存檔已複製'), () => prompt('請手動複製存檔：', t));
+    else prompt('請手動複製存檔：', t);
+  },
+
+  importSave() {
+    const t = prompt('貼上之前匯出的存檔文字：');
+    if (!t) return;
+    try { JSON.parse(t); localStorage.setItem(this.saveKey, t); this.load(); this.renderAll(); this.toast('匯入成功'); }
+    catch (e) { this.toast('存檔格式錯誤'); }
+  },
+
+  resetSave() {
+    if (!confirm('確定要清除所有存檔？此操作無法復原。')) return;
+    localStorage.removeItem(this.saveKey); this.state = this.defaultState(); this.save(); this.renderAll();
+    this.toast('存檔已清除');
+  },
+
+  renderAll() {
+    this.renderTop(); this.renderHome(); this.renderAdventure(); this.renderMap();
+    this.renderCity(); this.renderPets(); this.renderEquip();
+    this.renderCodex(); this.renderAchieve(); this.renderParent();
+  }
+};
+
+window.addEventListener('DOMContentLoaded', () => Game.init());
+window.Game = Game;
+</script>
+</body>
+</html>

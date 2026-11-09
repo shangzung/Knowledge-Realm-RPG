@@ -1,0 +1,133 @@
+# 知識之城 RPG — 戰鬥畫面／場景背景 圖資清單＋提示詞
+
+> 格式一律：PNG、透明背景（角色）或實景背景  
+> 角色／怪物建議 512×512；Boss 768×768；背景見下表  
+> 統一風格前綴（角色用）：
+
+```
+cute chibi children's game character illustration, storybook watercolor style, soft thick outline, vibrant warm colors, big sparkling eyes, full body, single character, centered, plain white background, no text, no shadow
+```
+
+背景用：
+
+```
+cute children's game environment background, storybook watercolor, soft colors, no characters, no text, wide landscape
+```
+
+---
+
+## 一、戰鬥畫面最需要的素材（優先）
+
+對應你提供的宣傳圖「3. 戰鬥畫面」：
+
+| 檔名 | 用途 | 尺寸 | 完整提示詞 |
+|---|---|---|---|
+| bg_battle.png | 一般戰鬥場景底圖 | 1280×720 | `cute children's game environment background, storybook watercolor, soft colors, sunny grassland and trees, fantasy adventure battlefield, no characters, no text, wide landscape, vibrant green and blue sky` |
+| bg_battle_boss.png | Boss 戰鬥場景 | 1280×720 | `cute children's game environment background, storybook watercolor, dramatic fantasy arena, soft glowing light, castle ruins in distance, no characters, no text, wide landscape` |
+| hero_warrior.png | 戰士（戰鬥用） | 512×512 | `cute chibi children's game character illustration, storybook watercolor style, soft thick outline, vibrant warm colors, big sparkling eyes, full body, single character, centered, plain white background, no text, no shadow, a brave boy warrior with brown hair, blue armor, red cape, holding a shining sword, dynamic pose` |
+| hero_mage.png | 魔法師 | 512×512 | `...same style prefix..., a cute girl mage with pink long hair, purple pointed hat, holding a magic staff with glowing orb` |
+| hero_archer.png | 弓箭手 | 512×512 | `...same style prefix..., a cute child archer with green hooded cloak, holding a wooden bow and arrow` |
+| hero_engineer.png | 工程師 | 512×512 | `...same style prefix..., a cute boy engineer with goggles on hat, overalls, holding a wrench and small gadget` |
+| hero_scholar.png | 學者 | 512×512 | `...same style prefix..., a cute child scholar with bookish hat, long robe, holding an open book glowing with light` |
+| mon_m01.png | 加法史萊姆（宣傳圖同款） | 512×512 | `...same style prefix..., a cute blue slime monster with a small green sprout on head, big sparkling eyes, friendly smile, round body` |
+| ui_skill_atk.png | 技能圖示：普通攻擊 | 96×96 | `cute game UI icon, circular badge, sword slash symbol, warm orange glow, soft outline, no text` |
+| ui_skill_skill1.png | 技能圖示：職業技1 | 96×96 | `cute game UI icon, circular badge, double slash symbol, golden glow, soft outline, no text` |
+| ui_skill_skill2.png | 技能圖示：職業技2 | 96×96 | `cute game UI icon, circular badge, whirlwind symbol, blue energy, soft outline, no text` |
+| ui_skill_ult.png | 技能圖示：大招 | 96×96 | `cute game UI icon, circular badge, shining star burst, purple and gold, soft outline, no text` |
+| ui_combo_badge.png | COMBO 徽章 | 192×192 | `cute game UI badge, golden star medal, COMBO style, vibrant orange yellow, soft thick outline, no text` |
+| ui_question_box.png | 題目框 | 640×120 | `cute wooden game UI panel, rounded rectangle, cream paper texture, soft brown border, empty center, no text` |
+| ui_opt_btn.png | 答案按鈕底板 | 280×72 | `cute wooden game UI button, rounded rectangle, light wood texture, soft shadow, empty center, no text` |
+
+---
+
+## 二、地圖／場景背景（大翻新）
+
+| 檔名 | 用途 | 尺寸 | 提示詞（接在背景前綴後） |
+|---|---|---|---|
+| bg_map_zone0.png | 初心村 | 1600×1000 | `peaceful beginner village, wooden houses, green fields, soft morning light, dirt paths` |
+| bg_map_zone1.png | 注音森林 | 1600×1000 | `magical forest with glowing trees, soft mist, alphabet-like leaf patterns subtle, no text` |
+| bg_map_zone2.png | 數學平原 | 1600×1000 | `wide sunny plains, gentle hills, geometric rock shapes subtle, blue sky` |
+| bg_map_zone3.png | 閱讀峽谷 | 1600×1000 | `grand canyon with floating books and scrolls subtle, warm orange cliffs, soft light` |
+| bg_map_zone4.png | 英文港口 | 1600×1000 | `cute harbor town, blue sea, sailing boats, lighthouse, seagulls in distance` |
+| bg_map_zone5.png | 科學研究所 | 1600×1000 | `cute sci-fi laboratory campus, glass buildings, gears and beakers as decorations subtle, no text` |
+| bg_map_zone6.png | 知識王國 | 1600×1000 | `fantasy royal city, golden castle, banners, marble streets, warm sunset` |
+| bg_map_zone7.png | 智慧神殿 | 1600×1000 | `sacred temple on mountain peak, white stone, glowing runes subtle, clouds, divine light` |
+| bg_battle.png | 一般戰鬥 | 1280×720 | `sunny grassland battlefield, soft trees, fantasy adventure, vibrant green and blue sky` |
+| bg_battle_boss.png | Boss 戰 | 1280×720 | `dramatic fantasy arena, soft glowing light, distant castle ruins` |
+| bg_home.png | 首頁主畫面 | 1080×1920 | `cute fantasy city overview, castle on hill, soft sky, vertical mobile wallpaper style` |
+| bg_city.png | 城市建設總覽 | 1600×900 | `cute growing fantasy town, houses parks schools, soft isometric-ish watercolor` |
+| bg_pets.png | 寵物頁（可選） | 1600×900 | `cute pet park garden, soft grass, toys, sunny day` |
+| bg_parent.png | 家長模式（可選） | 1600×900 | `calm study room background, soft bookshelves, warm lamp light, no text` |
+| map_world_overview.png | 八大區域總覽 | 1400×900 | `cute fantasy world map, eight regions marked by soft landmarks, storybook style, no text labels` |
+
+**背景完整提示詞範例（直接複製）：**
+
+```
+cute children's game environment background, storybook watercolor, soft colors, no characters, no text, wide landscape, peaceful beginner village, wooden houses, green fields, soft morning light, dirt paths
+```
+
+---
+
+## 三、職業技能對應（已寫進程式，出圖可對照）
+
+| 職業 | 專屬技能（升級只能抽這些＋通用） |
+|---|---|
+| 戰士 | 雙重斬擊、旋風斬、勇者衝鋒、鐵壁、戰意 |
+| 魔法師 | 火球術、冰霜風暴、流星術、魔力湧現、魔法護盾 |
+| 弓箭手 | 連續射擊、爆裂箭、狙擊模式、專注、陷阱 |
+| 工程師 | 砲塔支援、機器人助戰、防禦工事、資源回收、緊急維修 |
+| 學者 | 博學、靈感、智慧之光、錯題洞察、沉著 |
+| 通用 | 勤學、財運、回復、小提示、連擊之心、寵物連結 |
+
+> **已修正**：戰士不會再抽到火球術；換職業會自動清掉不屬於該職業的技能；舊存檔載入時也會過濾。
+
+---
+
+## 四、戰鬥 UI 建議層級（對齊宣傳圖）
+
+```
+┌─────────────────────────────────────┐
+│  標題（章節名）          [暫停]      │
+│                                     │
+│   [英雄立繪]    ⚔️    [怪物立繪]     │
+│   HP條／名字         HP條／名字      │
+│                                     │
+│            COMBO 5                  │
+│                                     │
+│         ┌─────────────┐             │
+│         │  8 + 3 = ?  │  ← 題目框   │
+│         └─────────────┘             │
+│     [9] [10] [11] [12]  ← 大按鈕    │
+│                                     │
+│   [技1] [技2] [技3] [技4]  ← 可選    │
+└─────────────────────────────────────┘
+```
+
+目前程式已改為：**左英雄、右怪物** 並排，較接近宣傳圖。  
+完整「草地場景＋大立繪＋底部技能圓鈕」需要上面 `bg_battle.png` 與角色／技能圖示素材後，再把 `Art.usePng = true` 即可疊圖。
+
+---
+
+## 五、建議製作順序（戰鬥優先）
+
+**Phase Battle（立刻提升戰鬥質感）**
+1. bg_battle.png  
+2. hero_warrior / mage / archer / engineer / scholar（5 張）  
+3. mon_m01.png（加法史萊姆）  
+4. ui_combo_badge、ui_question_box、ui_opt_btn  
+
+**Phase Map**
+5. map_world_overview.png + bg_map_zone0～3  
+
+**Phase Rest**
+6. 其餘區域背景、Boss 背景、城市／寵物背景  
+
+---
+
+## 六、去背與匯出
+
+1. 生成時背景用**純白**  
+2. remove.bg / Photopea 去背  
+3. 匯出 PNG，檔名全小寫  
+4. 放到 `index.html` 旁的 `img/` 資料夾  
+5. 程式內 `Art.usePng = false` 改成 `true`
