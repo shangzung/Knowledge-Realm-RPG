@@ -1037,6 +1037,7 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
           <button class="btn purple block" type="button" onclick="Game.toggleSound()">🔊 音效：<span id="sound-label">開</span></button>
           <button class="btn green block" type="button" onclick="ZY.cycle()">ㄅㄆㄇ 注音：<span id="zy-label">自動</span></button>
           <button class="btn amber block" type="button" onclick="Game.toggleExplain()">📘 錯題解析：<span id="explain-label">開</span></button>
+          <button class="btn green block" type="button" onclick="Voice.toggle()">🗣️ 語音（答對了／答錯了）：<span id="voice-label">開</span></button>
           <button class="btn blue block" type="button" onclick="Game.importQuestions()">📥 匯入 AI 題庫（JSON）</button>
           <button class="btn amber block" type="button" onclick="Game.exportSave()">📤 匯出存檔（複製）</button>
           <button class="btn block" type="button" onclick="Game.importSave()">📥 匯入存檔</button>
@@ -2608,6 +2609,33 @@ const Assets = {
     const urls = []; names.forEach(n => urls.push(...this.srcs(n)));
     this.probe(urls, u => { this._res[key] = u || false; delete this._pend[key]; apply(u); });
   },
+  // 自動裁切透明邊：外部圖周圍留白太多時（角色在圖裡很小），自動放大到填滿格子，並讓腳踩在地面。
+  // 需要用網站／伺服器開啟（本機 file:// 開啟時瀏覽器不允許讀像素，會自動略過、維持原樣）。
+  trim(img, maxS) {
+    try {
+      const W = 128, c = document.createElement('canvas'); c.width = c.height = W;
+      const g = c.getContext('2d', { willReadFrequently: true }), nw = img.naturalWidth, nh = img.naturalHeight;
+      if (!nw || !nh) return;
+      const k = Math.min(W / nw, W / nh), dw = nw * k, dh = nh * k;
+      g.drawImage(img, (W - dw) / 2, (W - dh) / 2, dw, dh);
+      const d = g.getImageData(0, 0, W, W).data; let x0 = W, x1 = -1, y0 = W, y1 = -1;
+      for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) return;
+      const bw = (x1 - x0 + 1) / W, bh = (y1 - y0 + 1) / W, cx = (x0 + x1 + 1) / 2 / W, by = (y1 + 1) / W;
+      const s = Math.min(0.94 / Math.max(bw, bh), maxS || 1.6);
+      if (s < 1.12) return;                                     // 本來就夠大 → 不動
+      img.style.transformOrigin = `${(cx * 100).toFixed(2)}% ${(by * 100).toFixed(2)}%`;
+      img.style.transform = `translate(${((0.5 - cx) * 100).toFixed(2)}%, ${((1 - by) * 100 - 2).toFixed(2)}%) scale(${s.toFixed(3)})`;
+    } catch (e) { /* file:// 無法讀像素：略過 */ }
+  },
+  trimIn(el, maxS) {
+    if (!el) return;
+    el.querySelectorAll('img').forEach(im => {
+      const go = () => this.trim(im, maxS);
+      if (im.complete && im.naturalWidth) go();
+      im.addEventListener('load', go);
+    });
+  },
   // UI 外框／按鈕：有圖就套用（以 CSS 變數 + html class 控制）
   initUI() {
     this.UI.forEach(n => this.probe(this.srcs(n), u => {
@@ -2615,6 +2643,79 @@ const Assets = {
       document.documentElement.style.setProperty('--' + k, `url("${u}")`);
       document.documentElement.classList.add(k);
     }));
+  }
+};
+
+/* ===================== 語音回饋（答對了／答錯了…，設定可開關） =====================
+   優先順序：assets/audio/voice_事件.mp3（.ogg／.wav）→ 瀏覽器內建中文語音（備案） */
+const Voice = {
+  KEY: 'kc_voice', on: true,
+  EV: {
+    correct: ['答對了！', '太棒了！', '好厲害！', '答對囉！'],
+    combo: { 3: '三連擊！', 5: '五連擊！太厲害了！', 10: '十連擊！超級厲害！', 20: '二十連擊！你是天才！', 30: '三十連擊！太神啦！' },
+    wrong: ['答錯了，看看解析喔', '沒關係，看一看解析'],
+    down: ['打倒怪物了！'], win: ['挑戰成功！恭喜你！'], lose: ['沒關係，再接再厲！'],
+    levelup: ['升級了！'], build: ['建造完成！'], on: ['語音開啟了！']
+  },
+  _files: {}, _cur: null, _pending: 0, _voice: null,
+  init() {
+    try { const v = localStorage.getItem(this.KEY); if (v === '0') this.on = false; } catch (e) {}
+    this.preload(); this.pickVoice();
+    try { if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => this.pickVoice(); } catch (e) {}
+    this.label();
+  },
+  label() { const l = document.getElementById('voice-label'); if (l) l.textContent = this.on ? '開' : '關'; },
+  toggle() {
+    this.on = !this.on; try { localStorage.setItem(this.KEY, this.on ? '1' : '0'); } catch (e) {}
+    this.label();
+    if (this.on) this.say('on', 0, true); else this.stop();
+  },
+  preload() {
+    Object.keys(this.EV).forEach(ev => ['mp3', 'ogg', 'wav'].forEach(ext => {
+      if (this._files[ev]) return;
+      const url = `assets/audio/voice_${ev}.${ext}`, a = new Audio();
+      a.preload = 'auto';
+      a.addEventListener('canplaythrough', () => { if (!this._files[ev]) this._files[ev] = url; }, { once: true });
+      a.addEventListener('error', () => {}, { once: true });
+      a.src = url; try { a.load(); } catch (e) {}
+    }));
+  },
+  pickVoice() {
+    try {
+      const vs = speechSynthesis.getVoices() || [];
+      this._voice = vs.find(v => /zh[-_]TW/i.test(v.lang)) || vs.find(v => /zh[-_]HK/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang)) || null;
+    } catch (e) { this._voice = null; }
+  },
+  stop() {
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+    try { if (this._cur) { this._cur.pause(); this._cur = null; } } catch (e) {}
+    this._pending = 0;
+  },
+  // ev：事件名稱；n：連擊數；force：重要訊息，直接打斷目前的語音
+  say(ev, n, force) {
+    if (!this.on || document.hidden) return;
+    try {
+      const pool = this.EV[ev]; if (!pool) return;
+      let text = Array.isArray(pool) ? pool[Math.floor(Math.random() * pool.length)] : (pool[n] || '');
+      if (!text) return;
+      if (force) this.stop();
+      else if (this._pending >= 1) return;                  // 前一句還沒說完 → 不疊音
+      const file = this._files[ev];
+      if (file) {
+        const a = new Audio(file); this._cur = a; this._pending++;
+        const done = () => { this._pending = Math.max(0, this._pending - 1); if (this._cur === a) this._cur = null; };
+        a.addEventListener('ended', done); a.addEventListener('error', done);
+        a.play().catch(done); return;
+      }
+      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = (this._voice && this._voice.lang) || 'zh-TW'; if (this._voice) u.voice = this._voice;
+      u.rate = 0.95; u.pitch = 1.25; u.volume = 1;
+      this._pending++;
+      const done = () => { this._pending = Math.max(0, this._pending - 1); };
+      u.onend = done; u.onerror = done;
+      speechSynthesis.speak(u);
+    } catch (e) {}
   }
 };
 
@@ -3200,6 +3301,7 @@ const Game = {
     const sp = document.getElementById('sprite-player');
     sp.className = 'char-sprite';
     sp.innerHTML = Art.html('hero:' + s.heroClass, 150, cls.icon);
+    Assets.trimIn(sp, 1.5);
     const mp = Math.min(100, (B && B.energy) || 0);
     document.getElementById('meta-player').innerHTML =
       `<div class="sc-head">
@@ -3233,6 +3335,7 @@ const Game = {
       if (se.parentNode) se.parentNode.classList.toggle('boss', !!e.isBoss);
       se.innerHTML = e.art ? Art.html(e.art, 150, e.emoji)
         : `<div style="font-size:84px;line-height:1;display:flex;align-items:flex-end;justify-content:center">${e.emoji}</div>`;
+      Assets.trimIn(se, e.isBoss ? 2.8 : 1.6);
       document.getElementById('meta-enemy').innerHTML =
         `<div class="sc-head">
           <div class="sc-portrait">${e.art ? Art.html(e.art, 32, e.emoji) : e.emoji}</div>
@@ -3443,6 +3546,7 @@ const Game = {
       s.daily.correctToday = (s.daily.correctToday || 0) + 1;
       s.stats.comboMax = Math.max(s.stats.comboMax || 0, B.combo);
       this.kDrop(cat);
+      Voice.say([3, 5, 10, 20, 30].includes(B.combo) ? 'combo' : 'correct', B.combo);
       if (q.wrongRef) s.wrongLog = s.wrongLog.filter(w => w !== q.wrongRef);
       // 答對：回能量 + 依選中技能攻擊
       B.energy = Math.min(100, (B.energy | 0) + 20 + Math.min(15, B.combo * 3));
@@ -3478,6 +3582,7 @@ const Game = {
       st.wrong++; B.combo = 0;
       s.wrongLog = s.wrongLog.filter(w => w.q !== q.q);
       s.wrongLog.push({ subj: q.subj, q: q.q, a: q.a, opts: q.opts.slice(), sw: !!q.swatch, g: s.grade, t: Date.now() });
+      if (!this.explainOn()) Voice.say('wrong');
       if (s.wrongLog.length > 80) s.wrongLog.shift();
       if (Math.random() < sk.ice + pb.ice) { txt = '❄️ 擋下！'; who = 'enemy'; }
       else {
@@ -3526,6 +3631,7 @@ const Game = {
       this.toast('👑 Boss 出現！護盾 ×' + B.bossShield);
     }
     try { FX.defeat(); } catch (_) {}
+    Voice.say('down');
     if (B.index >= B.queue.length) this.finishStage(true);
     else this.later(B, () => this.nextQuestion(), 450);
   },
@@ -3545,6 +3651,7 @@ const Game = {
   },
 
   finishStage(win) {
+    Voice.say(win ? 'win' : 'lose', 0, true);
     const B = this.battle, s = this.state;
     if (!B || B.over) return;
     B.over = true; this.exAbort(); this.battle = null; this.paused = false;
@@ -3635,6 +3742,7 @@ const Game = {
       box.appendChild(b);
     });
     document.getElementById('levelup').classList.add('active');
+    Voice.say('levelup');
   },
 
   tryUnlockPet() {
@@ -3768,6 +3876,7 @@ const Game = {
     Object.entries(i.cost).forEach(([r, v]) => { s[r] = (s[r] | 0) - v; });
     s.buildings[id] = i.k; s.pop = (s.pop | 0) + b.pop;
     this._kPop = id;
+    Voice.say('build');
     this.toast((i.lv ? '⬆️ 升級完成：' : '🏗️ 建造完成：') + b.names[i.k - 1] + ' Lv.' + i.k);
     this.syncKingdom();
     const KL = this.kLevel();
@@ -4157,6 +4266,7 @@ const Game = {
       </div>`;
     this._ex = { q, picked, done, ready: false, timer: null };
     document.getElementById('explain-modal').classList.add('active');
+    Voice.say('wrong', 0, true);
     this.exReveal();
     // 至少讓孩子看 2.5 秒，之後才能繼續（再播放怪物攻擊）
     this._ex.timer = setTimeout(() => {
@@ -4326,7 +4436,7 @@ const ZY = {
 };
 window.ZY = ZY;
 
-window.addEventListener('DOMContentLoaded', () => { QBank.load(); Game.init(); ZY.init(); Assets.initUI(); });
+window.addEventListener('DOMContentLoaded', () => { QBank.load(); Game.init(); ZY.init(); Assets.initUI(); Voice.init(); });
 window.Game = Game;
 </script>
 </body>
