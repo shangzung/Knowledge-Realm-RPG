@@ -1039,11 +1039,18 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
           <button class="btn amber block" type="button" onclick="Game.toggleExplain()">📘 錯題解析：<span id="explain-label">開</span></button>
           <button class="btn green block" type="button" onclick="Voice.toggle()">🗣️ 語音（答對了／答錯了）：<span id="voice-label">開</span></button>
           <button class="btn blue block" type="button" onclick="Game.importQuestions()">📥 匯入 AI 題庫（JSON）</button>
-          <button class="btn amber block" type="button" onclick="Game.exportSave()">📤 匯出存檔（複製）</button>
+          <p class="muted" style="margin:8px 0 4px;font-weight:900">💾 多存檔位</p>
+          <div class="row-actions">
+            <button class="btn purple sm" type="button" onclick="Game.switchSlot(0)">存檔1</button>
+            <button class="btn purple sm" type="button" onclick="Game.switchSlot(1)">存檔2</button>
+            <button class="btn purple sm" type="button" onclick="Game.switchSlot(2)">存檔3</button>
+          </div>
+          <button class="btn amber block" type="button" onclick="Game.exportSave()">📤 匯出存檔（複製文字）</button>
+          <button class="btn amber block" type="button" onclick="Game.exportSaveFile()">💾 下載 save.json</button>
           <button class="btn block" type="button" onclick="Game.importSave()">📥 匯入存檔</button>
-          <button class="btn red block" type="button" onclick="Game.resetSave()">🗑️ 清除存檔</button>
+          <button class="btn red block" type="button" onclick="Game.resetSave()">🗑️ 清除目前存檔（需輸入 RESET）</button>
         </div>
-        <p class="muted center" style="margin-top:14px">知識之城 RPG · 課綱題庫<br>缺圖時自動使用內建插圖 · 版本 2026.11</p>
+        <p class="muted center" style="margin-top:14px">知識之城 RPG · 究極長期養成版<br>Boss 高血量 + 護盾 + 智慧去重 · 版本 2026.11 究極</p>
       </div>
     </div>
   </div>
@@ -1398,14 +1405,14 @@ const DB = {
     scholar:  { name: '學者',   icon: '📚', desc: '經驗與學習加速', skills: ['博學', '靈感', '智慧之光'] }
   },
   zones: [
-    { id: 0, chap: '第一章', name: '初心村',     color: '#98d88e', minLv: 1, boss: { name: '初心守護木偶王', icon: '🪵', hp: 180 } },
-    { id: 1, chap: '第二章', name: '注音森林',   color: '#7bc67b', minLv: 2, boss: { name: '聲調精靈女王', icon: '🧚‍♀️', hp: 260 } },
-    { id: 2, chap: '第三章', name: '數學平原',   color: '#b8e082', minLv: 3, boss: { name: '四則運算巨像', icon: '🗿', hp: 360 } },
-    { id: 3, chap: '第四章', name: '閱讀峽谷',   color: '#e2c98d', minLv: 4, boss: { name: '古卷奇美拉', icon: '🦁', hp: 480 } },
-    { id: 4, chap: '第五章', name: '英文港口',   color: '#8fd3e8', minLv: 5, boss: { name: '深海字母克拉肯', icon: '🐙', hp: 600 } },
-    { id: 5, chap: '第六章', name: '科學研究所', color: '#c5cae9', minLv: 6, boss: { name: '知識機器人 Mk-II', icon: '🤖', hp: 750 } },
-    { id: 6, chap: '第七章', name: '知識王國',   color: '#f3d1dc', minLv: 7, boss: { name: '皇家博學黃金龍', icon: '🐉', hp: 920 } },
-    { id: 7, chap: '第八章', name: '智慧神殿',   color: '#ffe082', minLv: 8, boss: { name: '全知智慧大天使', icon: '👼', hp: 1200 } }
+    { id: 0, chap: '第一章', name: '初心村',     color: '#98d88e', minLv: 1, areas: ['新手草原','森林入口','神秘小徑','巨木區','古老祭壇'], boss: { name: '初心守護木偶王', icon: '🪵', hp: 520, shields: [3,5] } },
+    { id: 1, chap: '第二章', name: '注音森林',   color: '#7bc67b', minLv: 2, areas: ['聲調草地','拼音小徑','二聲山谷','三聲瀑布','輕聲秘境'], boss: { name: '聲調精靈女王', icon: '🧚‍♀️', hp: 780, shields: [3,6] } },
+    { id: 2, chap: '第三章', name: '數學平原',   color: '#b8e082', minLv: 3, areas: ['加法田野','減法樹林','乘法丘陵','除法峽谷','分數遺址'], boss: { name: '四則運算巨像', icon: '🗿', hp: 1100, shields: [4,7] } },
+    { id: 3, chap: '第四章', name: '閱讀峽谷',   color: '#e2c98d', minLv: 4, areas: ['生字小徑','造句平原','閱讀森林','作文山谷','成語遺蹟'], boss: { name: '古卷奇美拉', icon: '🦁', hp: 1550, shields: [4,8] } },
+    { id: 4, chap: '第五章', name: '英文港口',   color: '#8fd3e8', minLv: 5, areas: ['字母碼頭','單字海灣','句子燈塔','文法島嶼','對話港口'], boss: { name: '深海字母克拉肯', icon: '🐙', hp: 2200, shields: [5,9] } },
+    { id: 5, chap: '第六章', name: '科學研究所', color: '#c5cae9', minLv: 6, areas: ['實驗走廊','能量實驗室','生態溫室','化學反應室','發明大廳'], boss: { name: '知識機器人 Mk-II', icon: '🤖', hp: 3200, shields: [5,10] } },
+    { id: 6, chap: '第七章', name: '知識王國',   color: '#f3d1dc', minLv: 7, areas: ['皇家圖書館','星象台','歷史長廊','智慧庭園','黃金寶庫'], boss: { name: '皇家博學黃金龍', icon: '🐉', hp: 4500, shields: [6,12] } },
+    { id: 7, chap: '第八章', name: '智慧神殿',   color: '#ffe082', minLv: 8, areas: ['試煉門廊','真理大廳','永恆迴廊','全知聖壇','終焉祭壇'], boss: { name: '全知智慧大天使', icon: '👼', hp: 6500, shields: [8,15] } }
   ],
   monsters: [
     { id: 'm01', name: '加法史萊姆', icon: '💧', zone: 0 },
@@ -1932,18 +1939,33 @@ const QG = {
   ctx() { return this.pick(this.CTX); },
 
   make(lv, recent, hard) {
-    if (!hard && QBank.list.length && Math.random() < 0.3) { const cq = QBank.pick(lv); if (cq && !(Array.isArray(recent) && recent.includes(cq.q))) return cq; }
+    // 智慧權重：最近 50 題完全禁止、最近 100 題權重極低
+    const ban50 = Array.isArray(recent) ? recent.slice(-50) : [];
+    const soft100 = Array.isArray(recent) ? recent.slice(-100) : [];
+    if (!hard && QBank.list.length && Math.random() < 0.35) {
+      const cq = QBank.pick(lv);
+      if (cq && !ban50.includes(cq.q) && !(soft100.includes(cq.q) && Math.random() < 0.9)) return cq;
+    }
     lv = Math.max(0, Math.min(6, lv | 0));
     this._hard = !!hard;
     const gens = [this.L0, this.L1, this.L2, this.L3, this.L4, this.L5, this.L6];
-    let q = null;
-    for (let i = 0; i < 60; i++) {
+    let q = null, best = null;
+    for (let i = 0; i < 80; i++) {
       try { q = gens[lv].call(this); } catch (e) { q = null; continue; }
-      if (q && (!recent || !recent.includes(q.q))) break;
+      if (!q) continue;
+      if (ban50.includes(q.q)) continue;                 // 最近 50 題禁止
+      if (soft100.includes(q.q) && Math.random() < 0.9) continue; // 最近 100 題 90% 降權
+      best = q; break;
+    }
+    if (!best) { // 最後手段：放寬軟限制
+      for (let i = 0; i < 40; i++) {
+        try { q = gens[lv].call(this); } catch (e) { continue; }
+        if (q && !ban50.includes(q.q)) { best = q; break; }
+      }
     }
     this._hard = false;
-    try { if (q) Explain.attach(q, lv); } catch (e) {}
-    return q;
+    try { if (best) Explain.attach(best, lv); } catch (e) {}
+    return best || q;
   },
 
   /* ---------- 幼稚園 ---------- */
@@ -2920,7 +2942,9 @@ const Game = {
   battle: null,
   paused: false,
   sound: true,
-  saveKey: 'knowledge_city_rpg_v2',
+  saveKey: 'knowledge_city_rpg_v3',
+  saveSlots: ['knowledge_city_rpg_v3_s1', 'knowledge_city_rpg_v3_s2', 'knowledge_city_rpg_v3_s3'],
+  activeSlot: 0,
 
   defaultState() {
     return {
@@ -2930,11 +2954,13 @@ const Game = {
       kingdom: { cat: { math: { c: 0, t: 0 }, chinese: { c: 0, t: 0 }, english: { c: 0, t: 0 }, science: { c: 0, t: 0 }, social: { c: 0, t: 0 } }, cnt: { wood: 0, stone: 0, steel: 0, crystal: 0, blueprint: 0, badge: 0, stages: 0, boss: 0 }, res: {}, q: {}, favor: {}, migrated: false },
       skills: [], pendingLv: 0, equip: {}, buildings: {},
       pets: {}, codex: {}, stageStars: {}, unlockedZones: [0],
+      zoneExplore: {}, // 各章探索度 0~100
+      recentQ: [],    // 跨場次最近出題紀錄（智慧去重）
       wrongLog: [], achievements: {},
       stats: { answered: 0, correct: 0, comboMax: 0, playMinutes: 0 },
       subjStats: {},
       daily: { date: '', correctToday: 0, stagesToday: 0, loginToday: 1, claimed: false },
-      sound: true
+      sound: true, explain: true, ngPlus: 0
     };
   },
 
@@ -2948,16 +2974,20 @@ const Game = {
     setInterval(() => { if (this.state) { this.state.stats.playMinutes = (this.state.stats.playMinutes || 0) + 0.5; } }, 30000);
   },
 
-  load() {
+  load(slot) {
     try {
-      const raw = localStorage.getItem(this.saveKey);
+      if (slot != null) this.activeSlot = Math.max(0, Math.min(2, slot | 0));
+      const key = this.saveSlots[this.activeSlot] || this.saveKey;
+      let raw = localStorage.getItem(key);
+      if (!raw) raw = localStorage.getItem(this.saveKey); // 相容舊版
       if (raw) {
         const d = JSON.parse(raw);
         this.state = Object.assign(this.defaultState(), d);
         this.state.grade = Math.max(0, Math.min(6, +this.state.grade || 0));
         if (!this.state.unlockedZones || !this.state.unlockedZones.length) this.state.unlockedZones = [0];
         if (!this.state.daily) this.state.daily = this.defaultState().daily;
-        // 遷移：過濾不符合目前職業的技能（修正戰士火球術等問題）
+        if (!this.state.recentQ) this.state.recentQ = [];
+        if (!this.state.zoneExplore) this.state.zoneExplore = {};
         try {
           const allowed = new Set(skillsForClass(this.state.heroClass || 'warrior').map(x => x.id));
           this.state.skills = (this.state.skills || []).filter(id => allowed.has(id));
@@ -2968,7 +2998,23 @@ const Game = {
   },
 
   save() {
-    try { localStorage.setItem(this.saveKey, JSON.stringify(this.state)); } catch (e) {}
+    try {
+      const key = this.saveSlots[this.activeSlot] || this.saveKey;
+      localStorage.setItem(key, JSON.stringify(this.state));
+      // 自動備份（每 5 分鐘一次）
+      const now = Date.now();
+      if (!this._lastBackup || now - this._lastBackup > 300000) {
+        localStorage.setItem(key + '_bak', JSON.stringify(this.state));
+        this._lastBackup = now;
+      }
+    } catch (e) {}
+  },
+
+  switchSlot(n) {
+    this.save();
+    this.load(n);
+    this.renderAll();
+    this.toast('已切換至存檔 ' + (n + 1));
   },
 
   ensureDaily() {
@@ -3190,8 +3236,26 @@ const Game = {
     });
   },
 
-  monstersForZone(zi) {
-    return DB.monsters.filter(m => m.zone === zi).slice(0, 4);
+  monstersForZone(zi, count) {
+    // 每關固定打 count 隻小怪（預設 10），再打 Boss
+    const n = Math.max(1, count | 0 || 10);
+    let pool = DB.monsters.filter(m => m.zone === zi);
+    if (!pool.length) pool = DB.monsters.filter(m => m.zone === 0);
+    if (!pool.length) pool = [{ id: 'm_fallback', name: '知識史萊姆', icon: '💧', zone: zi | 0 }];
+    const out = [];
+    // 先盡量不重複抽完一輪，不夠再隨機補滿到 n 隻
+    const shuffled = pool.slice().sort(() => Math.random() - 0.5);
+    for (let i = 0; i < n; i++) {
+      const src = shuffled[i % shuffled.length];
+      // 複製一份，給唯一戰鬥 id，避免同種怪連續出現時狀態共用
+      out.push(Object.assign({}, src, { _fightId: src.id + '_' + i }));
+    }
+    // 後半段再洗一次，避免固定順序感
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = out[i]; out[i] = out[j]; out[j] = t;
+    }
+    return out;
   },
 
   bossForZone(zi) {
@@ -3200,27 +3264,37 @@ const Game = {
   },
 
   makeFighter(src, isBoss) {
-    const z = src.zone != null ? src.zone : 0;
-    const hp = isBoss ? Math.round((src.hp || 150) * 0.55) : 36 + z * 14;
+    const z = src.zone != null ? src.zone : (src.id && String(src.id).startsWith('boss') ? 0 : 0);
+    // 小怪：約 3～6 題；Boss：用 zones 表血量（約 15～30 題含護盾）
+    let hp;
+    if (isBoss) {
+      hp = src.hp || 520;
+    } else {
+      // 每關 10 隻小怪：每隻約 2～4 題（章0≈60、章2≈100、章4≈160、章7≈280）
+      const base = 60 + z * 28 + Math.floor(z * z * 8);
+      hp = Math.round(base * (src.elite ? 2.5 : src.rare ? 4 : 1));
+    }
     let art = null;
     if (isBoss) {
-      // 支援 img/boss_0.png ~ boss_7.png、boss_weak.png（有圖就顯示，沒有則自動退回 emoji）
       if (src.id && String(src.id).startsWith('boss_')) art = 'boss:' + String(src.id).replace('boss_', '');
-      else art = 'boss:' + z;
+      else art = 'boss:' + (src.zone != null ? src.zone : z);
     } else {
       art = 'mon:' + src.id;
     }
+    const shields = isBoss && Array.isArray(src.shields) ? src.shields.slice() : null;
     return {
-      id: src.id, name: src.name, maxHp: hp, hp,
-      atk: isBoss ? 10 + z * 2 : 6 + z * 1.5, isBoss: !!isBoss,
+      id: src._fightId || src.id, name: src.name, maxHp: hp, hp,
+      atk: isBoss ? 8 + z * 2.5 : 5 + z * 1.2, isBoss: !!isBoss,
       emoji: src.icon || (isBoss ? '👑' : '👾'),
-      art
+      art, shields, shieldIdx: 0, shieldLeft: shields ? shields[0] : 0,
+      phase: 1 // 1普通 2生氣 3狂暴
     };
   },
 
   startStage(zi) {
     if (this.battle) return;
-    const q = this.monstersForZone(zi).map(m => this.makeFighter(m, false));
+    // 固定：10 隻小怪 → Boss
+    const q = this.monstersForZone(zi, 10).map(m => this.makeFighter(m, false));
     q.push(this.makeFighter(this.bossForZone(zi), true));
     this.beginBattle(zi, q, `${DB.zones[zi].chap} · ${DB.zones[zi].name}`, false);
   },
@@ -3229,8 +3303,8 @@ const Game = {
     if (this.battle) return;
     const w = this.state.wrongLog || [];
     if (w.length < 3) { this.toast('錯題還不夠多（至少 3 題），先去挑戰關卡吧！'); return; }
-    const hp = 60 + w.length * 6;
-    this.beginBattle(-1, [{ id: 'boss_weak', name: '錯題大魔王', maxHp: hp, hp, atk: 12, isBoss: true, emoji: '👿', art: 'boss:weak' }], '錯題複習戰', true);
+    const hp = 280 + w.length * 35; // 約 10～20 題可打完
+    this.beginBattle(-1, [{ id: 'boss_weak', name: '錯題大魔王', maxHp: hp, hp, atk: 12, isBoss: true, emoji: '👿', art: 'boss:weak', shields: [3, 5] }], '錯題複習戰', true);
   },
 
   beginBattle(zoneId, queue, title, weak) {
@@ -3482,11 +3556,14 @@ const Game = {
     if (!e) { this.finishStage(true); return; }
     const s = this.state;
     let q;
+    // 合併本場 + 跨場次 recentQ，達成「最近50禁出、100大幅降權」
+    const hist = (B.recent || []).concat(s.recentQ || []);
     if (B.weak && s.wrongLog.length) {
       const w = QG.pick(s.wrongLog);
       q = { subj: w.subj, q: w.q, a: w.a, opts: QG.shuffle(w.opts), wrongRef: w, swatch: w.sw };
-    } else q = QG.make(s.grade, B.recent, !!e.isBoss);
-    B.recent.push(q.q); if (B.recent.length > 15) B.recent.shift();
+    } else q = QG.make(s.grade, hist, !!e.isBoss);
+    B.recent.push(q.q); if (B.recent.length > 100) B.recent.shift();
+    s.recentQ = s.recentQ || []; s.recentQ.push(q.q); if (s.recentQ.length > 120) s.recentQ.shift();
     B.curQ = q; B.waiting = true;
     const qb = document.getElementById('q-box'); qb.toggleAttribute('data-zyq', q.subj === '注音'); qb.textContent = q.q; qb.classList.toggle('long', String(q.q).length > 26);
     const opts = document.getElementById('opts'); opts.innerHTML = '';
@@ -3557,17 +3634,39 @@ const Game = {
       if (skill.cost > 0 && B.energy < skill.cost) { si = 0; skill = slots[0]; B.selectedSkill = 0; }
       if (skill.cost > 0) B.energy -= skill.cost;
       this._fxSkill = skill;
-      let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk + kb.atk) * (skill.atk || 1)
-        * (1 + Math.min(0.55, B.combo * 0.05 * (1 + (sk.combo || 0) * 0.5)));
-      let crit = Math.random() < m.crit + sk.crit + pb.crit || !!skill.crit;
-      if (crit) dmg *= 1.55;
-      // Boss 護盾
-      if (e.isBoss && B.bossShield > 0) {
-        B.bossShield--;
+      // 基礎傷害 + 連擊倍率（依提示詞：5連1.2x、10連1.5x、20連2x、30連3x、50連5x）
+      let comboMul = 1;
+      if (B.combo >= 50) comboMul = 5;
+      else if (B.combo >= 30) comboMul = 3;
+      else if (B.combo >= 20) comboMul = 2;
+      else if (B.combo >= 10) comboMul = 1.5;
+      else if (B.combo >= 5) comboMul = 1.2;
+      comboMul *= (1 + (sk.combo || 0) * 0.15);
+      let dmg = s.atk * m.atk * (1 + sk.atk + pb.atk + kb.atk) * (skill.atk || 1) * comboMul;
+      // 暴擊：10% 兩倍、3% 五倍
+      let crit = false, critMul = 1;
+      const cr = m.crit + sk.crit + pb.crit + (skill.crit ? 0.1 : 0);
+      if (Math.random() < 0.03) { crit = true; critMul = 5; }
+      else if (Math.random() < cr + 0.07) { crit = true; critMul = 2; }
+      dmg *= critMul;
+      // Boss 多層護盾：答對題數破盾；護盾期間仍可造成約 35% 傷害（有進度感）
+      if (e.isBoss && e.shields && e.shieldLeft > 0) {
+        e.shieldLeft--;
+        B.bossShield = e.shieldLeft;
         dmg = Math.round(dmg * 0.35);
-        this.toast('🛡️ Boss 護盾減傷！');
+        if (e.shieldLeft <= 0) {
+          e.shieldIdx = (e.shieldIdx || 0) + 1;
+          if (e.shields[e.shieldIdx]) {
+            e.shieldLeft = e.shields[e.shieldIdx];
+            this.toast('🛡️ 護盾破碎！下一層護盾出現（需再答對 ' + e.shieldLeft + ' 題）');
+          } else {
+            this.toast('💥 所有護盾已破！現在可以造成完整傷害！');
+          }
+        } else {
+          this.toast('🛡️ Boss 護盾減傷！還需 ' + e.shieldLeft + ' 題破盾');
+        }
       }
-      dmg = Math.round(dmg);
+      dmg = Math.max(1, Math.round(dmg));
       if (Object.values(s.pets).some(p => p.active) && Math.random() < 0.35)
         dmg += Math.round(dmg * 0.25 * (1 + sk.pet));
       e.hp = Math.max(0, e.hp - dmg);
@@ -3592,10 +3691,17 @@ const Game = {
       try { SoundFX.playWrongGentle(); } catch (_) {}
     }
     this.showFighters(); this.fx(who, txt, /💥/.test(txt)); this.save();
-    // Boss 狂暴：血量低於 30%
-    if (e && e.isBoss && e.hp > 0 && e.hp / e.maxHp < 0.3 && !B.bossRage) {
-      B.bossRage = true; e.atk = Math.round(e.atk * 1.4);
-      this.toast('💢 Boss 狂暴！攻擊上升');
+    // Boss 階段：100% 普通 → 50% 生氣 → 20% 狂暴
+    if (e && e.isBoss && e.hp > 0) {
+      const ratio = e.hp / e.maxHp;
+      if (ratio < 0.2 && e.phase < 3) {
+        e.phase = 3; e.atk = Math.round(e.atk * 1.6); B.bossRage = true;
+        this.toast('💢 Boss 進入狂暴模式！攻擊大幅上升');
+        const sc = document.querySelector('.battle-scene'); if (sc) sc.classList.add('boss');
+      } else if (ratio < 0.5 && e.phase < 2) {
+        e.phase = 2; e.atk = Math.round(e.atk * 1.25);
+        this.toast('🔥 Boss 生氣了！攻擊上升');
+      }
     }
     this.later(B, () => {
       if (s.hp <= 0) this.finishStage(false);
@@ -3623,12 +3729,19 @@ const Game = {
     }
     this.toast(`🎉 打倒 ${e.name}！`);
     B.index++;
-    // 下一隻若是 Boss：給護盾 + 可能狂暴
+    // 下一隻若是 Boss：初始化多層護盾
     const next = B.queue[B.index];
     if (next && next.isBoss) {
-      B.bossShield = 2 + Math.max(0, B.zoneId | 0);
       B.bossRage = false;
-      this.toast('👑 Boss 出現！護盾 ×' + B.bossShield);
+      if (next.shields && next.shields.length) {
+        next.shieldIdx = 0;
+        next.shieldLeft = next.shields[0];
+        B.bossShield = next.shieldLeft;
+        this.toast('👑 Boss 出現！第一層護盾需答對 ' + next.shieldLeft + ' 題');
+      } else {
+        B.bossShield = 0;
+        this.toast('👑 Boss 出現！');
+      }
     }
     try { FX.defeat(); } catch (_) {}
     Voice.say('down');
@@ -4214,16 +4327,38 @@ const Game = {
   },
 
   importSave() {
-    const t = prompt('貼上之前匯出的存檔文字：');
+    const t = prompt('貼上之前匯出的存檔文字（或 save.json 內容）：');
     if (!t) return;
-    try { JSON.parse(t); localStorage.setItem(this.saveKey, t); this.load(); this.renderAll(); this.toast('匯入成功'); }
-    catch (e) { this.toast('存檔格式錯誤'); }
+    try {
+      const d = JSON.parse(t);
+      const key = this.saveSlots[this.activeSlot] || this.saveKey;
+      localStorage.setItem(key, JSON.stringify(d));
+      this.load(this.activeSlot); this.renderAll(); this.toast('匯入成功');
+    } catch (e) { this.toast('存檔格式錯誤'); }
   },
 
   resetSave() {
-    if (!confirm('確定要清除所有存檔？此操作無法復原。')) return;
-    localStorage.removeItem(this.saveKey); this.state = this.defaultState(); this.save(); this.renderAll();
+    if (!confirm('第一次確認：確定要清除目前存檔？此操作無法復原。')) return;
+    if (!confirm('第二次確認：真的要清除嗎？所有進度都會消失！')) return;
+    const code = prompt('請輸入 RESET（全大寫）才能執行清除：');
+    if (code !== 'RESET') { this.toast('已取消清除'); return; }
+    const key = this.saveSlots[this.activeSlot] || this.saveKey;
+    localStorage.removeItem(key);
+    localStorage.removeItem(key + '_bak');
+    this.state = this.defaultState(); this.save(); this.renderAll();
     this.toast('存檔已清除');
+  },
+
+  exportSaveFile() {
+    try {
+      const blob = new Blob([JSON.stringify(this.state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'knowledge_city_save.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      this.toast('已下載 save.json');
+    } catch (e) { this.exportSave(); }
   },
 
   /* ===================== 錯題解析（答錯後、怪物攻擊前顯示） ===================== */
