@@ -884,6 +884,11 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
 .ex-line.eq { font-size: 17px; font-weight: 900; color: #2a5fb5; background: #eef5ff; border-radius: 8px; padding: 1px 8px; display: inline-block; }
 .ex-btns { display: flex; gap: 8px; margin-top: 8px; }
 .ex-btns .btn { flex: 1; }
+.q-speak { position: absolute; top: 10px; right: 10px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 3px solid #fff; padding: 0;
+  background: linear-gradient(180deg, #7fc8ff, #3a86e0); color: #fff; font-size: 17px; line-height: 1; box-shadow: 0 3px 0 #245fa8; cursor: pointer; font-family: inherit; }
+.q-speak.on { animation: spkPulse .6s ease-in-out 2; }
+@keyframes spkPulse { 0%, 100% { scale: 1; } 50% { scale: 1.18; } }
+.q-box { padding-left: 34px; padding-right: 34px; }
 </style>
 </head>
 <body>
@@ -1038,6 +1043,8 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
           <button class="btn green block" type="button" onclick="ZY.cycle()">ㄅㄆㄇ 注音：<span id="zy-label">自動</span></button>
           <button class="btn amber block" type="button" onclick="Game.toggleExplain()">📘 錯題解析：<span id="explain-label">開</span></button>
           <button class="btn green block" type="button" onclick="Voice.toggle()">🗣️ 語音（答對了／答錯了）：<span id="voice-label">開</span></button>
+          <button class="btn amber block" type="button" onclick="Voice.cycleStyle()">🎤 語音風格：<span id="voice-style-label">活潑</span></button>
+          <button class="btn green block" type="button" onclick="Voice.cycleRead()">📖 朗讀題目與選項：<span id="read-label">自動</span></button>
           <button class="btn blue block" type="button" onclick="Game.importQuestions()">📥 匯入 AI 題庫（JSON）</button>
           <p class="muted" style="margin:8px 0 4px;font-weight:900">💾 多存檔位</p>
           <div class="row-actions">
@@ -1110,6 +1117,7 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
 
       <div class="battle-panel">
         <div class="panel-ribbon">✦ 知識挑戰！ ✦</div>
+        <button type="button" class="q-speak" id="q-speak" onclick="Voice.readCurrent()" aria-label="朗讀題目與選項">🔊</button>
         <div class="q-box" id="q-box">準備出題…</div>
         <div class="opts" id="opts"></div>
         <p class="battle-hint" id="battle-hint"></p>
@@ -2671,26 +2679,49 @@ const Assets = {
 /* ===================== 語音回饋（答對了／答錯了…，設定可開關） =====================
    優先順序：assets/audio/voice_事件.mp3（.ogg／.wav）→ 瀏覽器內建中文語音（備案） */
 const Voice = {
-  KEY: 'kc_voice', on: true,
+  KEY: 'kc_voice', SKEY: 'kc_voice_style', RKEY: 'kc_read', on: true, style: 'lively', readMode: 'auto',
+  // 活潑模式用高音、快一點的語氣；溫柔模式比較慢、音調低一點
+  STYLES: { lively: { p: 1.55, r: 1.08 }, gentle: { p: 1.2, r: 0.92 } },
+  // 各事件的語氣微調：p 音調加減、r 速度加減
+  TUNE: { correct: { p: 0.05, r: 0.02 }, streak: { p: 0.15, r: 0.08 }, combo: { p: 0.25, r: 0.1 }, crit: { p: 0.3, r: 0.15 },
+    wrong: { p: -0.25, r: -0.12 }, lowhp: { p: -0.05, r: 0.1 }, down: { p: 0.15, r: 0.05 }, win: { p: 0.3, r: 0.05 }, lose: { p: -0.2, r: -0.1 },
+    levelup: { p: 0.3, r: 0.05 }, build: { p: 0.2, r: 0.03 }, start: { p: 0.2, r: 0.1 }, boss: { p: -0.15, r: 0.0 }, on: { p: 0.2, r: 0.05 } },
   EV: {
-    correct: ['答對了！', '太棒了！', '好厲害！', '答對囉！'],
-    combo: { 3: '三連擊！', 5: '五連擊！太厲害了！', 10: '十連擊！超級厲害！', 20: '二十連擊！你是天才！', 30: '三十連擊！太神啦！' },
-    wrong: ['答錯了，看看解析喔', '沒關係，看一看解析'],
-    down: ['打倒怪物了！'], win: ['挑戰成功！恭喜你！'], lose: ['沒關係，再接再厲！'],
-    levelup: ['升級了！'], build: ['建造完成！'], on: ['語音開啟了！']
+    correct: ['答對囉！耶！', '哇！好棒喔！', '太厲害了！', '你好聰明喔！', '讚讚讚！', '漂亮！答對了！', '耶～答對了！', '好強喔！', '就是這個答案！', '答對了！繼續繼續！'],
+    streak: ['連擊中！繼續！', '手感正熱喔！', '一直答對，好厲害！', '連續答對！加油！', '哇！停不下來！'],
+    combo: { 3: '三連擊！哇！', 5: '五連擊！你好厲害！', 10: '十連擊！太驚人了！', 20: '二十連擊！你是天才！', 30: '三十連擊！太神啦！', 50: '五十連擊！傳說級！' },
+    crit: ['暴擊！哇！', '爆擊！超猛的！', '轟！暴擊！', '暴擊！太強啦！'],
+    wrong: ['哎呀！沒關係，看看解析喔', '差一點點！我們看一看解析', '沒關係沒關係，來看解析', '加油！看看哪裡不一樣'],
+    lowhp: ['小心！快沒血了！', '加油！撐住喔！', '危險！再加油一下！'],
+    down: ['打倒了！耶！', '怪物倒下囉！', '搞定！下一隻！', '贏了一隻！加油！'],
+    win: ['挑戰成功！你太棒了！', '耶！通關成功！恭喜恭喜！', '贏啦！好厲害！'],
+    lose: ['沒關係，再挑戰一次！', '別灰心，你可以的！', '下一次一定更好！'],
+    levelup: ['升級啦！變強囉！', '哇！升級了！', '等級提升！好厲害！'],
+    build: ['建造完成！王國變大囉！', '哇！好漂亮的建築！', '蓋好啦！'],
+    start: ['冒險出發！衝啊！', '準備好了嗎？開始囉！', '加油！我們出發！'],
+    boss: ['Boss 出現了！小心喔！', '大魔王來了！加油！'],
+    on: ['語音開啟！我們一起加油！']
   },
   _files: {}, _cur: null, _pending: 0, _voice: null,
   init() {
-    try { const v = localStorage.getItem(this.KEY); if (v === '0') this.on = false; } catch (e) {}
-    this.preload(); this.pickVoice();
+    try { const v = localStorage.getItem(this.KEY); if (v === '0') this.on = false; const s = localStorage.getItem(this.SKEY); if (s === 'lively' || s === 'gentle') this.style = s; } catch (e) {}
+    this.preload(); this.pickVoice(); this.loadRead();
     try { if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => this.pickVoice(); } catch (e) {}
     this.label();
   },
-  label() { const l = document.getElementById('voice-label'); if (l) l.textContent = this.on ? '開' : '關'; },
+  label() {
+    const l = document.getElementById('voice-label'); if (l) l.textContent = this.on ? '開' : '關';
+    const s = document.getElementById('voice-style-label'); if (s) s.textContent = this.style === 'lively' ? '活潑' : '溫柔';
+  },
   toggle() {
     this.on = !this.on; try { localStorage.setItem(this.KEY, this.on ? '1' : '0'); } catch (e) {}
     this.label();
     if (this.on) this.say('on', 0, true); else this.stop();
+  },
+  cycleStyle() {
+    this.style = this.style === 'lively' ? 'gentle' : 'lively';
+    try { localStorage.setItem(this.SKEY, this.style); } catch (e) {}
+    this.label(); this.say('correct', 0, true);        // 立刻試聽
   },
   preload() {
     Object.keys(this.EV).forEach(ev => ['mp3', 'ogg', 'wav'].forEach(ext => {
@@ -2705,7 +2736,9 @@ const Voice = {
   pickVoice() {
     try {
       const vs = speechSynthesis.getVoices() || [];
-      this._voice = vs.find(v => /zh[-_]TW/i.test(v.lang)) || vs.find(v => /zh[-_]HK/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang)) || null;
+      // 優先挑台灣中文；有多個時偏好女聲／較活潑的聲音名稱
+      const zh = vs.filter(v => /zh[-_]TW/i.test(v.lang)), any = zh.length ? zh : vs.filter(v => /zh[-_]HK/i.test(v.lang)).concat(vs.filter(v => /^zh/i.test(v.lang)));
+      this._voice = any.find(v => /Mei-Jia|Meijia|美佳|Hanhan|曉臻|Yating|雅婷|HsiaoChen|Female|女/i.test(v.name)) || any[0] || null;
     } catch (e) { this._voice = null; }
   },
   stop() {
@@ -2713,12 +2746,20 @@ const Voice = {
     try { if (this._cur) { this._cur.pause(); this._cur = null; } } catch (e) {}
     this._pending = 0;
   },
-  // ev：事件名稱；n：連擊數；force：重要訊息，直接打斷目前的語音
+  pr(ev, n) {
+    const b = this.STYLES[this.style] || this.STYLES.lively, t = this.TUNE[ev] || {};
+    let p = b.p + (t.p || 0), r = b.r + (t.r || 0);
+    if (ev === 'combo' || ev === 'streak') p += Math.min(0.25, (n || 0) / 40);   // 連擊越高越興奮
+    const k = this.style === 'lively' ? 0.04 : 0.015;                              // 每次說話有一點點不同，聽起來比較自然
+    p += (Math.random() - 0.5) * k * 2; r += (Math.random() - 0.5) * k * 2;
+    return { p: Math.max(0.1, Math.min(2, p)), r: Math.max(0.5, Math.min(1.6, r)) };
+  },
+  // ev：事件；n：連擊數；force：重要訊息，直接打斷目前的語音
   say(ev, n, force) {
     if (!this.on || document.hidden) return;
     try {
       const pool = this.EV[ev]; if (!pool) return;
-      let text = Array.isArray(pool) ? pool[Math.floor(Math.random() * pool.length)] : (pool[n] || '');
+      const text = Array.isArray(pool) ? pool[Math.floor(Math.random() * pool.length)] : (pool[n] || '');
       if (!text) return;
       if (force) this.stop();
       else if (this._pending >= 1) return;                  // 前一句還沒說完 → 不疊音
@@ -2730,14 +2771,86 @@ const Voice = {
         a.play().catch(done); return;
       }
       if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
-      const u = new SpeechSynthesisUtterance(text);
+      const u = new SpeechSynthesisUtterance(text), q = this.pr(ev, n);
       u.lang = (this._voice && this._voice.lang) || 'zh-TW'; if (this._voice) u.voice = this._voice;
-      u.rate = 0.95; u.pitch = 1.25; u.volume = 1;
+      u.rate = q.r; u.pitch = q.p; u.volume = 1;
       this._pending++;
       const done = () => { this._pending = Math.max(0, this._pending - 1); };
       u.onend = done; u.onerror = done;
       speechSynthesis.speak(u);
     } catch (e) {}
+  },
+
+  /* ===== 朗讀題目與選項（按 🔊 或自動朗讀）===== */
+  loadRead() { try { const m = localStorage.getItem(this.RKEY); if (m === 'auto' || m === 'on' || m === 'off') this.readMode = m; } catch (e) {} this.readLabel(); },
+  readLabel() { const l = document.getElementById('read-label'); if (l) l.textContent = this.readMode === 'auto' ? '自動（幼兒園～二年級）' : this.readMode === 'on' ? '全部開' : '關'; },
+  cycleRead() {
+    this.readMode = this.readMode === 'auto' ? 'on' : this.readMode === 'on' ? 'off' : 'auto';
+    try { localStorage.setItem(this.RKEY, this.readMode); } catch (e) {}
+    this.readLabel();
+  },
+  autoOn() { return this.on && (this.readMode === 'on' || (this.readMode === 'auto' && window.Game && Game.state && (Game.state.grade | 0) <= 2)); },
+  clean(t) {
+    return String(t)
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+      .replace(/（\s*）|\(\s*\)|（　）/g, '空格')
+      .replace(/(\d+)\s*[%％]/g, '百分之$1').replace(/(\d+)\/(\d+)/g, '$2分之$1')
+      .replace(/(\d)\s*：\s*(\d)/g, '$1比$2')
+      .replace(/×/g, '乘').replace(/÷/g, '除以').replace(/−/g, '減').replace(/\+/g, '加').replace(/[=＝]/g, '等於')
+      .replace(/＞/g, '大於').replace(/＜/g, '小於').replace(/○/g, '圓圈').replace(/°/g, '度').replace(/π/g, '圓周率')
+      .replace(/["“”]/g, ' ').replace(/\n+/g, '，').replace(/\s+/g, ' ').trim();
+  },
+  segs(t) {
+    const out = []; const re = /([A-Za-z][A-Za-z0-9'’ ,.!?\-]*[A-Za-z0-9.!?]|[A-Za-z])/g; let last = 0, m;
+    while ((m = re.exec(t))) { if (m.index > last) out.push([t.slice(last, m.index), 'zh']); out.push([m[0], 'en']); last = m.index + m[0].length; }
+    if (last < t.length) out.push([t.slice(last), 'zh']);
+    return out.map(x => [x[1] === 'zh' ? x[0].replace(/^[，。,、\s]+/, '') : x[0], x[1]]).filter(x => x[0].trim());
+  },
+  speakText(text) {
+    try {
+      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
+      this.stop();
+      const vs = speechSynthesis.getVoices() || [], en = vs.find(v => /^en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+      const st = this.STYLES[this.style] || this.STYLES.lively;
+      this.segs(this.clean(text)).forEach(([s, k]) => {
+        const u = new SpeechSynthesisUtterance(s);
+        if (k === 'en') { u.lang = (en && en.lang) || 'en-US'; if (en) u.voice = en; u.rate = 0.85; }
+        else { u.lang = (this._voice && this._voice.lang) || 'zh-TW'; if (this._voice) u.voice = this._voice; u.rate = Math.min(1.0, st.r - 0.12); }
+        u.pitch = Math.min(1.5, st.p - 0.15); this._pending++;
+        const done = () => { this._pending = Math.max(0, this._pending - 1); };
+        u.onend = done; u.onerror = done;
+        speechSynthesis.speak(u);
+      });
+      return true;
+    } catch (e) { return false; }
+  },
+  qText(q) {
+    let stem = String(q.q);
+    // 注音題：不能把「要考的字／符號」唸出來，也不唸選項，否則等於直接告訴答案
+    if (q.subj === '注音') return stem.replace(/「[^」]*」/g, m => /[\u3105-\u312F]/.test(m) ? '這個注音' : '這個字');
+    const L = 'ABCDEFGH';
+    return stem + (/[？?。！!]\s*$/.test(stem) ? '' : '。') + q.opts.map((o, i) => ` ${L[i]}，${o}。`).join('');
+  },
+  readCurrent() {
+    const B = window.Game && Game.battle; if (!B || !B.curQ) return;
+    const b = document.getElementById('q-speak'); if (b) { b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 1200); }
+    this.speakText(this.qText(B.curQ));
+  },
+  autoRead(q, B) {
+    if (!this.autoOn() || !B || Game.battle !== B || B.curQ !== q || !B.waiting) return;
+    let tries = 0;
+    const go = () => {                                 // 等前一句回饋語音說完再唸，避免互相打斷
+      if (Game.battle !== B || B.curQ !== q || !B.waiting) return;
+      if (this._pending > 0 && tries++ < 15) { setTimeout(go, 200); return; }
+      this.speakText(this.qText(q));
+    };
+    go();
+  },
+  readExplain() {
+    const ex = window.Game && Game._ex; if (!ex) return;
+    const b = Explain.build(ex.q, Game.state.grade | 0, ex.picked);
+    const exp = ex.q.explanation || b.explanation, why = ex.q.custom ? ex.q.wrongReason : b.wrongReason, hint = ex.q.hint || b.hint;
+    this.speakText(`你選的是 ${ex.picked}，正確答案是 ${ex.q.a}。錯誤原因：${why}。解析：${exp}。提示：${hint}`);
   }
 };
 
@@ -3321,6 +3434,7 @@ const Game = {
     const app = document.getElementById('app');
     if (app) app.style.visibility = 'hidden';
     document.getElementById('battle').classList.add('active');
+    Voice.say('start', 0, true);
     // 戰鬥場景背景：內建 SVG 場景；有 img/bg_battle.png 會自動覆蓋
     (function(){
       const bgEl = document.getElementById('bg-svg');
@@ -3565,6 +3679,7 @@ const Game = {
     B.recent.push(q.q); if (B.recent.length > 100) B.recent.shift();
     s.recentQ = s.recentQ || []; s.recentQ.push(q.q); if (s.recentQ.length > 120) s.recentQ.shift();
     B.curQ = q; B.waiting = true;
+    setTimeout(() => { try { Voice.autoRead(q, B); } catch (e) {} }, 450);
     const qb = document.getElementById('q-box'); qb.toggleAttribute('data-zyq', q.subj === '注音'); qb.textContent = q.q; qb.classList.toggle('long', String(q.q).length > 26);
     const opts = document.getElementById('opts'); opts.innerHTML = '';
     opts.className = 'opts' + (q.opts.some(o => COLOR_RE.test(o)) ? ' neutral' : '');
@@ -3623,7 +3738,7 @@ const Game = {
       s.daily.correctToday = (s.daily.correctToday || 0) + 1;
       s.stats.comboMax = Math.max(s.stats.comboMax || 0, B.combo);
       this.kDrop(cat);
-      Voice.say([3, 5, 10, 20, 30].includes(B.combo) ? 'combo' : 'correct', B.combo);
+      Voice.say([3, 5, 10, 20, 30, 50].includes(B.combo) ? 'combo' : (B.combo >= 3 && Math.random() < 0.5 ? 'streak' : 'correct'), B.combo);
       if (q.wrongRef) s.wrongLog = s.wrongLog.filter(w => w !== q.wrongRef);
       // 答對：回能量 + 依選中技能攻擊
       B.energy = Math.min(100, (B.energy | 0) + 20 + Math.min(15, B.combo * 3));
@@ -3649,6 +3764,7 @@ const Game = {
       if (Math.random() < 0.03) { crit = true; critMul = 5; }
       else if (Math.random() < cr + 0.07) { crit = true; critMul = 2; }
       dmg *= critMul;
+      if (crit) Voice.say('crit', 0, true);
       // Boss 多層護盾：答對題數破盾；護盾期間仍可造成約 35% 傷害（有進度感）
       if (e.isBoss && e.shields && e.shieldLeft > 0) {
         e.shieldLeft--;
@@ -3687,6 +3803,7 @@ const Game = {
       else {
         const d = Math.max(3, Math.round(e.atk * (e.isBoss ? 1.2 : 1)));
         s.hp = Math.max(0, s.hp - d); txt = '-' + d; who = 'player';
+        if (s.hp > 0 && s.hp / s.maxHp <= 0.3 && !B._lowWarn) { B._lowWarn = true; setTimeout(() => Voice.say('lowhp'), 1000); }
       }
       try { SoundFX.playWrongGentle(); } catch (_) {}
     }
@@ -3738,6 +3855,7 @@ const Game = {
         next.shieldLeft = next.shields[0];
         B.bossShield = next.shieldLeft;
         this.toast('👑 Boss 出現！第一層護盾需答對 ' + next.shieldLeft + ' 題');
+        Voice.say('boss', 0, true);
       } else {
         B.bossShield = 0;
         this.toast('👑 Boss 出現！');
@@ -4396,6 +4514,7 @@ const Game = {
         <div class="ex-sec"><h4>💡 提示</h4><p>${this.esc(hint)}</p></div>
       </div>
       <div class="ex-btns">
+        <button type="button" class="btn blue sm" style="flex:0 0 56px" onclick="Voice.readExplain()" aria-label="唸給我聽">🔊</button>
         <button type="button" class="btn purple sm" onclick="Game.exReplay()">🔁 再看一次解析</button>
         <button type="button" class="btn green" id="ex-next" onclick="Game.exNext()" disabled>➡️ 下一題</button>
       </div>`;
