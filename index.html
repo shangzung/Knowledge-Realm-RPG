@@ -889,6 +889,19 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
 .q-speak.on { animation: spkPulse .6s ease-in-out 2; }
 @keyframes spkPulse { 0%, 100% { scale: 1; } 50% { scale: 1.18; } }
 .q-box { padding-left: 34px; padding-right: 34px; }
+#exam-result { display: none; position: fixed; inset: 0; z-index: 330; padding: 28px 16px 16px; background: rgba(20,28,60,.72); backdrop-filter: blur(3px); align-items: center; justify-content: center; }
+#exam-result.active { display: flex; }
+#exam-box { overflow: visible; }
+.q-pass { text-align: left; font-size: 13.5px; line-height: 1.55; font-weight: 700; color: #4a3320; background: #fffaf0; border: 2px dashed #e6c78a; border-radius: 12px; padding: 6px 10px; margin: 0 44px 6px 0; max-height: 104px; overflow-y: auto; }
+.q-pic { text-align: center; line-height: 1; margin: 0 44px 4px 0; font-size: 56px; }
+.ex-kp { display: inline-block; margin: 2px 0 6px; padding: 2px 10px; border-radius: 99px; background: #eef5ff; border: 2px solid #9cc3f0; color: #2a5fb5; font-size: 12px; font-weight: 900; }
+.ex-score { text-align: center; line-height: 1.1; margin: 4px 0; }
+.ex-score b { font-size: 54px; color: #e5484d; font-weight: 900; }
+.ex-score small { font-size: 16px; font-weight: 900; margin-left: 2px; color: #4a3320; }
+.ex-grade { display: inline-block; margin-left: 10px; padding: 2px 12px; border-radius: 12px; font-size: 24px; font-weight: 900; color: #fff; background: linear-gradient(180deg, #ffd76a, #ff9a3c); border: 3px solid #fff; box-shadow: 0 2px 0 #c06a10; vertical-align: middle; }
+.ex-rev { background: #fffaf0; border: 2px dashed #e6c78a; border-radius: 12px; padding: 6px 10px; margin: 6px 0; font-size: 13px; font-weight: 700; color: #4a3320; }
+.ex-rev .bad { color: #b13a3a; font-weight: 900; } .ex-rev .good { color: #2a7a2a; font-weight: 900; }
+.ex-rev small { display: block; color: #8a6a3a; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -958,6 +971,7 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
 
     <!-- ADVENTURE / STAGE SELECT -->
     <div class="panel" id="panel-adventure">
+      <div class="card" id="exam-card"></div>
       <div class="card">
         <h3>🎓 角色與題庫</h3>
         <label class="muted">題庫等級（幼稚園～小六）</label>
@@ -1117,6 +1131,8 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
 
       <div class="battle-panel">
         <div class="panel-ribbon">✦ 知識挑戰！ ✦</div>
+        <div class="q-pic" id="q-pic" style="display:none"></div>
+        <div class="q-pass" id="q-pass" style="display:none"></div>
         <button type="button" class="q-speak" id="q-speak" onclick="Voice.readCurrent()" aria-label="朗讀題目與選項">🔊</button>
         <div class="q-box" id="q-box">準備出題…</div>
         <div class="opts" id="opts"></div>
@@ -1148,6 +1164,7 @@ html.ui-frame .card { background: var(--ui-frame) center / 100% 100% no-repeat !
 </div>
 
 <!-- Result -->
+<div id="exam-result"><div class="modal-box" id="exam-box"></div></div>
 <div id="explain-modal"><div class="modal-box ex-box" id="ex-box"></div></div>
 <div id="bld-modal" onclick="if(event.target===this)Game.closeBuilding()"><div class="modal-box" id="bld-box"></div></div>
 <div id="result-modal">
@@ -1551,13 +1568,13 @@ const DB = {
 
 /* ===== 題庫等級標籤 ===== */
 const LV = [
-  ['幼稚園', '注音·認字·數量·顏色形狀'],
-  ['一年級', '國語·數學（基礎加減）'],
-  ['二年級', '國語·數學（加減乘）'],
-  ['三年級', '國語·數學·自然'],
-  ['四年級', '國語·數學·自然·社會'],
-  ['五年級', '國語·數學·自然·社會·英文'],
-  ['六年級', '國語·數學·自然·社會·英文（進階）']
+  ['幼稚園', '國語·數學·生活'],
+  ['一年級', '國語·數學·生活'],
+  ['二年級', '國語·數學·生活'],
+  ['三年級', '國語·數學·英文·自然·社會'],
+  ['四年級', '國語·數學·英文·自然·社會'],
+  ['五年級', '國語·數學·英文·自然·社會'],
+  ['六年級', '國語·數學·英文·自然·社會（進階）']
 ];
 
 /* ===== 題庫生成器（台灣課綱風格 · 大幅擴充版） ===== */
@@ -1946,34 +1963,48 @@ const QG = {
         ['爸爸', '氣球', '個'], ['弟弟', '餅乾', '片'], ['姊姊', '故事書', '本'], ['哥哥', '玩具車', '輛'], ['奶奶', '橘子', '顆']],
   ctx() { return this.pick(this.CTX); },
 
-  make(lv, recent, hard) {
-    // 智慧權重：最近 50 題完全禁止、最近 100 題權重極低
+  make(lv, recent, hard, filter) {
+    lv = Math.max(0, Math.min(6, lv | 0)); filter = filter || {};
+    // 智慧權重：最近 50 題完全禁止、最近 100 題權重極低；另外「同一題 30 天內不重複」
     const ban50 = Array.isArray(recent) ? recent.slice(-50) : [];
     const soft100 = Array.isArray(recent) ? recent.slice(-100) : [];
-    if (!hard && QBank.list.length && Math.random() < 0.35) {
+    if (!hard && !filter.subject && !filter.kp && QBank.list.length && Math.random() < 0.35) {
       const cq = QBank.pick(lv);
       if (cq && !ban50.includes(cq.q) && !(soft100.includes(cq.q) && Math.random() < 0.9)) return cq;
     }
-    lv = Math.max(0, Math.min(6, lv | 0));
+    const subs = Taxo.subjects(lv);
+    const subj = filter.subject && subs.includes(filter.subject) ? filter.subject : Taxo.pickSubject(lv, !!filter.weak);
     this._hard = !!hard;
-    const gens = [this.L0, this.L1, this.L2, this.L3, this.L4, this.L5, this.L6];
-    let q = null, best = null;
-    for (let i = 0; i < 80; i++) {
-      try { q = gens[lv].call(this); } catch (e) { q = null; continue; }
+    let best = null, soft = null, old = null, last = null;
+    const tries = (filter.kp || filter.topicPrefix) ? 500 : 180;
+    for (let i = 0; i < tries; i++) {
+      let q = null;
+      try { q = this._gen(lv, subj, filter); } catch (e) { q = null; }
       if (!q) continue;
-      if (ban50.includes(q.q)) continue;                 // 最近 50 題禁止
-      if (soft100.includes(q.q) && Math.random() < 0.9) continue; // 最近 100 題 90% 降權
+      Taxo.fill(q, lv);
+      if (q.subject !== subj) continue;
+      last = q;
+      if (filter.topicPrefix && !String(q.topic || '').startsWith(filter.topicPrefix)) continue;
+      if (filter.kp && q.kp !== filter.kp) continue;
+      if (ban50.includes(q.q)) continue;
+      const age = (window.Game && Game.state) ? Dedup.age(q) : null;
+      if (age !== null && age < Dedup.DAYS) { if (!old || age > old.age) old = { q, age }; continue; }
+      if (soft100.includes(q.q) && Math.random() < 0.9) { soft = soft || q; continue; }
       best = q; break;
     }
-    if (!best) { // 最後手段：放寬軟限制
-      for (let i = 0; i < 40; i++) {
-        try { q = gens[lv].call(this); } catch (e) { continue; }
-        if (q && !ban50.includes(q.q)) { best = q; break; }
-      }
-    }
     this._hard = false;
-    try { if (best) Explain.attach(best, lv); } catch (e) {}
-    return best || q;
+    const q = best || soft || (old && old.q) || last;
+    if (q) { try { Explain.attach(q, lv); } catch (e) {} q.trick = Taxo.trick(q.kp) || ''; }
+    return q;
+  },
+  _gen(lv, subj, filter) {
+    const pre = filter.topicPrefix;
+    const cands = QX.reg.filter(e => e.s === subj && lv >= e.lv[0] && lv <= e.lv[1] && (!pre || e.t.startsWith(pre) || pre.startsWith(e.t)));
+    const legW = ({ 數學: 40, 國語: 12, 生活: 10, 自然: 5, 社會: 4, 英文: 4 }[subj] || 4) * ((pre || filter.kp) ? 0.5 : 1);
+    let tot = legW + cands.reduce((a, e) => a + e.w, 0), r = Math.random() * tot;
+    for (const e of cands) { r -= e.w; if (r <= 0) return e.fn.call(null, lv, this._hard); }
+    const gens = [this.L0, this.L1, this.L2, this.L3, this.L4, this.L5, this.L6];
+    return gens[lv].call(this);
   },
 
   /* ---------- 幼稚園 ---------- */
@@ -2555,7 +2586,7 @@ const Explain = {
 
 /* ===================== 題庫欄位驗證（AI 題庫強制規則）===================== */
 const QBank = {
-  REQUIRED: ['grade', 'subject', 'question', 'choices', 'answer', 'wrongReason', 'explanation', 'hint'],
+  REQUIRED: ['grade', 'subject', 'question', 'choices', 'answer', 'wrongReason', 'explanation', 'hint', 'kp'],
   KEY: 'kc_custom_questions',
   list: [],
   load() { try { this.list = JSON.parse(localStorage.getItem(this.KEY) || '[]') || []; } catch (e) { this.list = []; } },
@@ -2569,6 +2600,7 @@ const QBank = {
     });
     if (!miss.length && !q.choices.map(String).includes(String(q.answer))) miss.push('answer（必須是選項之一）');
     if (!miss.length && new Set(q.choices.map(String)).size !== q.choices.length) miss.push('choices（選項不可重複）');
+    if (!miss.length) { const all = [q.question, q.answer, q.wrongReason, q.explanation, q.hint, q.kp].concat(q.choices).join(''); for (const ch of all) if (SIMP.has(ch)) { miss.push('內容含簡體字「' + ch + '」（必須使用繁體中文）'); break; } }
     return { ok: miss.length === 0, missing: miss };
   },
   add(q) { const v = this.validate(q); if (v.ok) { this.list.push(q); this.save(); } return v; },
@@ -2584,7 +2616,7 @@ const QBank = {
     const pool = this.list.filter(q => Explain.lvOf(q.grade) === lv);
     if (!pool.length) return null;
     const c = pool[Math.floor(Math.random() * pool.length)];
-    return { subj: c.subject, q: c.question, a: String(c.answer), opts: QG.shuffle(c.choices.map(String)), grade: c.grade, subject: c.subject, question: c.question, choices: c.choices.map(String), answer: String(c.answer), wrongReason: c.wrongReason, explanation: c.explanation, hint: c.hint, custom: true };
+    return { subj: c.subject, q: c.question, a: String(c.answer), opts: QG.shuffle(c.choices.map(String)), grade: c.grade, subject: c.subject, question: c.question, choices: c.choices.map(String), answer: String(c.answer), wrongReason: c.wrongReason, explanation: c.explanation, hint: c.hint, kp: c.kp, topic: '自訂題庫', custom: true };
   }
 };
 
@@ -2594,7 +2626,7 @@ const QBank = {
    一個位置同時只會顯示一張圖：有外部圖就隱藏內建圖，沒有就自動退回。 */
 const Assets = {
   DIRS: { hero: 'heroes', mon: 'monsters', pet: 'pets', boss: 'boss', res: 'npc', npc: 'npc', bld: 'buildings', lm: 'landmarks', deco: 'deco',
-    bg: 'background', map: 'background', ui: 'ui', skill: 'skills', item: 'items', ach: 'achievements', quest: 'quests', title: 'ui' },
+    bg: 'background', map: 'background', ui: 'ui', skill: 'skills', item: 'items', ach: 'achievements', quest: 'quests', quiz: 'quiz', subj: 'subjects', exam: 'exam', title: 'ui' },
   UI: ['ui_avatar_frame', 'ui_hpbar', 'ui_button', 'ui_button_blue', 'ui_button_green', 'ui_button_amber', 'ui_button_red', 'ui_button_purple', 'ui_button_gray', 'ui_title_frame', 'ui_frame'],
   _res: {}, _pend: {},
   srcs(name) {
@@ -2826,10 +2858,12 @@ const Voice = {
   },
   qText(q) {
     let stem = String(q.q);
-    // 注音題：不能把「要考的字／符號」唸出來，也不唸選項，否則等於直接告訴答案
-    if (q.subj === '注音') return stem.replace(/「[^」]*」/g, m => /[\u3105-\u312F]/.test(m) ? '這個注音' : '這個字');
+    // 考「注音／字詞」的題目：不能把要考的字詞唸出來，也不唸選項，否則等於直接告訴答案
+    if (q.subj === '注音' || q.noZyQuote) stem = stem.replace(/「[^」]*」/g, m => /[\u3105-\u312F]/.test(m) ? '這個注音' : '這個詞');
+    const pre = (q.passage ? '短文：' + q.passage + '。問題：' : '') + (q.pic ? '請看圖片。' : '');
+    if (q.subj === '注音' || q.noZyOpts) return pre + stem;
     const L = 'ABCDEFGH';
-    return stem + (/[？?。！!]\s*$/.test(stem) ? '' : '。') + q.opts.map((o, i) => ` ${L[i]}，${o}。`).join('');
+    return pre + stem + (/[？?。！!]\s*$/.test(stem) ? '' : '。') + q.opts.map((o, i) => ` ${L[i]}，${o}。`).join('');
   },
   readCurrent() {
     const B = window.Game && Game.battle; if (!B || !B.curQ) return;
@@ -2850,7 +2884,1005 @@ const Voice = {
     const ex = window.Game && Game._ex; if (!ex) return;
     const b = Explain.build(ex.q, Game.state.grade | 0, ex.picked);
     const exp = ex.q.explanation || b.explanation, why = ex.q.custom ? ex.q.wrongReason : b.wrongReason, hint = ex.q.hint || b.hint;
-    this.speakText(`你選的是 ${ex.picked}，正確答案是 ${ex.q.a}。錯誤原因：${why}。解析：${exp}。提示：${hint}`);
+    this.speakText(`你選的是 ${ex.picked}，正確答案是 ${ex.q.a}。錯誤原因：${why}。解題過程：${exp}。記憶技巧：${ex.q.trick || hint}`);
+  }
+};
+
+const SIMP = new Set('专业丛东丝丢两严丧个临为丽举义乌乐乔习乡书买乱争亏亘亚产亩亲亵亸亿仅从仑仓仪们众会伛伞伟传伡伣伤伥伦伧伪伫佥侠侣侥侦侧侨侩侪侬侭俣俦俨俩俪俫俭债倾偬偻偾偿傤傥傧储傩兑兖兰关兴兹养兽冁内冈册写军农冯冲决况冻净凉减凑凛凤凫凭凯击凿刍刘则刚创删别刬刭刹刽刾刿剀剂剐剑剥剧劝办务劢动励劲劳势勋勚匀匦匮区医华协单卖卢卤卧卫却卺厅历厉压厌厍厐厕厢厣厦厨厩厮县叁参叆叇双发变叙叠叶号叹叽吓吕吗启吴呐呒呓呕呖呗员呙呛呜咏咙咛咝咤响哑哒哓哔哕哗哙哜哝哟唛唝唠唡唢唤啧啬啭啮啯啰啴啸喷喽喾嗫嗳嘘嘤嘱噜嚣团园囱围囵国图圆圹场块坚坛坜坝坞坟坠垄垅垆垒垦垩垫垭垯垱垲垴埘埙埚堑堕塆墙壮声壳壶壸处备够头夹夺奁奂奋奖奥妆妇妈妩妪妫姗姹娄娅娆娇娈娱娲娴婳婴婵婶媪媭嫒嫔嫱嬷孙学孪宝实宠审宪宫宽宾寝对寻导寿将尔尘尝尧尴尽层屃屉届属屡屦屿岁岂岖岗岘岚岛岽岿峃峄峡峣峤峥峦崂崃崄崭嵘嵚嵝巅巩巯币帅师帏帐帜带帧帮帱帻帼幂广庆庐庑库应庙庞废庼廪开弃弑张弥弪弯弹强归当录彟彦彨彻径徕忆忧忾态怂怃怄怅怆总怼怿恋恒恳恶恸恹恺恻恼恽悦悫悬悭悮悯惧惨惩惫惬惭惮惯愠愤愦慑慭懑懒懔戆戋戏戗战戬戯户执扩扪扫扬抚抛抟抠抡抢护报担拟拢拣拥拦拧拨择挚挛挜挝挞挟挠挡挢挣挤挥挦捝捞损捡换捣掳掴掷掸掺掼揽揾揿搀搁搂搄搅携摄摅摆摇摈摊撄撑撵撷撸撺擜擞攒敌敚敛敩数斋斓斩断无旧时旷旸昙昼昽显晋晓晔晕晖暂暅暧术杀杂权条来杨杩枞枢枣枥枧枨枪枫枭柠柽栀栅标栈栉栊栋栌栎栏树样栾桠桡桢档桤桥桦桧桨桩桪梦梼梾梿检棁棂椁椝椟椠椢椤椫椭椮楼榄榅榇榈榉榝槚槛槟槠横樯樱橥橱橹橼檩欢欤欧歼殁殇残殒殓殚殡殴毁毂毕毙毡毵毶氇氢氩氲汇汉汤汹沟没沣沤沥沦沧沨沩沪泪泶泷泸泺泻泼泽泾浃浅浆浇浈浉浊测浍济浏浐浑浒浓浔浕涚涛涝涞涟涠涡涢涣涤润涧涨涩渊渌渍渎渐渑渔渖渗温湾湿溁溃溅溆溇滗滚滞滟滠满滢滤滥滦滨滩滪潆潇潋潍潜潴澛澜濑濒灏灭灯灵灾灿炀炉炜炝点炼炽烁烂烃烛烟烦烧烨烩烫烬热焕焖焘煴爱爷牍牦牵牺犊状犷犸犹狈狝狞独狭狮狯狰狱狲猃猎猕猡猪猫猬献獭玑玙玚玛玮环现玱玺珐珑珰珲琎琏琐琼瑶瑷瑸璎瓒瓯电画畅畴疖疗疟疠疡疬疭疮疯疱疴痈痉痖痨痪痫瘅瘆瘗瘘瘪瘫瘾瘿癞癣癫皑皱皲盏盐监盖盗盘眍眦眬睁睐睑瞆瞒瞩矫矶矾矿砀码砖砗砚砜砺砻砾础硁硕硖硗硙硚硵硷碍碛碜碱礼祃祎祢祯祷祸禀禄禅秃秆积称秽秾稆税稣稳穑穞穷窃窍窎窑窜窝窥窦窭竖竞笃笋笔笕笺笼笾筚筛筜筝筹筼签筿简箓箦箧箨箩箪箫篑篓篮篯簖籁籴类籼粜粝粤粪粮糁糇糍紧絷緼縆纟纠纡红纣纤纥约级纨纩纪纫纬纭纮纯纰纱纲纳纴纵纶纷纸纹纺纻纼纽纾线绀绁绂练组绅细织终绉绊绋绌绍绎经绐绑绒结绔绕绖绗绘给绚绛络绝绞统绠绡绢绣绤绥绦继绨绩绪绫绬续绮绯绰绱绲绳维绵绶绷绸绹绺绻综绽绾绿缀缁缂缃缄缅缆缇缈缉缊缋缌缍缎缏缐缑缒缓缔缕编缗缘缙缚缛缜缝缞缟缠缡缢缣缤缥缦缧缨缩缪缫缬缭缮缯缰缱缲缳缴缵罂罗罚罢罴羁羟翘翙翚耢耧耸耻聂聋职聍联聩聪肃肠肤肾肿胀胁胆胧胨胪胫胶脉脍脏脐脑脓脔脚脱脶脸腘腭腻腼腽腾膑臜舆舣舰舱舻艰艳艺节芈芗芜芦苁苇苈苋苌苍苎苏茎茏茑茔茕荆荙荚荛荜荝荞荟荠荡荣荤荥荦荧荨荩荪荫荬荭荮药莅莱莲莳莴莶获莸莹莺莼萚萝萤营萦萧萨葱蒀蒇蒉蒋蒌蓝蓟蓠蓣蓥蓦蔷蔹蔺蔼蕰蕲蕴薮藓藴蘖虏虑虚虬虽虾虿蚀蚁蚂蚃蚬蛊蛎蛏蛮蛰蛱蛲蛳蛴蜕蜗蝇蝈蝉蝼蝾螀螨蟏衅衔补衬衮袄袅袆袜袭袯装裆裈裢裣裤裥褛褴襕见观觃规觅视觇览觉觊觋觌觍觎觏觐觑觞觯訚詟誉誊讠计订讣认讥讦讧讨让讪讫讬训议讯记讱讲讳讴讵讶讷许讹论讻讼讽设访诀证诂诃评诅识诇诈诉诊诋诌词诎诏诐译诒诓诔试诖诗诘诙诚诛诜话诞诟诠诡询诣诤该详诧诨诩诪诫诬语诮误诰诱诲诳说诵诶请诸诹诺读诼诽课诿谀谁谂调谄谅谆谇谈谉谊谋谌谍谎谏谐谑谒谓谔谕谖谗谘谙谚谛谜谝谞谟谠谡谢谣谤谥谦谧谨谩谪谫谬谭谮谯谰谱谲谳谴谵谶豮贝贞负贠贡财责贤败账货质贩贪贫贬购贮贯贰贱贲贳贴贵贶贷贸费贺贻贼贽贾贿赀赁赂赃资赅赆赇赈赉赊赋赌赍赎赏赐赑赒赓赔赕赖赗赘赙赚赛赜赝赞赟赠赡赢赣赪赵趋趱趸跃跄跞践跶跷跸跹跻踌踪踬踯蹑蹒蹰蹿躏躜躯輼车轧轨轩轪轫转轭轮软轰轱轲轳轴轵轶轷轸轹轺轻轼载轾轿辀辁辂较辄辅辆辇辈辉辊辋辌辍辎辏辐辑辒输辔辕辖辗辘辙辚辞辩辫边辽达迁过迈运还这进远违连迟迩迳迹选逊递逦逻遗遥邓邝邬邮邹邺邻郏郐郑郓郦郧郸酂酝酦酱酽酾酿醖释鉴銮錾钅钆钇针钉钊钋钌钍钎钏钐钑钒钓钔钕钖钗钘钙钚钛钜钝钞钟钠钡钢钣钤钥钦钧钨钩钪钫钬钭钮钯钰钱钲钳钴钵钶钷钸钹钺钻钼钽钾钿铀铁铂铃铄铅铆铇铈铉铊铋铌铍铎铏铐铑铒铓铔铕铖铗铘铙铚铛铜铝铞铟铠铡铢铣铤铥铦铧铨铩铪铫铬铭铮铯铰铱铲铳铴铵银铷铸铹铺铻铼铽链铿销锁锂锃锄锅锆锇锈锉锊锋锌锍锎锏锐锑锒锓锔锕锖锗锘错锚锛锜锝锞锟锠锡锢锣锤锥锦锧锨锩锪锫锬锭键锯锰锱锲锳锴锵锶锷锸锹锺锻锼锽锾锿镀镁镂镃镄镅镆镇镈镉镊镋镌镍镎镏镐镑镒镓镔镕镖镗镘镙镚镛镜镝镞镟镠镡镢镣镤镥镦镧镨镩镪镫镬镭镮镯镰镱镲镳镴镵镶长门闩闪闫闬闭问闯闰闱闲闳间闵闶闷闸闹闺闻闼闽闾闿阀阁阂阃阄阅阆阇阈阉阊阋阌阍阎阏阐阑阒阓阔阕阖阗阘阙阚阛队阳阴阵阶际陆陇陈陉陕陦陧陨险随隐隶隽难雏雠雳雾霁霡霭靓靔静靥鞑鞒鞯鞲韦韧韨韩韪韫韬韵页顶顷顸项顺须顼顽顾顿颀颁颂颃预颅领颇颈颉颊颋颌颍颎颏颐频颒颓颔颕颖颗题颙颚颛颜额颞颟颠颡颢颣颤颥颦颧风飏飐飑飒飓飔飕飖飗飘飙飚飞飨餍饣饤饥饦饧饨饩饪饫饬饭饮饯饰饱饲饳饴饵饶饷饸饹饺饻饼饽饾饿馀馁馂馃馄馅馆馇馈馉馊馋馌馍馎馏馐馑馒馓馔馕马驭驮驯驰驱驲驳驴驵驶驷驸驹驺驻驼驽驾驿骀骁骂骃骄骅骆骇骈骉骊骋验骍骎骏骐骑骒骓骔骕骖骗骘骙骚骛骜骝骞骟骠骡骢骣骤骥骦骧髅髋髌鬓鬶魇魉鱼鱽鱾鱿鲀鲁鲂鲃鲄鲅鲆鲇鲈鲉鲊鲋鲌鲍鲎鲏鲐鲑鲒鲓鲔鲕鲖鲗鲘鲙鲚鲛鲜鲝鲞鲟鲠鲡鲢鲣鲤鲥鲦鲧鲨鲩鲪鲫鲬鲭鲮鲯鲰鲱鲲鲳鲴鲵鲶鲷鲸鲹鲺鲻鲼鲽鲾鲿鳀鳁鳂鳃鳄鳅鳆鳇鳈鳉鳊鳋鳌鳍鳎鳏鳐鳑鳒鳓鳔鳕鳖鳗鳘鳙鳚鳛鳜鳝鳞鳟鳠鳡鳢鳣鳤鸟鸠鸡鸢鸣鸤鸥鸦鸧鸨鸩鸪鸫鸬鸭鸮鸯鸰鸱鸲鸳鸴鸵鸶鸷鸸鸹鸺鸻鸼鸽鸾鸿鹀鹁鹂鹃鹄鹅鹆鹇鹈鹉鹊鹋鹌鹍鹎鹏鹐鹑鹒鹓鹔鹕鹖鹗鹘鹙鹚鹛鹜鹝鹞鹟鹠鹡鹢鹣鹤鹥鹦鹧鹨鹩鹪鹫鹬鹭鹮鹯鹰鹱鹲鹳鹴鹾麦麸麹麺麽黄黉黡黩黪黾鼋鼌鼍鼹齐齑齿龀龁龂龃龄龅龆龇龈龉龊龋龌龙龚龛龟鿎鿏鿒鿔');
+/* ===================== 全面題庫系統（科目／知識點／不重複／弱科） ===================== */
+// 每個年級開放的科目：幼兒園～二年級＝國語、數學、生活；三～六年級＝國語、數學、英文、自然、社會
+const SUBJ_ICON = { 國語: '📖', 數學: '🔢', 英文: '🔤', 自然: '🔬', 社會: '🗺️', 生活: '🏡' };
+const SUBJ_LEG = { 國語: '國語', 數學: '數學', 英文: '英文', 自然: '自然', 社會: '社會', 生活: '常識' };   // 舊程式使用的科目名稱
+
+const QX = {
+  reg: [],
+  add(meta, fn) { this.reg.push(Object.assign({ w: 5, lv: [0, 6] }, meta, { fn })); },
+  // 組題（沿用 QG.mk：自動補干擾項、洗牌）。meta = {s, t, kp, ty, zy}
+  q(meta, stem, ans, wrongs, extra) {
+    const leg = meta.zy ? '注音' : SUBJ_LEG[meta.s];
+    const q = QG.mk(leg, stem, ans, wrongs, '', Object.assign({ subject: meta.s, topic: meta.t, kp: meta.kp, type: meta.ty || '選擇', rich: true }, extra || {}));
+    return q;
+  },
+  picId(e) { return 'e' + [...e].map(c => c.codePointAt(0).toString(16)).filter(h => h !== 'fe0f').join('-'); },
+  pick: a => QG.pick(a), R: (a, b) => QG.R(a, b), shuffle: a => QG.shuffle(a), sample: (a, n) => QG.sample(a, n),
+  // 從 pool 取不重複、且不等於 ans 的 n 個
+  others(pool, ans, n) { const s = new Set([String(ans)]), out = []; for (const x of QG.shuffle(pool)) { const k = String(x); if (!s.has(k)) { s.add(k); out.push(x); if (out.length >= n) break; } } return out; }
+};
+
+const Taxo = {
+  subjects(lv) { return lv <= 2 ? ['國語', '數學', '生活'] : ['國語', '數學', '英文', '自然', '社會']; },
+  // 各科抽題比例
+  W: { low: { 國語: .34, 數學: .40, 生活: .26 }, mid: { 國語: .25, 數學: .25, 英文: .15, 自然: .17, 社會: .18 }, high: { 國語: .22, 數學: .26, 英文: .16, 自然: .18, 社會: .18 } },
+  pickSubject(lv, weakBoost) {
+    const base = this.W[lv <= 2 ? 'low' : lv <= 4 ? 'mid' : 'high'], keys = Object.keys(base);
+    let t = 0; const w = keys.map(k => { let x = base[k]; if (weakBoost) { const r = Perf.rate(k); if (r !== null) x *= (1 + (1 - r) * 1.5); } t += x; return x; });
+    let r = Math.random() * t; for (let i = 0; i < keys.length; i++) { r -= w[i]; if (r <= 0) return keys[i]; }
+    return keys[0];
+  },
+  // 舊題庫的題目 → 科目／題型／知識點
+  classify(q, lv) {
+    const Q = String(q.q), sj = q.subj; let subject, topic, kp, type = '選擇';
+    if (sj === '數學') { subject = '數學'; [type, kp] = this.mathKp(Q); topic = kp.replace('數學·', ''); return { subject, topic, kp, type }; }
+    if (sj === '注音') {
+      subject = '國語';
+      if (/^注音「/.test(Q)) topic = '看注音寫國字'; else if (/的注音是/.test(Q)) topic = '看國字寫注音'; else topic = '注音填空';
+      kp = '國語·注音符號（' + (/第幾聲|聲調/.test(Q) ? '聲調' : /開頭|韻母|順序/.test(Q) ? '聲母韻母' : '拼讀') + '）';
+      return { subject, topic, kp, type };
+    }
+    if (sj === '國語') {
+      subject = '國語';
+      if (/成語/.test(Q)) topic = '成語'; else if (/部首/.test(Q)) topic = '部首'; else if (/標點/.test(Q)) topic = '標點符號';
+      else if (/修辭/.test(Q)) topic = '修辭'; else topic = '字詞';
+      kp = '國語·' + (topic === '字詞' ? (/相反|近義|意思最接近/.test(Q) ? '詞語（反義與近義）' : /量詞/.test(Q) ? '詞語（量詞）' : '字詞') : topic);
+      return { subject, topic, kp, type };
+    }
+    if (sj === '英文') {
+      subject = '英文';
+      if (/的中文意思是|的英文是/.test(Q)) { topic = 'Vocabulary'; kp = '英文·單字'; }
+      else if (/\(　\)/.test(Q)) { topic = 'Fill in Blank'; kp = '英文·文法填空'; }
+      else { topic = 'Sentence'; kp = '英文·句子'; }
+      return { subject, topic, kp, type };
+    }
+    if (sj === '自然') { subject = '自然'; topic = '判斷'; kp = '自然·' + (/動物|鳥|魚|蟲|哺乳/.test(Q) ? '動物' : /植物|花|葉|根|種子|樹/.test(Q) ? '植物' : /月|星|太陽|地球|行星/.test(Q) ? '天文' : /水|冰|蒸|沸|溶/.test(Q) ? '物質變化' : /磁|電|光|聲|熱/.test(Q) ? '物理現象' : '自然常識'); return { subject, topic, kp, type }; }
+    if (sj === '社會') { subject = '社會'; topic = /台灣|縣|山|河|地圖|方向|海|島/.test(Q) ? '地理' : /朝代|古代|歷史|鄭成功|民國|日治|荷蘭|清朝/.test(Q) ? '歷史' : '公民'; kp = '社會·' + topic; return { subject, topic, kp, type }; }
+    // 常識
+    subject = '生活'; topic = '生活常識'; kp = '生活·生活常識';
+    return { subject, topic, kp, type };
+  },
+  mathKp(Q) {
+    let m;
+    const T = (t, k) => [t, '數學·' + k];
+    if (/^數一數/.test(Q)) return T('填空', '數數與認數');
+    if ((m = Q.match(/^(\d+) \+ (\d+) = ？$/))) { const a = +m[1], b = +m[2]; return T('計算', ((a % 10) + (b % 10) >= 10 || a + b >= 20 && a < 10) ? '加法（進位）' : '加法'); }
+    if ((m = Q.match(/^(\d+) − (\d+) = ？$/))) { const a = +m[1], b = +m[2]; return T('計算', (a % 10) < (b % 10) && a > 20 ? '減法（退位）' : '減法'); }
+    if ((m = Q.match(/^(\d+) × (\d+) = ？$/))) return T('計算', (+m[1] <= 9 && +m[2] <= 9) ? '乘法（九九乘法）' : '乘法（多位數）');
+    if ((m = Q.match(/^(\d+) ÷ (\d+) = ？$/))) return T('計算', /餘/.test(Q) ? '除法（有餘數）' : '除法');
+    if (/（　）/.test(Q) && /[+×÷−]|＝|=/.test(Q)) return T('填空', '算式填空');
+    if (/○/.test(Q) || /比大小|比較大|比較小|最大|最小/.test(Q)) return T('選擇', '比大小');
+    if (/接下來是什麼|、（　）/.test(Q)) return T('填空', '數列規律');
+    if (/元/.test(Q) && /找回|付|個 10 元|買/.test(Q)) return T('應用', '錢幣');
+    if (/短針|長針|點半|點鐘|經過了幾分鐘|分鐘後|幾點/.test(Q)) return T('選擇', '時間');
+    if (/星期/.test(Q)) return T('選擇', '時間（星期）');
+    if (/公尺|公分|公里|公斤|公克|公升|毫升/.test(Q) && /是幾|等於/.test(Q)) return T('填空', '單位換算');
+    if (/周長/.test(Q)) return T('應用', '周長'); if (/面積/.test(Q)) return T('應用', '面積'); if (/體積/.test(Q)) return T('應用', '體積');
+    if (/角/.test(Q) && /度|°/.test(Q)) return T('選擇', '角度');
+    if (/\d+\/\d+|分數|假分數|帶分數/.test(Q)) return T('計算', '分數'); if (/0\.\d/.test(Q) || /小數/.test(Q)) return T('計算', '小數');
+    if (/%|折|百分/.test(Q)) return T('應用', '百分率'); if (/因數|倍數|質數|質因數|公因數|公倍數/.test(Q)) return T('選擇', '因數與倍數');
+    if (/：/.test(Q)) return T('填空', '比與比值'); if (/時速|每小時|速率|公里/.test(Q)) return T('應用', '速率'); if (/x/.test(Q)) return T('填空', '未知數');
+    if (/圓/.test(Q)) return T('應用', '圓'); if (/平均/.test(Q)) return T('應用', '平均'); if (/單數|雙數/.test(Q)) return T('選擇', '單數與雙數');
+    if (/四捨五入/.test(Q)) return T('選擇', '四捨五入'); if (/位數字|個十|位/.test(Q)) return T('選擇', '位值');
+    if (/長方形|正方形|三角形|圓形|形狀|邊|角/.test(Q)) return T('選擇', '平面圖形');
+    if (Q.length > 16 && /有|買|分給|一共|平分|每|比/.test(Q)) return T('應用', '應用題');
+    return T('選擇', '數學綜合');
+  },
+  // 補齊 subject／topic／kp／type
+  fill(q, lv) {
+    if (!q.subject || !q.kp) { const c = this.classify(q, lv); q.subject = q.subject || c.subject; q.topic = q.topic || c.topic; q.kp = q.kp || c.kp; q.type = q.type || c.type; }
+    q.type = q.type || '選擇';
+    return q;
+  },
+  // 記憶技巧（依知識點）
+  TRICK: [
+    [/九九乘法/, '背口訣：「二二得四、三三得九…」，先背小的再背大的，邊念邊拍手更好記。'],
+    [/加法（進位）/, '個位滿十就進一：先加個位，滿 10 寫 0 進 1，再加十位。'],
+    [/減法（退位）/, '個位不夠減，就向十位借 1 當 10：借了之後十位要記得少 1。'],
+    [/除法/, '除法倒過來想成乘法：用九九乘法表找答案，最後再驗算。'],
+    [/周長/, '周長＝繞一圈：把每一個邊的長度全部加起來。'], [/面積/, '面積＝長 × 寬：先想「裡面有幾格」，單位是平方。'],
+    [/聲調/, '口訣：「一聲平、二聲揚、三聲轉、四聲降」，用手比劃上上下下就記得住。'],
+    [/聲母韻母|注音符號/, '把注音歌唱一遍：ㄅㄆㄇㄈ、ㄉㄊㄋㄌ…，邊唱邊指著符號。'],
+    [/看國字寫注音/, '先把詞唸出來，再一個字一個字拆開寫，最後檢查每個字的聲調。'], [/看注音寫國字|注音填空/, '把注音一個一個拼出來唸唸看，再想想像哪個詞。'],
+    [/成語/, '把成語拆成小故事或畫面來記，例如「畫蛇添足」就想畫了蛇又加腳。'], [/部首/, '部首像字的「家族」：同一個部首的字，意思常常有關係。'],
+    [/標點/, '問句用「？」、很驚訝用「！」、說完了用「。」、中間停一下用「，」。'], [/閱讀/, '讀文章先看「誰、在哪裡、做什麼」，答案一定在文章裡，用手指找找看。'],
+    [/造句|重組/, '句子順序口訣：「誰」＋「在哪裡」＋「做什麼」。'], [/關聯詞/, '成對記：因為…所以…、雖然…但是…、如果…就…，它們是好朋友。'],
+    [/單字|Vocabulary/, '看圖片＋唸出聲＋拼一遍，三招一起用，單字記得牢。'], [/英文·文法|Fill/, '先找句子裡的線索：是誰？什麼時候？幾個？再選字。'],
+    [/動物/, '分類口訣：有毛會餵奶＝哺乳類；有羽毛＝鳥類；有鰓有鱗＝魚類；六隻腳＝昆蟲。'], [/植物/, '根吸水、莖運送、葉做養分、花結果、種子長新苗。'],
+    [/天文/, '行星順序口訣：水金地火木土天海，從離太陽最近排到最遠。'], [/物質|水的/, '水的三態：冰（固）→水（液）→水蒸氣（氣），加熱往右、降溫往左。'],
+    [/地理/, '看地圖先找「上北下南左西右東」，再找位置關係。'], [/歷史/, '把事件排成時間線：先、後順序記清楚，再配上人物。'], [/公民/, '遇到情境題就想：這樣做會不會幫助別人、遵守規則、保護環境？']
+  ],
+  trick(kp) { const t = this.TRICK.find(x => x[0].test(kp || '')); return t ? t[1] : ''; }
+};
+
+/* ----- 30 天內不重複 ----- */
+const Dedup = {
+  DAYS: 30,
+  hash(q) { const s = q.subject + '|' + q.q + '|' + q.a + '|' + (q.passage || ''); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); },
+  day() { return Math.floor(Date.now() / 86400000); },
+  store() { const s = Game.state; return (s.seenQ = s.seenQ || {}); },
+  age(q) { const t = this.store()[this.hash(q)]; return t == null ? null : this.day() - t; },     // 幾天前出過（沒出過 = null）
+  mark(q) { this.store()[this.hash(q)] = this.day(); },
+  prune() {
+    const st = this.store(), d = this.day(); let n = 0;
+    for (const k in st) { if (d - st[k] > this.DAYS) delete st[k]; else n++; }
+    if (n > 60000) { const ks = Object.keys(st).sort((a, b) => st[a] - st[b]); ks.slice(0, n - 50000).forEach(k => delete st[k]); }
+  }
+};
+
+/* ----- 弱科分析 ----- */
+const Perf = {
+  data() { const s = Game.state; return (s.perf = s.perf || {}); },
+  rec(q, ok) {
+    if (!q || !q.subject) return;
+    const d = this.data(), sub = (d[q.subject] = d[q.subject] || { n: 0, c: 0, kp: {} });
+    sub.n++; if (ok) sub.c++;
+    const k = (sub.kp[q.kp] = sub.kp[q.kp] || { n: 0, c: 0 }); k.n++; if (ok) k.c++;
+  },
+  rate(subject) { const s = this.data()[subject]; return s && s.n >= 10 ? s.c / s.n : null; },
+  subjects(lv) {
+    const d = this.data();
+    return Taxo.subjects(lv).map(s => { const x = d[s] || { n: 0, c: 0, kp: {} }; return { subject: s, n: x.n, c: x.c, rate: x.n ? x.c / x.n : null }; });
+  },
+  // 弱點：答題 ≥ 4 次且正確率 < 70%，由低到高
+  weakKps(lv) {
+    const d = this.data(), ok = new Set(Taxo.subjects(lv)), out = [];
+    for (const s in d) { if (!ok.has(s)) continue; for (const k in d[s].kp) { const x = d[s].kp[k]; if (x.n >= 4 && x.c / x.n < 0.7) out.push({ subject: s, kp: k, n: x.n, c: x.c, rate: x.c / x.n }); } }
+    return out.sort((a, b) => a.rate - b.rate || b.n - a.n);
+  }
+};
+
+const QZW = [["爸爸","ㄅㄚˋ ㄅㄚ˙",0],["媽媽","ㄇㄚ ㄇㄚ˙",0],["哥哥","ㄍㄜ ㄍㄜ˙",0],["姊姊","ㄐㄧㄝˇ ㄐㄧㄝ˙",0],["弟弟","ㄉㄧˋ ㄉㄧ˙",0],["妹妹","ㄇㄟˋ ㄇㄟ˙",0],["爺爺","ㄧㄝˊ ㄧㄝ˙",0],["奶奶","ㄋㄞˇ ㄋㄞ˙",0],["老師","ㄌㄠˇ ㄕ",0],["同學","ㄊㄨㄥˊ ㄒㄩㄝˊ",0],["朋友","ㄆㄥˊ ㄧㄡˇ",0],["小孩","ㄒㄧㄠˇ ㄏㄞˊ",0],["眼睛","ㄧㄢˇ ㄐㄧㄥ",0],["耳朵","ㄦˇ ㄉㄨㄛˇ",0],["鼻子","ㄅㄧˊ ㄗ˙",0],["嘴巴","ㄗㄨㄟˇ ㄅㄚ˙",0],["頭髮","ㄊㄡˊ ㄈㄚˋ",0],["手指","ㄕㄡˇ ㄓˇ",0],["肚子","ㄉㄨˋ ㄗ˙",0],["身體","ㄕㄣ ㄊㄧˇ",0],["太陽","ㄊㄞˋ ㄧㄤˊ",0],["月亮","ㄩㄝˋ ㄌㄧㄤˋ",0],["星星","ㄒㄧㄥ ㄒㄧㄥ˙",0],["白雲","ㄅㄞˊ ㄩㄣˊ",0],["下雨","ㄒㄧㄚˋ ㄩˇ",0],["大風","ㄉㄚˋ ㄈㄥ",0],["花朵","ㄏㄨㄚ ㄉㄨㄛˇ",0],["樹木","ㄕㄨˋ ㄇㄨˋ",0],["小草","ㄒㄧㄠˇ ㄘㄠˇ",0],["河水","ㄏㄜˊ ㄕㄨㄟˇ",0],["石頭","ㄕˊ ㄊㄡ˙",0],["天空","ㄊㄧㄢ ㄎㄨㄥ",0],["彩虹","ㄘㄞˇ ㄏㄨㄥˊ",0],["閃電","ㄕㄢˇ ㄉㄧㄢˋ",0],["小狗","ㄒㄧㄠˇ ㄍㄡˇ",0],["小貓","ㄒㄧㄠˇ ㄇㄠ",0],["小鳥","ㄒㄧㄠˇ ㄋㄧㄠˇ",0],["兔子","ㄊㄨˋ ㄗ˙",0],["老虎","ㄌㄠˇ ㄏㄨˇ",0],["大象","ㄉㄚˋ ㄒㄧㄤˋ",0],["猴子","ㄏㄡˊ ㄗ˙",0],["青蛙","ㄑㄧㄥ ㄨㄚ",0],["蝴蝶","ㄏㄨˊ ㄉㄧㄝˊ",0],["蜜蜂","ㄇㄧˋ ㄈㄥ",0],["烏龜","ㄨ ㄍㄨㄟ",0],["獅子","ㄕ ㄗ˙",0],["小雞","ㄒㄧㄠˇ ㄐㄧ",0],["小鴨","ㄒㄧㄠˇ ㄧㄚ",0],["小豬","ㄒㄧㄠˇ ㄓㄨ",0],["蘋果","ㄆㄧㄥˊ ㄍㄨㄛˇ",0],["香蕉","ㄒㄧㄤ ㄐㄧㄠ",0],["西瓜","ㄒㄧ ㄍㄨㄚ",0],["米飯","ㄇㄧˇ ㄈㄢˋ",0],["麵包","ㄇㄧㄢˋ ㄅㄠ",0],["牛奶","ㄋㄧㄡˊ ㄋㄞˇ",0],["雞蛋","ㄐㄧ ㄉㄢˋ",0],["餅乾","ㄅㄧㄥˇ ㄍㄢ",0],["草莓","ㄘㄠˇ ㄇㄟˊ",0],["葡萄","ㄆㄨˊ ㄊㄠˊ",0],["學校","ㄒㄩㄝˊ ㄒㄧㄠˋ",0],["教室","ㄐㄧㄠˋ ㄕˋ",0],["書包","ㄕㄨ ㄅㄠ",0],["鉛筆","ㄑㄧㄢ ㄅㄧˇ",0],["課本","ㄎㄜˋ ㄅㄣˇ",0],["黑板","ㄏㄟ ㄅㄢˇ",0],["橡皮擦","ㄒㄧㄤˋ ㄆㄧˊ ㄘㄚ",0],["開心","ㄎㄞ ㄒㄧㄣ",0],["快樂","ㄎㄨㄞˋ ㄌㄜˋ",0],["唱歌","ㄔㄤˋ ㄍㄜ",0],["跳舞","ㄊㄧㄠˋ ㄨˇ",0],["走路","ㄗㄡˇ ㄌㄨˋ",0],["吃飯","ㄔ ㄈㄢˋ",0],["睡覺","ㄕㄨㄟˋ ㄐㄧㄠˋ",0],["看書","ㄎㄢˋ ㄕㄨ",0],["寫字","ㄒㄧㄝˇ ㄗˋ",0],["畫畫","ㄏㄨㄚˋ ㄏㄨㄚˋ",0],["桌子","ㄓㄨㄛ ㄗ˙",0],["椅子","ㄧˇ ㄗ˙",0],["杯子","ㄅㄟ ㄗ˙",0],["房子","ㄈㄤˊ ㄗ˙",0],["帽子","ㄇㄠˋ ㄗ˙",0],["衣服","ㄧ ㄈㄨˊ",0],["鞋子","ㄒㄧㄝˊ ㄗ˙",0],["手機","ㄕㄡˇ ㄐㄧ",0],["汽車","ㄑㄧˋ ㄔㄜ",0],["公園","ㄍㄨㄥ ㄩㄢˊ",0],["水果","ㄕㄨㄟˇ ㄍㄨㄛˇ",0],["青菜","ㄑㄧㄥ ㄘㄞˋ",0],["冰淇淋","ㄅㄧㄥ ㄑㄧˊ ㄌㄧㄣˊ",0],["糖果","ㄊㄤˊ ㄍㄨㄛˇ",0],["氣球","ㄑㄧˋ ㄑㄧㄡˊ",0],["玩具","ㄨㄢˊ ㄐㄩˋ",0],["積木","ㄐㄧ ㄇㄨˋ",0],["彩色","ㄘㄞˇ ㄙㄜˋ",0],["紅色","ㄏㄨㄥˊ ㄙㄜˋ",0],["綠色","ㄌㄩˋ ㄙㄜˋ",0],["黃色","ㄏㄨㄤˊ ㄙㄜˋ",0],["藍色","ㄌㄢˊ ㄙㄜˋ",0],["圖書館","ㄊㄨˊ ㄕㄨ ㄍㄨㄢˇ",1],["操場","ㄘㄠ ㄔㄤˇ",1],["動物園","ㄉㄨㄥˋ ㄨˋ ㄩㄢˊ",1],["市場","ㄕˋ ㄔㄤˇ",1],["醫院","ㄧ ㄩㄢˋ",1],["郵局","ㄧㄡˊ ㄐㄩˊ",1],["車站","ㄔㄜ ㄓㄢˋ",1],["捷運","ㄐㄧㄝˊ ㄩㄣˋ",1],["腳踏車","ㄐㄧㄠˇ ㄊㄚˋ ㄔㄜ",1],["計程車","ㄐㄧˋ ㄔㄥˊ ㄔㄜ",1],["公車","ㄍㄨㄥ ㄔㄜ",1],["火車","ㄏㄨㄛˇ ㄔㄜ",1],["飛機","ㄈㄟ ㄐㄧ",1],["輪船","ㄌㄨㄣˊ ㄔㄨㄢˊ",1],["電腦","ㄉㄧㄢˋ ㄋㄠˇ",1],["電視","ㄉㄧㄢˋ ㄕˋ",1],["冰箱","ㄅㄧㄥ ㄒㄧㄤ",1],["洗衣機","ㄒㄧˇ ㄧ ㄐㄧ",1],["電話","ㄉㄧㄢˋ ㄏㄨㄚˋ",1],["雨傘","ㄩˇ ㄙㄢˇ",1],["眼鏡","ㄧㄢˇ ㄐㄧㄥˋ",1],["手錶","ㄕㄡˇ ㄅㄧㄠˇ",1],["春天","ㄔㄨㄣ ㄊㄧㄢ",1],["夏天","ㄒㄧㄚˋ ㄊㄧㄢ",1],["秋天","ㄑㄧㄡ ㄊㄧㄢ",1],["冬天","ㄉㄨㄥ ㄊㄧㄢ",1],["早上","ㄗㄠˇ ㄕㄤˋ",1],["中午","ㄓㄨㄥ ㄨˇ",1],["下午","ㄒㄧㄚˋ ㄨˇ",1],["晚上","ㄨㄢˇ ㄕㄤˋ",1],["昨天","ㄗㄨㄛˊ ㄊㄧㄢ",1],["今天","ㄐㄧㄣ ㄊㄧㄢ",1],["明天","ㄇㄧㄥˊ ㄊㄧㄢ",1],["努力","ㄋㄨˇ ㄌㄧˋ",1],["認真","ㄖㄣˋ ㄓㄣ",1],["勇敢","ㄩㄥˇ ㄍㄢˇ",1],["誠實","ㄔㄥˊ ㄕˊ",1],["禮貌","ㄌㄧˇ ㄇㄠˋ",1],["乾淨","ㄍㄢ ㄐㄧㄥˋ",1],["整齊","ㄓㄥˇ ㄑㄧˊ",1],["安靜","ㄢ ㄐㄧㄥˋ",1],["熱鬧","ㄖㄜˋ ㄋㄠˋ",1],["美麗","ㄇㄟˇ ㄌㄧˋ",1],["運動","ㄩㄣˋ ㄉㄨㄥˋ",1],["游泳","ㄧㄡˊ ㄩㄥˇ",1],["籃球","ㄌㄢˊ ㄑㄧㄡˊ",1],["棒球","ㄅㄤˋ ㄑㄧㄡˊ",1],["跳繩","ㄊㄧㄠˋ ㄕㄥˊ",1],["賽跑","ㄙㄞˋ ㄆㄠˇ",1],["颱風","ㄊㄞˊ ㄈㄥ",1],["地震","ㄉㄧˋ ㄓㄣˋ",1],["海洋","ㄏㄞˇ ㄧㄤˊ",1],["沙灘","ㄕㄚ ㄊㄢ",1],["森林","ㄙㄣ ㄌㄧㄣˊ",1],["草原","ㄘㄠˇ ㄩㄢˊ",1],["瀑布","ㄆㄨˋ ㄅㄨˋ",1],["湖泊","ㄏㄨˊ ㄆㄛ",1],["農夫","ㄋㄨㄥˊ ㄈㄨ",1],["醫生","ㄧ ㄕㄥ",1],["警察","ㄐㄧㄥˇ ㄔㄚˊ",1],["消防員","ㄒㄧㄠ ㄈㄤˊ ㄩㄢˊ",1],["廚師","ㄔㄨˊ ㄕ",1],["司機","ㄙ ㄐㄧ",1],["電燈","ㄉㄧㄢˋ ㄉㄥ",1],["電池","ㄉㄧㄢˋ ㄔˊ",1],["磁鐵","ㄘˊ ㄊㄧㄝˇ",1],["溫度","ㄨㄣ ㄉㄨˋ",1],["天氣","ㄊㄧㄢ ㄑㄧˋ",1],["季節","ㄐㄧˋ ㄐㄧㄝˊ",1],["禮物","ㄌㄧˇ ㄨˋ",1],["生日","ㄕㄥ ㄖˋ",1],["蛋糕","ㄉㄢˋ ㄍㄠ",1],["餐廳","ㄘㄢ ㄊㄧㄥ",1],["超市","ㄔㄠ ㄕˋ",1],["百貨","ㄅㄞˇ ㄏㄨㄛˋ",1],["郊遊","ㄐㄧㄠ ㄧㄡˊ",1],["露營","ㄌㄨˋ ㄧㄥˊ",1],["風箏","ㄈㄥ ㄓㄥ",1],["旅行","ㄌㄩˇ ㄒㄧㄥˊ",1],["照片","ㄓㄠˋ ㄆㄧㄢˋ",1],["相機","ㄒㄧㄤˋ ㄐㄧ",1],["鋼琴","ㄍㄤ ㄑㄧㄣˊ",1],["小提琴","ㄒㄧㄠˇ ㄊㄧˊ ㄑㄧㄣˊ",1],["歌唱","ㄍㄜ ㄔㄤˋ",1],["比賽","ㄅㄧˇ ㄙㄞˋ",1],["冠軍","ㄍㄨㄢˋ ㄐㄩㄣ",1],["獎狀","ㄐㄧㄤˇ ㄓㄨㄤˋ",1],["作業","ㄗㄨㄛˋ ㄧㄝˋ",1],["考試","ㄎㄠˇ ㄕˋ",1],["成績","ㄔㄥˊ ㄐㄧˋ",1],["聰明","ㄘㄨㄥ ㄇㄧㄥˊ",1],["可愛","ㄎㄜˇ ㄞˋ",1],["溫柔","ㄨㄣ ㄖㄡˊ",1],["開朗","ㄎㄞ ㄌㄤˇ",1],["環保","ㄏㄨㄢˊ ㄅㄠˇ",2],["資源","ㄗ ㄩㄢˊ",2],["回收","ㄏㄨㄟˊ ㄕㄡ",2],["汙染","ㄨ ㄖㄢˇ",2],["節約","ㄐㄧㄝˊ ㄩㄝ",2],["愛護","ㄞˋ ㄏㄨˋ",2],["保護","ㄅㄠˇ ㄏㄨˋ",2],["地球","ㄉㄧˋ ㄑㄧㄡˊ",2],["氣候","ㄑㄧˋ ㄏㄡˋ",2],["科學","ㄎㄜ ㄒㄩㄝˊ",2],["實驗","ㄕˊ ㄧㄢˋ",2],["觀察","ㄍㄨㄢ ㄔㄚˊ",2],["研究","ㄧㄢˊ ㄐㄧㄡ",2],["發明","ㄈㄚ ㄇㄧㄥˊ",2],["知識","ㄓ ㄕˊ",2],["歷史","ㄌㄧˋ ㄕˇ",2],["文化","ㄨㄣˊ ㄏㄨㄚˋ",2],["傳統","ㄔㄨㄢˊ ㄊㄨㄥˇ",2],["節日","ㄐㄧㄝˊ ㄖˋ",2],["閱讀","ㄩㄝˋ ㄉㄨˊ",2],["作文","ㄗㄨㄛˋ ㄨㄣˊ",2],["日記","ㄖˋ ㄐㄧˋ",2],["故事","ㄍㄨˋ ㄕˋ",2],["詩歌","ㄕ ㄍㄜ",2],["成語","ㄔㄥˊ ㄩˇ",2],["友情","ㄧㄡˇ ㄑㄧㄥˊ",2],["感恩","ㄍㄢˇ ㄣ",2],["關心","ㄍㄨㄢ ㄒㄧㄣ",2],["合作","ㄏㄜˊ ㄗㄨㄛˋ",2],["責任","ㄗㄜˊ ㄖㄣˋ",2],["尊重","ㄗㄨㄣ ㄓㄨㄥˋ",2],["勇氣","ㄩㄥˇ ㄑㄧˋ",2],["堅持","ㄐㄧㄢ ㄔˊ",2],["耐心","ㄋㄞˋ ㄒㄧㄣ",2],["博物館","ㄅㄛˊ ㄨˋ ㄍㄨㄢˇ",2],["紀念館","ㄐㄧˋ ㄋㄧㄢˋ ㄍㄨㄢˇ",2],["火山","ㄏㄨㄛˇ ㄕㄢ",2],["銀河","ㄧㄣˊ ㄏㄜˊ",2],["宇宙","ㄩˇ ㄓㄡˋ",2],["望遠鏡","ㄨㄤˋ ㄩㄢˇ ㄐㄧㄥˋ",2],["太空人","ㄊㄞˋ ㄎㄨㄥ ㄖㄣˊ",2],["衛星","ㄨㄟˋ ㄒㄧㄥ",2],["能源","ㄋㄥˊ ㄩㄢˊ",2],["太陽能","ㄊㄞˋ ㄧㄤˊ ㄋㄥˊ",2],["風力","ㄈㄥ ㄌㄧˋ",2],["發電","ㄈㄚ ㄉㄧㄢˋ",2],["網路","ㄨㄤˇ ㄌㄨˋ",2],["學習","ㄒㄩㄝˊ ㄒㄧˊ",2],["習慣","ㄒㄧˊ ㄍㄨㄢˋ",2],["健康","ㄐㄧㄢˋ ㄎㄤ",2],["營養","ㄧㄥˊ ㄧㄤˇ",2],["運動會","ㄩㄣˋ ㄉㄨㄥˋ ㄏㄨㄟˋ",2],["畢業","ㄅㄧˋ ㄧㄝˋ",2],["典禮","ㄉㄧㄢˇ ㄌㄧˇ",2],["志工","ㄓˋ ㄍㄨㄥ",2],["公益","ㄍㄨㄥ ㄧˋ",2],["捐款","ㄐㄩㄢ ㄎㄨㄢˇ",2],["社區","ㄕㄜˋ ㄑㄩ",2],["鄰居","ㄌㄧㄣˊ ㄐㄩ",2],["民主","ㄇㄧㄣˊ ㄓㄨˇ",2],["選舉","ㄒㄩㄢˇ ㄐㄩˇ",2],["法律","ㄈㄚˇ ㄌㄩˋ",2],["規則","ㄍㄨㄟ ㄗㄜˊ",2],["權利","ㄑㄩㄢˊ ㄌㄧˋ",2],["義務","ㄧˋ ㄨˋ",2],["平等","ㄆㄧㄥˊ ㄉㄥˇ",2],["自由","ㄗˋ ㄧㄡˊ",2]];
+
+/* ===================== 國語題庫（注音／閱讀／造句／關聯詞／部首／標點） ===================== */
+const QZ = {
+  ini: 'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ',
+  swap: { 'ㄅ': 'ㄆ', 'ㄆ': 'ㄅ', 'ㄉ': 'ㄊ', 'ㄊ': 'ㄉ', 'ㄍ': 'ㄎ', 'ㄎ': 'ㄍ', 'ㄓ': 'ㄗ', 'ㄗ': 'ㄓ', 'ㄔ': 'ㄘ', 'ㄘ': 'ㄔ', 'ㄕ': 'ㄙ', 'ㄙ': 'ㄕ', 'ㄐ': 'ㄑ', 'ㄑ': 'ㄐ', 'ㄋ': 'ㄌ', 'ㄌ': 'ㄋ' },
+  split(s) { const m = s.match(/^(.*?)([ˊˇˋ˙]?)$/); return [m[1], m[2]]; },
+  fmt(arr) { return arr.map(s => { const [b, t] = this.split(s); return t === '˙' ? '˙' + b : b + t; }).join(' '); },
+  vary(arr) {
+    const out = [];
+    arr.forEach((s, i) => {
+      const [b, t] = this.split(s);
+      ['', 'ˊ', 'ˇ', 'ˋ', '˙'].forEach(m => { if (m !== t) { const c = arr.slice(); c[i] = b + m; out.push({ k: 'tone', a: c }); } });
+      const f = b[0]; if (this.swap[f]) { const c = arr.slice(); c[i] = this.swap[f] + b.slice(1) + t; out.push({ k: 'ini', a: c }); }
+    });
+    return out;
+  },
+  words(lv) {
+    const mx = lv <= 2 ? 0 : lv <= 4 ? 1 : 2;
+    let pool = QZW.filter(w => w[2] <= mx);
+    if (mx >= 1) { const hi = pool.filter(w => w[2] === mx); if (Math.random() < 0.6) pool = hi; }
+    return pool;
+  },
+  explainZy(w, arr) { return [...w].map((c, i) => `${c}　唸做　${this.fmt([arr[i]])}`).join('\n') + `\n合起來是：${this.fmt(arr)}`; },
+  charSyl: null,
+  charMap() {
+    if (this.charSyl) return this.charSyl; const m = {};
+    QZW.forEach(([w, z]) => { const a = z.split(' '); [...w].forEach((c, i) => { (m[c] = m[c] || new Set()).add(a[i]); }); });
+    return (this.charSyl = m);
+  }
+};
+
+/* 1. 看國字寫注音 */
+QX.add({ s: '國語', t: '看國字寫注音', lv: [1, 6], w: 9 }, function (lv) {
+  const [w, z] = QX.pick(QZ.words(lv)), arr = z.split(' '), ans = QZ.fmt(arr);
+  const cand = QX.shuffle(QZ.vary(arr)), ini = cand.filter(x => x.k === 'ini'), tone = cand.filter(x => x.k === 'tone');
+  const wr = []; const seen = new Set([ans]);
+  [].concat(ini.slice(0, 1), tone).forEach(x => { const s = QZ.fmt(x.a); if (!seen.has(s) && wr.length < 3) { seen.add(s); wr.push(s); } });
+  const kp = '國語·注音符號（看國字寫注音）';
+  return QX.q({ s: '國語', t: '看國字寫注音', kp, zy: true }, `「${w}」的注音是什麼？`, ans, wr,
+    { noZyQuote: true, explanation: QZ.explainZy(w, arr), hint: '先把詞唸出來，再一個字一個字拆開寫，最後檢查每個字的聲調。', wrongReason: '可能把聲調或聲母看錯了：二聲ˊ往上揚、三聲ˇ先降再升、四聲ˋ往下掉。' });
+});
+/* 2. 看注音寫國字 */
+QX.add({ s: '國語', t: '看注音寫國字', lv: [1, 6], w: 8 }, function (lv) {
+  const pool = QZ.words(lv), [w, z] = QX.pick(pool), arr = z.split(' ');
+  let same = pool.filter(x => x[0].length === w.length && x[1] !== z && x[0] !== w).map(x => x[0]);
+  if (same.length < 3) same = QZW.filter(x => x[0].length === w.length && x[1] !== z && x[0] !== w).map(x => x[0]);
+  if (same.length < 3) return null;
+  const kp = '國語·注音符號（看注音寫國字）';
+  return QX.q({ s: '國語', t: '看注音寫國字', kp, zy: true }, `「${QZ.fmt(arr)}」是哪一個詞？`, w, QX.sample(same, 3),
+    { noZyOpts: true, explanation: QZ.explainZy(w, arr), hint: '把注音一個一個拼出來，唸唸看像哪一個詞。', wrongReason: '可能只看了第一個音就選了，要把每個音節都對一對喔。' });
+});
+/* 3. 注音填空 */
+QX.add({ s: '國語', t: '注音填空', lv: [1, 6], w: 7 }, function (lv) {
+  const pool = QZ.words(lv).filter(x => x[0].length >= 2), [w, z] = QX.pick(pool), arr = z.split(' '), i = QX.R(0, w.length - 1), c = w[i];
+  const cm = QZ.charMap(), tgt = arr[i];
+  const chars = Object.keys(cm).filter(x => x !== c && ![...cm[x]].some(s => s === tgt));
+  if (chars.length < 3) return null;
+  const shown = [...w].map((ch, k) => k === i ? `（${QZ.fmt([arr[k]])}）` : ch).join('');
+  return QX.q({ s: '國語', t: '注音填空', kp: '國語·注音符號（注音填空）', zy: true }, `「${shown}」，括號裡的注音要寫成哪一個字？`, c, QX.sample(chars, 3),
+    { noZyOpts: true, explanation: `「${w}」唸做 ${QZ.fmt(arr)}。\n括號裡是「${QZ.fmt([arr[i]])}」，所以要寫成「${c}」。`, hint: '把整個詞唸出來，再想想缺的那個字長什麼樣子。', wrongReason: '可能選到了長得像或意思相近、但唸法不同的字。' });
+});
+
+/* 4. 部首 */
+const QZR = {
+  R: { water: '氵（三點水）', hand: '扌（提手旁）', heart: '心／忄（心字旁）', mouth: '口（口字旁）', foot: '足（足字旁）', speech: '言（言字旁）', woman: '女（女字旁）', sun: '日（日字旁）', wood: '木（木字旁）', fish: '魚（魚字旁）', food: '食（食字旁）', gold: '金（金字旁）', rain: '雨（雨字頭）', disease: '疒（病字旁）', roof: '宀（寶蓋頭）', cave: '穴（穴字頭）', bamboo: '竹（竹字頭）', silk: '糸（絞絲旁）', person: '亻（單人旁）', jade: '玉／王（玉字旁）', insect: '虫（蟲字旁）', dog: '犭（犬字旁）', grass: '艹（草字頭）', door: '門（門字框）', car: '車（車字旁）', bird: '鳥（鳥字旁）' },
+  C: { water: '河海洗湖游', hand: '打拍推提拉', heart: '想愛思快', mouth: '吃唱叫喝吹', foot: '跑路跳踢', speech: '說讀話課請', woman: '媽好她', sun: '明晴時早', wood: '校樹林桌椅', fish: '鯨鮮', food: '飯餅餓飽', gold: '錢鐵鐘銅', rain: '雲雪電', disease: '病痛瘦', roof: '家安', cave: '空窗', bamboo: '笑筆算第', silk: '紅綠線紙', person: '住你他休作', jade: '玩球', insect: '蝴蜂蜜', dog: '狗猴狼', grass: '花草菜', door: '開間關', car: '輪轉輛', bird: '鴨鵝鴿' },
+  list() { const o = []; for (const k in this.C) [...this.C[k]].forEach(c => o.push([c, k])); return o; }
+};
+QX.add({ s: '國語', t: '部首', lv: [2, 6], w: 6 }, function (lv) {
+  const all = QZR.list(), [c, k] = QX.pick(all), kp = '國語·部首';
+  if (Math.random() < 0.5) {
+    const others = Object.keys(QZR.R).filter(x => x !== k).map(x => QZR.R[x]);
+    return QX.q({ s: '國語', t: '部首', kp }, `「${c}」的部首是什麼？`, QZR.R[k], QX.sample(others, 3),
+      { explanation: `「${c}」的部首是「${QZR.R[k]}」。\n部首就是字的偏旁，常常和這個字的意思有關。`, hint: '部首像字的「家族」：看看字的左邊或上面是什麼部件。', wrongReason: '可能把字的其他部件當成部首了，部首通常在字的左邊或上面。' });
+  }
+  const pool = all.filter(x => x[1] !== k).map(x => x[0]), ans = QX.pick([...QZR.C[k]].filter(x => x));
+  return QX.q({ s: '國語', t: '部首', kp }, `下面哪一個字的部首是「${QZR.R[k]}」？`, ans, QX.sample(pool, 3),
+    { noZyOpts: false, explanation: `「${ans}」的部首是「${QZR.R[k]}」。`, hint: '部首像字的「家族」，同一家的字常常意思有關。', wrongReason: '可能被字形騙了，要看清楚字的偏旁是不是這一個。' });
+});
+
+/* 5. 標點符號 */
+const QZP = {
+  food: ['蘋果', '香蕉', '西瓜', '草莓', '葡萄', '布丁'], place: ['公園', '動物園', '圖書館', '海邊', '操場', '市場'], act: ['吃飯', '寫功課', '看書', '運動', '打掃', '唱歌'],
+  who: ['小明', '小美', '哥哥', '姊姊', '弟弟', '老師', '同學', '媽媽'], thing: ['這朵花', '這隻小狗', '這幅畫', '今天的天氣', '這個玩具', '這道菜'], adj: ['漂亮', '可愛', '好吃', '好玩', '舒服', '特別'],
+  qw: ['嗎', '呢'], whq: ['什麼', '為什麼', '哪裡', '誰', '怎麼']
+};
+QX.add({ s: '國語', t: '標點符號', lv: [1, 6], w: 7 }, function (lv) {
+  const P = QZP, f = QX.pick(P.food), pl = QX.pick(P.place), a = QX.pick(P.act), w = QX.pick(P.who), t = QX.pick(P.thing), ad = QX.pick(P.adj), kind = QX.R(0, 4);
+  let stem, ans, why;
+  if (kind === 0) { stem = `${w}喜歡${f}（　）`; ans = '。'; why = '這句話是在說一件事，說完了，要用句號「。」。'; }
+  else if (kind === 1) { stem = `${QX.pick(['你', '他', '妳'])}${QX.pick(['喜歡', '想吃', '要買'])}${f}${QX.pick(P.qw)}（　）`; ans = '？'; why = '這句話在問問題，句尾要用問號「？」。'; }
+  else if (kind === 2) { stem = `哇，${t}好${ad}啊（　）`; ans = '！'; why = '這句話表示很驚訝或很開心，要用驚嘆號「！」。'; }
+  else if (kind === 3) { const f2 = QX.pick(P.food.filter(x => x !== f)), f3 = QX.pick(P.food.filter(x => x !== f && x !== f2)); stem = `${w}喜歡${f}（　）${f2}和${f3}。`; ans = '、'; why = '把幾樣一樣的東西排在一起，中間要用頓號「、」。'; }
+  else { stem = `${QX.pick(['天氣很好', '今天放假', '下課了'])}（　）${w}${QX.pick(['和媽媽去', '想去'])}${pl}玩。`; ans = '，'; why = '句子還沒說完，中間要停一下，用逗號「，」。'; }
+  const all = ['。', '？', '！', '，', '、'];
+  return QX.q({ s: '國語', t: '標點符號', kp: '國語·標點符號' }, `句子「${stem}」，括號裡要填哪一個標點符號？`, ans, QX.sample(all.filter(x => x !== ans), 3),
+    { explanation: `${why}\n完整句子：${stem.replace('（　）', ans)}`, hint: '問句用「？」、很驚訝用「！」、說完用「。」、中間停一下用「，」、排列東西用「、」。', wrongReason: '可能沒看清楚這句話是問問題、很驚訝，還是只是說明一件事。' });
+});
+
+/* 6. 造句：句子排列 */
+const QZS = {
+  S: ['小明', '小美', '哥哥', '姊姊', '弟弟', '媽媽', '爸爸', '老師', '同學們', '我'],
+  L: { 公園: ['玩球', '放風箏', '散步', '盪鞦韆'], 教室: ['寫功課', '聽故事', '畫圖', '唱歌'], 操場: ['跑步', '跳繩', '打籃球', '踢足球'], 家裡: ['看電視', '吃飯', '做功課', '玩積木'], 圖書館: ['看書', '借書', '寫作業'], 海邊: ['撿貝殼', '玩水', '堆沙堡'], 院子: ['澆花', '玩球', '餵小狗'] },
+  T: ['今天早上', '星期天', '昨天下午', '每天晚上', '放學後']
+};
+QX.add({ s: '國語', t: '造句', lv: [1, 6], w: 8 }, function (lv) {
+  const S = QX.pick(QZS.S), loc = QX.pick(Object.keys(QZS.L)), V = QX.pick(QZS.L[loc]), L = '在' + loc, T = lv >= 2 && Math.random() < 0.7 ? QX.pick(QZS.T) : '';
+  const ok = `${T}${S}${L}${V}。`;
+  const wrong = [`${T}${V}${S}${L}。`, `${T}${V}${L}${S}。`, `${T}${S}${V}${L}。`, `${T}${L}${V}${S}。`];
+  return QX.q({ s: '國語', t: '造句', kp: '國語·造句（句子排列）' }, `下面哪一句話的順序最通順？`, ok, QX.sample(wrong, 3),
+    { explanation: `句子的順序是：${T ? '什麼時候＋' : ''}誰＋在哪裡＋做什麼。\n${[T, S, L, V].filter(Boolean).join('＋')}\n所以是：${ok}`, hint: '句子順序口訣：「誰」＋「在哪裡」＋「做什麼」，唸出來順口才對。', wrongReason: '可能把「做什麼」或「在哪裡」放錯位置，唸起來不通順。' });
+});
+
+/* 7. 關聯詞 */
+const QZC = {
+  cause: { pair: '因為…所以…', ban: ['如果…就…'], items: [['下大雨', '我們不能去操場玩'], ['他每天練習', '他的字寫得很漂亮'], ['弟弟生病了', '媽媽帶他去看醫生'], ['我忘了帶雨傘', '衣服全濕了'], ['小明很用功', '考試得了一百分'], ['天氣很冷', '大家都穿上厚外套'], ['花很久沒澆水', '花都枯萎了'], ['我吃了太多糖果', '牙齒痛起來了']] },
+  conc: { pair: '雖然…但是…', ban: [], items: [['這道題很難', '我還是做出來了'], ['天氣很冷', '大家還是很有精神'], ['他的年紀很小', '他懂得很多'], ['路程很遠', '我們都沒有喊累'], ['下著大雨', '比賽還是照常舉行'], ['他跑得很慢', '他沒有放棄']] },
+  prog: { pair: '不但…而且…', ban: [], items: [['小美會唱歌', '她還會跳舞'], ['這本書很有趣', '還教了我們很多知識'], ['他很聰明', '也很有禮貌'], ['蘋果很好吃', '也很有營養'], ['姊姊會彈鋼琴', '還會拉小提琴']] },
+  hypo: { pair: '如果…就…', ban: ['因為…所以…'], items: [['明天下雨', '運動會就會延期'], ['你多讀書', '你就會進步'], ['你努力練習', '你就能學會'], ['天氣好', '我們就去爬山'], ['你每天早睡早起', '身體就會更健康']] }
+};
+QX.add({ s: '國語', t: '造句', lv: [3, 6], w: 6 }, function (lv) {
+  const keys = Object.keys(QZC), k = QX.pick(keys), C = QZC[k], [c1, c2] = QX.pick(C.items);
+  const allPairs = keys.map(x => QZC[x].pair).concat(['一邊…一邊…', '先…再…']), ok = C.pair, bad = allPairs.filter(p => p !== ok && !C.ban.includes(p));
+  const [p1, p2] = ok.split('…');
+  return QX.q({ s: '國語', t: '造句', kp: '國語·造句（關聯詞）' }, `哪一組關聯詞最適合？「（　）${c1}，（　）${c2}。」`, ok, QX.sample(bad, 3),
+    { explanation: `完整的句子是：${p1}${c1}，${p2.replace('…', '')}${c2}。\n${k === 'cause' ? '前面是原因，後面是結果，用「因為…所以…」。' : k === 'conc' ? '前後意思相反（轉折），用「雖然…但是…」。' : k === 'prog' ? '後面比前面更進一步，用「不但…而且…」。' : '前面是條件、假設，後面是結果，用「如果…就…」。'}`,
+      hint: '成對記：因為…所以…、雖然…但是…、如果…就…、不但…而且…，它們是好朋友。', wrongReason: '可能沒有分清楚前後兩句話的關係：是原因結果、轉折、更進一步，還是假設。' });
+});
+
+/* 8. 閱讀測驗 */
+const QZRD = {
+  names: ['小明', '小華', '小美', '小芬', '阿傑', '小凱', '小玲', '小安', '小宇', '小晴'],
+  comps: ['爸爸', '媽媽', '姊姊', '哥哥', '爺爺', '奶奶', '同學'],
+  times: ['星期六早上', '星期日下午', '暑假的一天', '星期五放學後', '星期三中午'],
+  feels: ['開心', '快樂', '高興'], badFeels: ['難過', '生氣', '害怕', '無聊'],
+  places: {
+    公園: { acts: ['盪鞦韆', '溜滑梯', '放風箏', '追蝴蝶', '騎腳踏車'], why: '玩得很盡興' }, 動物園: { acts: ['看大象', '看猴子', '餵小羊', '拍照片', '看長頸鹿'], why: '看到了可愛的動物' },
+    海邊: { acts: ['撿貝殼', '堆沙堡', '玩水', '看海鷗', '踩沙子'], why: '撿到了漂亮的貝殼' }, 圖書館: { acts: ['看故事書', '借書', '畫圖', '讀繪本', '找恐龍書'], why: '看到了好多有趣的書' },
+    市場: { acts: ['買蘋果', '買青菜', '買麵包', '看魚', '買牛奶'], why: '買到了新鮮的水果' }, 農場: { acts: ['摘草莓', '餵小雞', '摸小羊', '挖地瓜', '澆菜'], why: '吃到了自己摘的草莓' },
+    學校: { acts: ['玩跳繩', '打籃球', '唱歌', '玩躲避球', '畫畫'], why: '和同學玩得很開心' }, 奶奶家: { acts: ['吃水餃', '玩積木', '聽故事', '幫忙掃地', '看電視'], why: '吃到了好吃的水餃' }
+  },
+  wx: [{ w: '很晴朗', a: '戴上了帽子' }, { w: '下著小雨', a: '帶了一把雨傘' }, { w: '很冷', a: '穿上了厚外套' }, { w: '很熱', a: '帶了一瓶水' }],
+  animals: [
+    { a: '長頸鹿', hab: '非洲的草原', food: '樹葉', feat: '長長的脖子', func: '吃到很高的樹葉' }, { a: '大象', hab: '森林和草原', food: '草和樹葉', feat: '長長的鼻子', func: '吸水和拿東西' },
+    { a: '駱駝', hab: '沙漠', food: '乾草', feat: '背上的駝峰', func: '儲存養分，很久不吃東西也沒關係' }, { a: '北極熊', hab: '很冷的北極', food: '魚和海豹', feat: '厚厚的毛和脂肪', func: '抵抗寒冷' },
+    { a: '蝙蝠', hab: '山洞和樹林', food: '昆蟲', feat: '特別的耳朵和叫聲', func: '在黑暗裡找到食物' }, { a: '啄木鳥', hab: '森林', food: '樹裡的蟲', feat: '又長又尖的嘴', func: '啄開樹皮找蟲吃' },
+    { a: '貓頭鷹', hab: '森林', food: '老鼠和小蟲', feat: '又大又圓的眼睛', func: '在晚上看清楚東西' }, { a: '企鵝', hab: '寒冷的南極', food: '魚和小蝦', feat: '像船槳一樣的翅膀', func: '在水裡游得很快' },
+    { a: '青蛙', hab: '池塘邊', food: '小昆蟲', feat: '又長又黏的舌頭', func: '快速抓到飛過的昆蟲' }, { a: '袋鼠', hab: '澳洲的草原', food: '草', feat: '強壯的後腳', func: '跳得又高又遠' },
+    { a: '變色龍', hab: '森林的樹上', food: '昆蟲', feat: '會變色的皮膚', func: '躲在葉子間不被發現' }, { a: '海豚', hab: '海洋', food: '魚', feat: '流線形的身體', func: '在水裡游得又快又順' }
+  ]
+};
+QX.add({ s: '國語', t: '閱讀測驗', lv: [1, 6], w: 14 }, function (lv) {
+  const D = QZRD, n = QX.pick(D.names), comp = QX.pick(D.comps), kp0 = '國語·閱讀理解';
+  const mk = (pass, stem, ans, wrongs, kp, why, hint, topicKp) => QX.q({ s: '國語', t: '閱讀測驗', kp: topicKp || kp0 + '（' + kp + '）' }, stem, ans, wrongs, { passage: pass, explanation: why, hint: hint || '答案一定在文章裡，用手指一句一句找找看。', wrongReason: '可能沒有把文章讀完，或是把兩件事情搞混了。' });
+  if (lv <= 2) {
+    const pk = QX.pick(Object.keys(D.places)), P = D.places[pk], [a1, a2] = QX.sample(P.acts, 2), time = QX.pick(D.times), feel = QX.pick(D.feels);
+    const pass = `${time}，${n}和${comp}去${pk}。${n}先${a1}，後來又${a2}。${n}玩得很${feel}。`;
+    const kind = QX.R(0, 5), otherActs = QX.pick(Object.keys(D.places).filter(x => x !== pk));
+    if (kind === 0) return mk(pass, `${n}和誰一起去${pk}？`, comp, QX.others(D.comps, comp, 3), '細節', `文章第一句說：${n}和${comp}去${pk}。`);
+    if (kind === 1) return mk(pass, `${n}去了哪裡？`, pk, QX.others(Object.keys(D.places), pk, 3), '細節', `文章說：${n}和${comp}去${pk}。`);
+    if (kind === 2) return mk(pass, `${n}先做了什麼？`, a1, [a2].concat(QX.sample(D.places[otherActs].acts, 2)), '順序', `文章說：${n}先${a1}，後來又${a2}。「先」做的是${a1}。`, '看到「先」「後來」「最後」，要注意事情發生的順序。');
+    if (kind === 3) return mk(pass, `${n}後來又做了什麼？`, a2, [a1].concat(QX.sample(D.places[otherActs].acts, 2)), '順序', `文章說：${n}先${a1}，後來又${a2}。「後來」做的是${a2}。`, '看到「先」「後來」「最後」，要注意事情發生的順序。');
+    if (kind === 4) return mk(pass, `${n}玩得怎麼樣？`, feel, QX.sample(D.badFeels, 3), '感受', `文章最後說：${n}玩得很${feel}。`);
+    return mk(pass, `${n}是什麼時候去的？`, time, QX.others(D.times, time, 3), '細節', `文章第一句說：${time}，${n}和${comp}去${pk}。`);
+  }
+  if (lv <= 4) {
+    const pk = QX.pick(Object.keys(D.places)), P = D.places[pk], [a1, a2, a3] = QX.sample(P.acts, 3), time = QX.pick(D.times), wx = QX.pick(D.wx), feel = QX.pick(D.feels);
+    const pass = `${time}，${n}和${comp}一起去${pk}。出發前，天氣${wx.w}，所以${n}${wx.a}。到了${pk}，${n}先${a1}，接著${a2}，最後${a3}。回家的路上，${n}覺得很${feel}，因為${P.why}。`;
+    const kind = QX.R(0, 5), others = Object.keys(D.places).filter(x => x !== pk), oa = D.places[QX.pick(others)].acts;
+    if (kind === 0) return mk(pass, `${n}到了${pk}以後，最後做了什麼？`, a3, [a1, a2, QX.pick(oa)], '順序', `文章說：先${a1}，接著${a2}，最後${a3}。`, '找「先、接著、最後」這些順序詞，就能排出事情的先後。');
+    if (kind === 1) return mk(pass, `${n}到了${pk}以後，接著做了什麼？`, a2, [a1, a3, QX.pick(oa)], '順序', `文章說：先${a1}，接著${a2}，最後${a3}。`, '找「先、接著、最後」這些順序詞，就能排出事情的先後。');
+    if (kind === 2) return mk(pass, `${n}為什麼${wx.a}？`, `因為天氣${wx.w}`, QX.others(D.wx.map(x => `因為天氣${x.w}`), `因為天氣${wx.w}`, 3), '原因', `文章說：天氣${wx.w}，所以${n}${wx.a}。「所以」前面就是原因。`, '看到「因為」「所以」，前面是原因，後面是結果。');
+    if (kind === 3) return mk(pass, `${n}回家路上為什麼覺得很${feel}？`, P.why, QX.others(Object.values(D.places).map(x => x.why).filter(x => x !== P.why), P.why, 3), '原因', `文章最後說：${n}覺得很${feel}，因為${P.why}。`);
+    if (kind === 4) return mk(pass, `這篇文章主要在說什麼？`, `${n}和${comp}去${pk}的經過`, [`${n}和${comp}去${QX.pick(others)}的經過`, `${n}一個人在家的一天`, `${QX.pick(D.names.filter(x => x !== n))}和${comp}去${pk}的經過`], '主旨', `整篇文章在說：${n}和${comp}去${pk}，做了哪些事。`, '主旨就是文章最主要在說的事，通常和「誰、做了什麼」有關。');
+    return mk(pass, `出發前的天氣怎麼樣？`, wx.w, QX.others(D.wx.map(x => x.w), wx.w, 3), '細節', `文章說：出發前，天氣${wx.w}。`);
+  }
+  const A = QX.pick(D.animals), pass = `${A.a}生活在${A.hab}，主要吃${A.food}。牠有${A.feat}，這樣就可以${A.func}。`;
+  const kind = QX.R(0, 4), others = D.animals.filter(x => x !== A);
+  if (kind === 0) return mk(pass, `${A.a}生活在哪裡？`, A.hab, QX.others(others.map(x => x.hab), A.hab, 3), '細節', `文章第一句說：${A.a}生活在${A.hab}。`);
+  if (kind === 1) return mk(pass, `${A.a}主要吃什麼？`, A.food, QX.others(others.map(x => x.food), A.food, 3), '細節', `文章說：${A.a}主要吃${A.food}。`);
+  if (kind === 2) return mk(pass, `「${A.feat}」對${A.a}有什麼用處？`, A.func, QX.others(others.map(x => x.func), A.func, 3), '推論', `文章說：牠有${A.feat}，這樣就可以${A.func}。`, '看到「這樣就可以」，前面是特徵，後面就是它的用處。');
+  if (kind === 3) return mk(pass, `為什麼${A.a}可以${A.func}？`, `因為牠有${A.feat}`, QX.others(others.map(x => `因為牠有${x.feat}`), `因為牠有${A.feat}`, 3), '推論', `文章說：牠有${A.feat}，這樣就可以${A.func}。所以是因為牠有${A.feat}。`, '想一想：有了什麼特徵，才能做到這件事？');
+  return mk(pass, `這段文字主要在介紹什麼？`, `${A.a}的特徵與生活`, [`${QX.pick(others).a}的特徵與生活`, `${A.a}的飼養方法`, `動物園的參觀路線`], '主旨', `這段文字介紹${A.a}住在哪裡、吃什麼，還有牠特別的地方。`, '主旨就是整段話最主要在講的人事物。');
+});
+
+
+/* ===================== 英文題庫（Vocabulary／Sentence／Reading／Matching／Fill in Blank） ===================== */
+// [英文, 中文, 類別, 最低年級, 圖片emoji]
+const QEW = [
+  ['red', '紅色', 'color', 3, '🔴'], ['blue', '藍色', 'color', 3, '🔵'], ['yellow', '黃色', 'color', 3, '🟡'], ['green', '綠色', 'color', 3, '🟢'], ['black', '黑色', 'color', 3, '⚫'], ['white', '白色', 'color', 3, '⚪'], ['pink', '粉紅色', 'color', 4, ''], ['purple', '紫色', 'color', 4, '🟣'], ['brown', '咖啡色', 'color', 4, '🟤'],
+  ['one', '一', 'number', 3, ''], ['two', '二', 'number', 3, ''], ['three', '三', 'number', 3, ''], ['four', '四', 'number', 3, ''], ['five', '五', 'number', 3, ''], ['six', '六', 'number', 3, ''], ['seven', '七', 'number', 3, ''], ['eight', '八', 'number', 3, ''], ['nine', '九', 'number', 3, ''], ['ten', '十', 'number', 3, ''],
+  ['cat', '貓', 'animal', 3, '🐱'], ['dog', '狗', 'animal', 3, '🐶'], ['bird', '鳥', 'animal', 3, '🐦'], ['fish', '魚', 'animal', 3, '🐟'], ['rabbit', '兔子', 'animal', 3, '🐰'], ['tiger', '老虎', 'animal', 3, '🐯'], ['lion', '獅子', 'animal', 3, '🦁'], ['elephant', '大象', 'animal', 3, '🐘'], ['monkey', '猴子', 'animal', 3, '🐵'], ['horse', '馬', 'animal', 3, '🐴'], ['cow', '牛', 'animal', 3, '🐮'], ['pig', '豬', 'animal', 3, '🐷'], ['sheep', '綿羊', 'animal', 4, '🐑'], ['duck', '鴨子', 'animal', 3, '🦆'], ['chicken', '雞', 'animal', 4, '🐔'], ['panda', '熊貓', 'animal', 3, '🐼'], ['bear', '熊', 'animal', 4, '🐻'], ['snake', '蛇', 'animal', 4, '🐍'], ['frog', '青蛙', 'animal', 4, '🐸'], ['mouse', '老鼠', 'animal', 4, '🐭'], ['turtle', '烏龜', 'animal', 4, '🐢'], ['giraffe', '長頸鹿', 'animal', 4, '🦒'], ['zebra', '斑馬', 'animal', 5, '🦓'], ['penguin', '企鵝', 'animal', 4, '🐧'], ['dolphin', '海豚', 'animal', 5, '🐬'], ['whale', '鯨魚', 'animal', 5, '🐳'], ['butterfly', '蝴蝶', 'animal', 4, '🦋'], ['bee', '蜜蜂', 'animal', 4, '🐝'], ['ant', '螞蟻', 'animal', 4, '🐜'],
+  ['apple', '蘋果', 'fruit', 3, '🍎'], ['banana', '香蕉', 'fruit', 3, '🍌'], ['orange', '橘子', 'fruit', 3, '🍊'], ['grape', '葡萄', 'fruit', 3, '🍇'], ['watermelon', '西瓜', 'fruit', 3, '🍉'], ['strawberry', '草莓', 'fruit', 3, '🍓'], ['lemon', '檸檬', 'fruit', 4, '🍋'], ['mango', '芒果', 'fruit', 4, '🥭'], ['pineapple', '鳳梨', 'fruit', 4, '🍍'], ['peach', '桃子', 'fruit', 4, '🍑'], ['pear', '梨子', 'fruit', 4, '🍐'], ['cherry', '櫻桃', 'fruit', 5, '🍒'],
+  ['rice', '米飯', 'food', 3, '🍚'], ['noodles', '麵條', 'food', 4, '🍜'], ['bread', '麵包', 'food', 3, '🍞'], ['egg', '蛋', 'food', 3, '🥚'], ['milk', '牛奶', 'food', 3, '🥛'], ['juice', '果汁', 'food', 4, '🧃'], ['water', '水', 'food', 3, '💧'], ['cake', '蛋糕', 'food', 3, '🍰'], ['cookie', '餅乾', 'food', 4, '🍪'], ['pizza', '披薩', 'food', 4, '🍕'], ['hamburger', '漢堡', 'food', 4, '🍔'], ['sandwich', '三明治', 'food', 4, '🥪'], ['soup', '湯', 'food', 5, '🍲'], ['tea', '茶', 'food', 4, '🍵'], ['candy', '糖果', 'food', 4, '🍬'],
+  ['father', '爸爸', 'family', 3, ''], ['mother', '媽媽', 'family', 3, ''], ['grandfather', '爺爺', 'family', 4, ''], ['grandmother', '奶奶', 'family', 4, ''], ['baby', '嬰兒', 'family', 4, '👶'],
+  ['teacher', '老師', 'person', 3, ''], ['student', '學生', 'person', 3, ''], ['friend', '朋友', 'person', 3, ''], ['boy', '男孩', 'person', 3, '👦'], ['girl', '女孩', 'person', 3, '👧'],
+  ['book', '書', 'school', 3, '📖'], ['pen', '原子筆', 'school', 3, '🖊️'], ['pencil', '鉛筆', 'school', 3, '✏️'], ['eraser', '橡皮擦', 'school', 4, ''], ['ruler', '尺', 'school', 4, '📏'], ['bag', '書包', 'school', 3, '🎒'], ['desk', '書桌', 'school', 4, ''], ['chair', '椅子', 'school', 4, '🪑'], ['classroom', '教室', 'place', 4, ''], ['school', '學校', 'place', 3, '🏫'],
+  ['head', '頭', 'body', 3, ''], ['eye', '眼睛', 'body', 3, '👁️'], ['ear', '耳朵', 'body', 3, '👂'], ['nose', '鼻子', 'body', 3, '👃'], ['mouth', '嘴巴', 'body', 3, '👄'], ['hand', '手', 'body', 3, '✋'], ['foot', '腳', 'body', 4, '🦶'], ['leg', '腿', 'body', 4, '🦵'], ['arm', '手臂', 'body', 4, ''], ['face', '臉', 'body', 4, ''], ['hair', '頭髮', 'body', 4, ''],
+  ['shirt', '襯衫', 'clothes', 4, '👕'], ['dress', '洋裝', 'clothes', 4, '👗'], ['shoes', '鞋子', 'clothes', 3, '👟'], ['hat', '帽子', 'clothes', 3, '🧢'], ['socks', '襪子', 'clothes', 4, '🧦'], ['pants', '褲子', 'clothes', 4, '👖'], ['coat', '外套', 'clothes', 5, '🧥'],
+  ['sunny', '晴朗的', 'weather', 4, '☀️'], ['rainy', '下雨的', 'weather', 4, '🌧️'], ['cloudy', '多雲的', 'weather', 4, '☁️'], ['windy', '有風的', 'weather', 4, '💨'], ['snowy', '下雪的', 'weather', 5, '❄️'],
+  ['home', '家', 'place', 3, '🏠'], ['park', '公園', 'place', 3, '🌳'], ['zoo', '動物園', 'place', 3, ''], ['library', '圖書館', 'place', 4, ''], ['hospital', '醫院', 'place', 4, '🏥'], ['market', '市場', 'place', 4, ''], ['station', '車站', 'place', 5, ''], ['restaurant', '餐廳', 'place', 5, ''], ['beach', '海灘', 'place', 4, '🏖️'],
+  ['car', '汽車', 'transport', 3, '🚗'], ['bus', '公車', 'transport', 3, '🚌'], ['bike', '腳踏車', 'transport', 3, '🚲'], ['train', '火車', 'transport', 4, '🚆'], ['plane', '飛機', 'transport', 4, '✈️'], ['boat', '船', 'transport', 4, '⛵'],
+  ['run', '跑', 'verb', 3, ''], ['jump', '跳', 'verb', 3, ''], ['swim', '游泳', 'verb', 4, ''], ['sing', '唱歌', 'verb', 3, ''], ['dance', '跳舞', 'verb', 3, ''], ['read', '閱讀', 'verb', 3, ''], ['write', '寫', 'verb', 4, ''], ['eat', '吃', 'verb', 3, ''], ['drink', '喝', 'verb', 3, ''], ['sleep', '睡覺', 'verb', 3, ''], ['play', '玩', 'verb', 3, ''], ['walk', '走路', 'verb', 4, ''], ['sit', '坐', 'verb', 4, ''], ['stand', '站', 'verb', 4, ''], ['draw', '畫畫', 'verb', 4, ''], ['cook', '煮飯', 'verb', 5, ''], ['fly', '飛', 'verb', 4, ''],
+  ['big', '大的', 'adj', 3, ''], ['small', '小的', 'adj', 3, ''], ['tall', '高的', 'adj', 4, ''], ['short', '矮的', 'adj', 4, ''], ['happy', '快樂的', 'adj', 3, ''], ['sad', '難過的', 'adj', 4, ''], ['hot', '熱的', 'adj', 3, ''], ['cold', '冷的', 'adj', 3, ''], ['fast', '快的', 'adj', 4, ''], ['slow', '慢的', 'adj', 4, ''], ['new', '新的', 'adj', 4, ''], ['old', '舊的', 'adj', 4, ''], ['good', '好的', 'adj', 3, ''], ['bad', '壞的', 'adj', 4, ''], ['beautiful', '美麗的', 'adj', 5, ''], ['clean', '乾淨的', 'adj', 5, ''], ['dirty', '髒的', 'adj', 5, ''],
+  ['doctor', '醫生', 'job', 5, '🧑‍⚕️'], ['nurse', '護士', 'job', 5, ''], ['farmer', '農夫', 'job', 5, '🧑‍🌾'], ['driver', '司機', 'job', 5, ''], ['cook', '廚師', 'job2', 5, '🧑‍🍳'], ['singer', '歌手', 'job', 5, '🎤'], ['dancer', '舞者', 'job', 6, '']
+].filter(x => !(x[0] === 'cook' && x[2] === 'job2')).concat([['chef', '廚師', 'job', 5, '🧑‍🍳']]);
+const QEO = [['big', 'small'], ['tall', 'short'], ['hot', 'cold'], ['happy', 'sad'], ['fast', 'slow'], ['new', 'old'], ['good', 'bad'], ['clean', 'dirty'], ['sit', 'stand'], ['black', 'white'], ['boy', 'girl'], ['father', 'mother'], ['grandfather', 'grandmother'], ['yes', 'no'], ['day', 'night'], ['up', 'down'], ['open', 'close'], ['in', 'out'], ['left', 'right'], ['buy', 'sell']];
+const QED = [   // 定義句：答案只有一個合理的單字
+  ['I see with my (　).', 'eyes', 'body'], ['I hear with my (　).', 'ears', 'body'], ['I smell with my (　).', 'nose', 'body'], ['I eat with my (　).', 'mouth', 'body'],
+  ['It is yellow and long. Monkeys like it. It is a (　).', 'banana', 'fruit'], ['It is red and round. Snow White eats it. It is an (　).', 'apple', 'fruit'], ['It is big and green. It is sweet and has many seeds. It is a (　).', 'watermelon', 'fruit'],
+  ['It says moo. It is a (　).', 'cow', 'animal'], ['It says meow. It is a (　).', 'cat', 'animal'], ['It says quack. It is a (　).', 'duck', 'animal'], ['It says woof. It is a (　).', 'dog', 'animal'], ['It is black and white. It likes bamboo. It is a (　).', 'panda', 'animal'], ['It has a very long neck. It is a (　).', 'giraffe', 'animal'], ['It has a long nose. It is very big. It is an (　).', 'elephant', 'animal'], ['It is a king of animals. It says roar. It is a (　).', 'lion', 'animal'], ['It can fly. It has wings and feathers. It is a (　).', 'bird', 'animal'],
+  ['We drink it every morning. It is white. It is (　).', 'milk', 'food'], ['It is a sweet food for a birthday party. It is a (　).', 'cake', 'food'], ['We eat it with chopsticks. It is long. They are (　).', 'noodles', 'food'],
+  ['I read it in the library. It has many pages. It is a (　).', 'book', 'school'], ['I write with it. I can erase it. It is a (　).', 'pencil', 'school'], ['I put my books in it. It is a (　).', 'bag', 'school'], ['I sit on it in class. It is a (　).', 'chair', 'school'],
+  ['I wear them on my feet. They are (　).', 'shoes', 'clothes'], ['I wear it on my head. It is a (　).', 'hat', 'clothes'],
+  ['It has four wheels. It can take many people to school. It is a (　).', 'bus', 'transport'], ['It has two wheels. I ride it in the park. It is a (　).', 'bike', 'transport'], ['It can fly in the sky. It is an (　).', 'plane', 'transport'],
+  ['Doctors work here. Sick people go here. It is a (　).', 'hospital', 'place'], ['We can see many animals here. It is a (　).', 'zoo', 'place'], ['We can borrow books here. It is a (　).', 'library', 'place'],
+  ['The sun is shining today. It is (　).', 'sunny', 'weather'], ['Water is falling from the sky today. It is (　).', 'rainy', 'weather']
+];
+const QEN = {
+  names: [['Tom', 'He', 'he'], ['Amy', 'She', 'she'], ['Ben', 'He', 'he'], ['Lily', 'She', 'she'], ['Jack', 'He', 'he'], ['Mary', 'She', 'she'], ['Sam', 'He', 'he'], ['Anna', 'She', 'she'], ['Leo', 'He', 'he'], ['Cindy', 'She', 'she']],
+  nums: ['six', 'seven', 'eight', 'nine', 'ten'], months: ['one', 'two', 'three'],
+  subj: ['English', 'math', 'art', 'music', 'P.E.'], sport: ['basketball', 'baseball', 'soccer', 'tennis', 'badminton'],
+  tr: ['bus', 'bike', 'car', 'train'],
+  vo: { A: ['I', 'You', 'We', 'They'], B: ['He', 'She', 'Tom', 'Amy'] }, obj: ['apples', 'cats', 'a dog', 'a book', 'two eggs', 'three pens', 'bananas', 'a bike'],
+  words(lv) { return QEW.filter(w => w[3] <= lv); }
+};
+QEN.sub3 = (s) => /^(He|She|Tom|Amy)$/.test(s);
+const QEV = { like: 'likes', have: 'has', want: 'wants', see: 'sees' };
+const QEQ = {
+  pl: [['cat', 'cats'], ['dog', 'dogs'], ['box', 'boxes'], ['bus', 'buses'], ['watch', 'watches'], ['baby', 'babies'], ['child', 'children'], ['foot', 'feet'], ['man', 'men'], ['apple', 'apples'], ['strawberry', 'strawberries'], ['tomato', 'tomatoes'], ['book', 'books'], ['bird', 'birds'], ['peach', 'peaches'], ['family', 'families'], ['tooth', 'teeth'], ['woman', 'women']],
+  past: [['go', 'went'], ['eat', 'ate'], ['see', 'saw'], ['have', 'had'], ['play', 'played'], ['walk', 'walked'], ['buy', 'bought'], ['come', 'came'], ['make', 'made'], ['run', 'ran'], ['swim', 'swam'], ['sing', 'sang'], ['draw', 'drew'], ['watch', 'watched'], ['visit', 'visited'], ['write', 'wrote']],
+  third: [['go', 'goes'], ['like', 'likes'], ['have', 'has'], ['play', 'plays'], ['watch', 'watches'], ['study', 'studies'], ['eat', 'eats'], ['read', 'reads'], ['wash', 'washes'], ['fly', 'flies'], ['run', 'runs'], ['sing', 'sings']],
+  wh: [['What', 'is your name? My name is Amy.'], ['How old', 'are you? I am ten years old.'], ['Who', 'is he? He is my father.'], ['Where', 'do you live? I live in Taipei.'], ['When', 'is your birthday? It is in May.'], ['What time', 'is it? It is seven o\'clock.'], ['How many', 'apples do you have? I have five apples.'], ['How much', 'is the cake? It is fifty dollars.'], ['What color', 'is your bag? It is blue.']]
+};
+const QEPOSS = [['I', 'my'], ['You', 'your'], ['He', 'his'], ['She', 'her'], ['We', 'our'], ['They', 'their']];
+
+const QEm = (t, kp) => ({ s: '英文', t, kp });
+const QEe = (word, zh) => `${word} 的中文是「${zh}」。`;
+const eWrongC = (w, lv) => { const pool = QEN.words(lv).filter(x => x[0] !== w[0] && x[1] !== w[1] && x[2] !== 'number'); const same = QX.shuffle(pool.filter(x => x[2] === w[2])).slice(0, 2), rest = QX.shuffle(pool.filter(x => x[2] !== w[2])); return [...same, ...rest].slice(0, 3); };
+
+/* Vocabulary：英→中 */
+QX.add({ s: '英文', t: 'Vocabulary', lv: [3, 6], w: 8 }, function (lv) {
+  const w = QX.pick(QEN.words(lv)), wr = eWrongC(w, lv).map(x => x[1]);
+  return QX.q(QEm('Vocabulary', '英文·單字'), `"${w[0]}" 的中文意思是？`, w[1], wr, { explanation: QEe(w[0], w[1]), hint: '看圖片＋唸出聲＋拼一遍，三招一起用，單字記得牢。', wrongReason: '可能把長得像或意思相近的單字搞混了，多唸幾遍會更清楚。' });
+});
+/* Vocabulary：中→英 */
+QX.add({ s: '英文', t: 'Vocabulary', lv: [3, 6], w: 7 }, function (lv) {
+  const w = QX.pick(QEN.words(lv)), wr = eWrongC(w, lv).map(x => x[0]);
+  return QX.q(QEm('Vocabulary', '英文·單字'), `「${w[1]}」的英文是？`, w[0], wr, { explanation: `「${w[1]}」的英文是 ${w[0]}。`, hint: '看圖片＋唸出聲＋拼一遍，三招一起用，單字記得牢。', wrongReason: '可能把字母順序或長得像的單字記混了。' });
+});
+/* Vocabulary：拼字 */
+QX.add({ s: '英文', t: 'Vocabulary', lv: [4, 6], w: 5 }, function (lv) {
+  const ws = QEN.words(lv).filter(x => x[0].length >= 4 && /^[a-z]+$/.test(x[0])), w = QX.pick(ws), s = w[0], all = new Set(QEW.map(x => x[0]));
+  const vowels = 'aeiou', bad = new Set();
+  const tryAdd = t => { if (t !== s && !all.has(t) && t.length >= 3) bad.add(t); };
+  for (let i = 0; i < s.length - 1; i++) { if (s[i] !== s[i + 1]) tryAdd(s.slice(0, i) + s[i + 1] + s[i] + s.slice(i + 2)); }
+  for (let i = 1; i < s.length; i++) { tryAdd(s.slice(0, i) + s.slice(i + 1)); tryAdd(s.slice(0, i) + s[i] + s.slice(i)); }
+  for (let i = 0; i < s.length; i++) if (vowels.includes(s[i])) vowels.split('').forEach(v => { if (v !== s[i]) tryAdd(s.slice(0, i) + v + s.slice(i + 1)); });
+  const wr = QX.sample([...bad], 3); if (wr.length < 3) return null;
+  return QX.q(QEm('Vocabulary', '英文·單字拼寫'), `哪一個單字拼對了？（${w[1]}）`, s, wr, { explanation: `${w[1]} 的英文拼法是：${s.split('').join(' - ')}。`, hint: '把單字一個字母一個字母唸出來，再拼一次。', wrongReason: '可能字母漏掉、多了，或順序顛倒了。' });
+});
+/* Matching：看圖選字 */
+QX.add({ s: '英文', t: 'Matching', lv: [3, 6], w: 8 }, function (lv) {
+  const ws = QEN.words(lv).filter(x => x[4]), w = QX.pick(ws), wr = eWrongC(w, lv).filter(x => x[0] !== w[0]).slice(0, 3).map(x => x[0]);
+  if (wr.length < 3) return null;
+  return QX.q(QEm('Matching', '英文·看圖配對'), `Which word matches the picture?`, w[0], wr, { pic: { id: 'en_' + w[0], e: w[4] }, explanation: `圖片是 ${w[4]}，英文是 ${w[0]}（${w[1]}）。`, hint: '看到圖片，先在心裡唸出英文，再找拼法一樣的選項。', wrongReason: '可能把外形相近或同一類的東西搞混了。' });
+});
+/* Matching：分類配對 */
+const QEC = { animal: ['an animal', '動物'], fruit: ['a fruit', '水果'], color: ['a color', '顏色'], food: ['food', '食物'], family: ['a family member', '家人'], school: ['a school thing', '文具和學校用品'], body: ['a part of the body', '身體的一部分'], clothes: ['clothes', '衣服'], transport: ['a kind of transport', '交通工具'], place: ['a place', '地方'] };
+QX.add({ s: '英文', t: 'Matching', lv: [3, 6], w: 6 }, function (lv) {
+  const ws = QEN.words(lv).filter(x => QEC[x[2]]), cats = [...new Set(ws.map(x => x[2]))], c = QX.pick(cats);
+  const inC = ws.filter(x => x[2] === c), w = QX.pick(inC), oc = QX.sample(cats.filter(x => x !== c), 3);
+  const wr = oc.map(k => QX.pick(ws.filter(x => x[2] === k))[0]);
+  return QX.q(QEm('Matching', '英文·分類配對'), `Which one is ${QEC[c][0]}?`, w[0], wr, { explanation: `${w[0]}（${w[1]}）是${QEC[c][1]}。其他選項不是${QEC[c][1]}。`, hint: '先想想這一類有哪些東西，再用刪去法。', wrongReason: '可能把不同類別的單字搞混了。' });
+});
+/* Matching：相反詞 */
+QX.add({ s: '英文', t: 'Matching', lv: [4, 6], w: 5 }, function (lv) {
+  const [a, b] = QX.pick(QEO), flip = Math.random() < 0.5, x = flip ? a : b, y = flip ? b : a, pool = QEO.flat().filter(z => z !== a && z !== b);
+  return QX.q(QEm('Matching', '英文·相反詞'), `"${x}" 的相反詞是？`, y, QX.sample(pool, 3), { explanation: `${x} 和 ${y} 是相反的意思。`, hint: '把相反詞成對記：big–small、hot–cold、happy–sad。', wrongReason: '可能把相反詞和相近的詞搞混了。' });
+});
+/* Fill in Blank：定義句 */
+QX.add({ s: '英文', t: 'Fill in Blank', lv: [3, 6], w: 7 }, function (lv) {
+  const d = QX.pick(QED.filter(x => { const w = QEW.find(y => y[0] === x[1].replace(/s$/, '') || y[0] === x[1]); return !w || w[3] <= lv; })), cat = d[2];
+  const pool = QEW.filter(x => x[3] <= lv && x[2] !== cat && x[2] !== 'number' && x[0] !== d[1]).map(x => x[0]);
+  return QX.q(QEm('Fill in Blank', '英文·句子填空'), d[0], d[1], QX.sample(pool, 3), { explanation: `完整的句子是：${d[0].replace('(　)', d[1])}\n看句子裡的線索，答案是 ${d[1]}。`, hint: '先找句子裡的線索（顏色、聲音、用途），再選單字。', wrongReason: '可能沒有注意句子裡的線索，選到了類別不同的單字。' });
+});
+/* Fill in Blank / Sentence：文法 */
+QX.add({ s: '英文', t: 'Fill in Blank', lv: [3, 6], w: 8 }, function (lv) {
+  const k = QX.R(0, 7);
+  if (k === 0) { const [s, be] = QX.pick([['I', 'am'], ['You', 'are'], ['He', 'is'], ['She', 'is'], ['It', 'is'], ['We', 'are'], ['They', 'are'], ['Tom', 'is'], ['Amy and Ben', 'are']]), p = QX.pick(['a student', 'happy', 'tall', 'my friend', 'in the park', 'ten years old']), ok = be;
+    return QX.q(QEm('Fill in Blank', '英文·be 動詞'), `${s} (　) ${p}.`, ok, ['am', 'is', 'are'].filter(x => x !== ok).concat(['be']), { explanation: `${s} 要搭配 ${be}。口訣：I am、you are、he/she/it is、we/they are。`, hint: '口訣：I am、you are、he／she／it is、we／they are。', wrongReason: 'be 動詞要看前面的主詞：I 用 am，he/she/it 用 is，you/we/they 用 are。' }); }
+  if (k === 1) { const n = QX.pick(QEW.filter(x => ['animal', 'fruit', 'school', 'clothes'].includes(x[2]) && x[3] <= lv && !/s$/.test(x[0]))), art = /^[aeiou]/.test(n[0]) ? 'an' : 'a';
+    return QX.q(QEm('Fill in Blank', '英文·a 和 an'), `This is (　) ${n[0]}.`, art, ['a', 'an', 'two', 'many'].filter(x => x !== art).slice(0, 3), { explanation: `${n[0]} 的第一個音是${/^[aeiou]/.test(n[0]) ? '母音（a、e、i、o、u）' : '子音'}，所以用 ${art}。`, hint: '單字第一個音是母音（a e i o u）就用 an，其他用 a。', wrongReason: '要看單字開頭的聲音：母音開頭用 an，其他用 a。' }); }
+  if (k === 2) { const [sg, pl] = QX.pick(QEQ.pl), num = QX.pick(['two', 'three', 'four', 'five']), wr = [sg, sg + 's', sg + 'es', pl + 's'].filter(x => x !== pl).concat([sg + 'ies']).filter(x => x !== pl);
+    return QX.q(QEm('Fill in Blank', '英文·名詞複數'), `I have ${num} (　).`, pl, QX.sample([...new Set(wr)], 3), { explanation: `${num}（${num === 'two' ? '二' : num === 'three' ? '三' : num === 'four' ? '四' : '五'}個）以上，名詞要用複數：${sg} → ${pl}。`, hint: '兩個以上要變複數：一般加 s；s、x、ch、sh 結尾加 es；子音+y 去 y 加 ies。', wrongReason: '兩個以上的東西，名詞要變成複數形。' }); }
+  if (k === 3) { const [b, t] = QX.pick(QEQ.third), s = QX.pick(['He', 'She', 'Tom', 'Amy', 'My father']), wr = [b, b + 'ing', 'to ' + b];
+    return QX.q(QEm('Fill in Blank', '英文·第三人稱單數'), `${s} (　) every day.`, t, wr, { explanation: `${s} 是第三人稱單數，動詞要加 s 或 es：${b} → ${t}。`, hint: 'he、she、it 或單一個人，動詞後面要加 s／es。', wrongReason: '主詞是 he／she／單一個人時，動詞要變成第三人稱單數形。' }); }
+  if (k === 4) { const third = Math.random() < 0.5, s = third ? QX.pick(['he', 'she', 'Tom', 'Amy']) : QX.pick(['you', 'they', 'we', 'I']), ok = third ? 'Does' : 'Do', o = QX.pick(['like apples', 'play basketball', 'have a pet', 'go to school']);
+    return QX.q(QEm('Fill in Blank', '英文·Do 和 Does'), `(　) ${s} ${o}?`, ok, ['Do', 'Does', 'Is', 'Are'].filter(x => x !== ok), { explanation: `${s} ${third ? '是第三人稱單數' : '不是第三人稱單數'}，一般動詞的問句開頭用 ${ok}。`, hint: '問句開頭：he／she／it 用 Does，I／you／we／they 用 Do，後面動詞用原形。', wrongReason: '一般動詞的問句，要看主詞是不是 he／she／it。' }); }
+  if (k === 5 && lv >= 5) { const [b, p] = QX.pick(QEQ.past), t = QX.pick(['Yesterday', 'Last night', 'Last week', 'Two days ago']), wr = [b, b + 'ing', b + 's'];
+    return QX.q(QEm('Fill in Blank', '英文·過去式'), `${t}, I (　) to the park.`.replace('to the park', QX.pick(['to the park', 'a lot', 'with my friends'])).replace('(　) a lot', '(　) a lot'), p, wr.filter(x => x !== p), { explanation: `${t} 表示過去發生的事，動詞要用過去式：${b} → ${p}。`, hint: '句子有 yesterday、last…、ago，就是過去式。', wrongReason: '句子有 yesterday／last／ago 這類字，動詞要用過去式。' }); }
+  if (k === 6) { const [q, a] = QX.pick(QEQ.wh); return QX.q(QEm('Fill in Blank', '英文·疑問詞'), `(　) ${a.split('? ')[0]}? ${a.split('? ')[1]}`, q, ['What', 'How old', 'Who', 'Where', 'When', 'What time', 'How many', 'How much', 'What color'].filter(x => x !== q), { explanation: `看回答「${a.split('? ')[1]}」，問的是：${q}。`, hint: '看答句：說名字用 What、說年齡用 How old、說地方用 Where、說時間用 When。', wrongReason: '要根據回答的內容，選出對應的疑問詞。' }); }
+  const [s, pos] = QX.pick(QEPOSS), pet = QX.pick(['cat', 'dog', 'bag', 'book', 'hat']);
+  const subj = s === 'I' ? 'I' : s; const wr = QEPOSS.map(x => x[1]).filter(x => x !== pos);
+  return QX.q(QEm('Fill in Blank', '英文·所有格'), `${subj} ${/^(He|She)$/.test(s) ? 'has' : 'have'} a ${pet}. (　) ${pet} is nice.`, pos, wr, { explanation: `${s} 的所有格是 ${pos}。口訣：I–my、you–your、he–his、she–her、we–our、they–their。`, hint: '口訣：I–my、you–your、he–his、she–her、we–our、they–their。', wrongReason: '「誰的」要用所有格，要先看第一句的主詞是誰。' });
+});
+/* Sentence：重組句子 */
+QX.add({ s: '英文', t: 'Sentence', lv: [3, 6], w: 7 }, function (lv) {
+  const third = Math.random() < 0.5, s = QX.pick(third ? QEN.vo.B : QEN.vo.A), v = QX.pick(Object.keys(QEV)), o = QX.pick(QEN.obj), verb = third ? QEV[v] : v;
+  const ok = `${s} ${verb} ${o}.`, wrong = [`${verb[0].toUpperCase() + verb.slice(1)} ${s.toLowerCase()} ${o}.`, `${s} ${o} ${verb}.`, `${o[0].toUpperCase() + o.slice(1)} ${verb} ${s.toLowerCase()}.`, `${verb[0].toUpperCase() + verb.slice(1)} ${o} ${s.toLowerCase()}.`];
+  const chunks = QX.shuffle([s, verb, o.replace(/\.$/, '')]).join(' / ');
+  return QX.q(QEm('Sentence', '英文·句子排列'), `把這些字排成一個句子：${chunks}`, ok, QX.sample(wrong, 3), { explanation: `英文句子的順序：主詞（誰）＋動詞（做什麼）＋受詞（什麼東西）。\n${s} ＋ ${verb} ＋ ${o}\n所以是：${ok}`, hint: '句子順序口訣：「誰」＋「做什麼」＋「什麼東西」。', wrongReason: '英文句子大多是「誰＋動詞＋東西」，順序放錯就不通順。' });
+});
+/* Reading */
+QX.add({ s: '英文', t: 'Reading', lv: [3, 6], w: 12 }, function (lv) {
+  const [N, He, he] = QX.pick(QEN.names), mk = (pass, stem, ans, wr, kp, why) => QX.q(QEm('Reading', '英文·閱讀（' + kp + '）'), stem, ans, wr, { passage: pass, explanation: why, hint: '先讀問題，再回到短文裡找關鍵字，答案就在裡面。', wrongReason: '可能沒有回到短文找答案，或把兩個人的資料搞混了。' });
+  if (lv <= 4) {
+    const age = QX.R(7, 12), fr = QX.pick(QEW.filter(x => x[2] === 'fruit' && x[3] <= 4)), pet = QX.pick(QEW.filter(x => ['cat', 'dog', 'bird', 'fish', 'rabbit', 'turtle'].includes(x[0]))), pass = `Hi! I am ${N}. I am ${age} years old. I like ${fr[0]}s. I have a ${pet[0]}.`, k = QX.R(0, 2);
+    if (k === 0) return mk(pass, `How old is ${N}?`, String(age), QX.others([7, 8, 9, 10, 11, 12, 13].map(String), String(age), 3), '細節', `短文說：I am ${age} years old. 所以 ${N} ${age} 歲。`);
+    if (k === 1) return mk(pass, `What does ${N} like?`, fr[0] + 's', QX.others(QEW.filter(x => x[2] === 'fruit' && x[3] <= 4).map(x => x[0] + 's'), fr[0] + 's', 3), '細節', `短文說：I like ${fr[0]}s. 所以 ${N} 喜歡${fr[1]}。`);
+    return mk(pass, `What pet does ${N} have?`, pet[0], QX.others(['cat', 'dog', 'bird', 'fish', 'rabbit', 'turtle'], pet[0], 3), '細節', `短文說：I have a ${pet[0]}. 所以 ${N} 養的寵物是${pet[1]}。`);
+  }
+  const t1 = QX.pick(['six', 'seven']), t2 = QX.pick(['eight', 'nine', 'ten']), tr = QX.pick(QEN.tr), sb = QX.pick(QEN.subj), sp = QX.pick(QEN.sport);
+  const pass = `${N} gets up at ${t1} o'clock. ${He} goes to school by ${tr}. At school, ${he} likes ${sb}. After school, ${he} plays ${sp}. ${He} goes to bed at ${t2} o'clock.`, k = QX.R(0, 4);
+  if (k === 0) return mk(pass, `What time does ${N} get up?`, `${t1} o'clock`, QX.others(['six', 'seven', 'eight', 'nine', 'ten'].map(x => x + " o'clock"), `${t1} o'clock`, 3), '細節', `短文說：${N} gets up at ${t1} o'clock.`);
+  if (k === 1) return mk(pass, `How does ${N} go to school?`, `By ${tr}.`, QX.others(QEN.tr.map(x => `By ${x}.`), `By ${tr}.`, 3), '細節', `短文說：${He} goes to school by ${tr}.`);
+  if (k === 2) return mk(pass, `What does ${N} like at school?`, sb, QX.others(QEN.subj, sb, 3), '細節', `短文說：At school, ${he} likes ${sb}.`);
+  if (k === 3) return mk(pass, `What does ${N} play after school?`, sp, QX.others(QEN.sport, sp, 3), '細節', `短文說：After school, ${he} plays ${sp}.`);
+  return mk(pass, `What time does ${N} go to bed?`, `${t2} o'clock`, QX.others(['six', 'seven', 'eight', 'nine', 'ten'].map(x => x + " o'clock"), `${t2} o'clock`, 3), '細節', `短文說：${He} goes to bed at ${t2} o'clock.`);
+});
+
+/* ===================== 自然題庫（觀察／實驗／判斷／圖片辨識） ===================== */
+// [名稱, emoji, 類別, 食性]
+const QSA = [
+  ['狗', '🐶', '哺乳類', '雜食'], ['貓', '🐱', '哺乳類', '肉食'], ['牛', '🐄', '哺乳類', '草食'], ['馬', '🐴', '哺乳類', '草食'], ['豬', '🐷', '哺乳類', '雜食'], ['羊', '🐑', '哺乳類', '草食'], ['兔子', '🐰', '哺乳類', '草食'], ['老虎', '🐯', '哺乳類', '肉食'], ['獅子', '🦁', '哺乳類', '肉食'], ['大象', '🐘', '哺乳類', '草食'], ['猴子', '🐵', '哺乳類', '雜食'], ['熊貓', '🐼', '哺乳類', '草食'], ['長頸鹿', '🦒', '哺乳類', '草食'], ['斑馬', '🦓', '哺乳類', '草食'], ['鯨魚', '🐳', '哺乳類', ''], ['海豚', '🐬', '哺乳類', '肉食'], ['蝙蝠', '🦇', '哺乳類', ''], ['袋鼠', '🦘', '哺乳類', '草食'],
+  ['雞', '🐔', '鳥類', '雜食'], ['鴨子', '🦆', '鳥類', '雜食'], ['企鵝', '🐧', '鳥類', '肉食'], ['老鷹', '🦅', '鳥類', '肉食'], ['貓頭鷹', '🦉', '鳥類', '肉食'], ['鸚鵡', '🦜', '鳥類', ''], ['天鵝', '🦢', '鳥類', ''],
+  ['魚', '🐟', '魚類', ''], ['鯊魚', '🦈', '魚類', '肉食'], ['熱帶魚', '🐠', '魚類', ''],
+  ['蛇', '🐍', '爬蟲類', '肉食'], ['烏龜', '🐢', '爬蟲類', ''], ['鱷魚', '🐊', '爬蟲類', '肉食'], ['蜥蜴', '🦎', '爬蟲類', '肉食'],
+  ['青蛙', '🐸', '兩生類', '肉食'],
+  ['蝴蝶', '🦋', '昆蟲', ''], ['蜜蜂', '🐝', '昆蟲', ''], ['螞蟻', '🐜', '昆蟲', ''], ['瓢蟲', '🐞', '昆蟲', ''], ['蚊子', '🦟', '昆蟲', ''], ['蟋蟀', '🦗', '昆蟲', '']
+];
+const QSC = { 哺乳類: '胎生，用乳汁哺育小寶寶', 鳥類: '身上有羽毛，有翅膀', 魚類: '用鰓呼吸，一輩子生活在水中', 爬蟲類: '用肺呼吸，皮膚乾燥有鱗片或硬殼，在陸地上產卵', 兩生類: '幼體在水中用鰓呼吸，長大後也能在陸地生活', 昆蟲: '身體分成頭、胸、腹三部分，有六隻腳' };
+const QSM = (t, kp) => ({ s: '自然', t, kp });
+
+/* 圖片辨識：動物 */
+QX.add({ s: '自然', t: '圖片辨識', lv: [2, 6], w: 7 }, function (lv) {
+  const a = QX.pick(QSA);
+  return QX.q(QSM('圖片辨識', '自然·動物（認識動物）'), `圖片中的動物是什麼？`, a[0], QX.sample(QSA.filter(x => x[0] !== a[0]).map(x => x[0]), 3), { pic: { id: 'an_' + a[0], e: a[1] }, explanation: `圖片是 ${a[1]}，牠是「${a[0]}」，屬於${a[2]}。`, hint: '看動物的外形：身體、四肢、有沒有羽毛、鱗片或翅膀。', wrongReason: '可能把外形相近的動物搞混了。' });
+});
+/* 圖片辨識＋分類 */
+QX.add({ s: '自然', t: '圖片辨識', lv: [3, 6], w: 6 }, function (lv) {
+  const a = QX.pick(QSA), cls = Object.keys(QSC);
+  return QX.q(QSM('圖片辨識', '自然·動物（動物分類）'), `圖片中的${a[0]}屬於哪一類動物？`, a[2], QX.sample(cls.filter(x => x !== a[2]), 3), { pic: { id: 'an_' + a[0], e: a[1] }, explanation: `${a[0]}屬於${a[2]}。\n${a[2]}的特徵：${QSC[a[2]]}。`, hint: '分類口訣：有毛會餵奶＝哺乳類；有羽毛＝鳥類；有鰓有鱗＝魚類；六隻腳＝昆蟲。', wrongReason: '可能被外表騙了：鯨魚和海豚住在水裡，但牠們是哺乳類；蝙蝠會飛，但牠也是哺乳類。' });
+});
+/* 判斷：由特徵找類別 */
+QX.add({ s: '自然', t: '判斷', lv: [4, 6], w: 5 }, function (lv) {
+  const cls = QX.pick(Object.keys(QSC));
+  return QX.q(QSM('判斷', '自然·動物（動物特徵）'), `「${QSC[cls]}」是哪一類動物的特徵？`, cls, QX.sample(Object.keys(QSC).filter(x => x !== cls), 3), { explanation: `「${QSC[cls]}」是${cls}的特徵。\n例如：${QX.sample(QSA.filter(x => x[2] === cls).map(x => x[0]), Math.min(3, QSA.filter(x => x[2] === cls).length)).join('、')}。`, hint: '把每一類動物的特徵編成口訣：哺乳類胎生、鳥類有羽毛、魚類有鰓。', wrongReason: '可能把兩類動物的特徵搞混了。' });
+});
+/* 判斷：食性 */
+QX.add({ s: '自然', t: '判斷', lv: [3, 6], w: 5 }, function (lv) {
+  const diets = ['草食', '肉食', '雜食'], d = QX.pick(diets), ok = QX.pick(QSA.filter(x => x[3] === d)), no = QX.sample(QSA.filter(x => x[3] && x[3] !== d), 3);
+  const nm = { 草食: '草食動物（只吃植物）', 肉食: '肉食動物（吃其他動物）', 雜食: '雜食動物（植物和動物都吃）' }[d];
+  return QX.q(QSM('判斷', '自然·動物（食性）'), `下面哪一種動物是${nm}？`, ok[0], no.map(x => x[0]), { explanation: `${ok[0]}是${nm}。\n其他選項：${no.map(x => x[0] + '是' + x[3] + '動物').join('；')}。`, hint: '草食吃植物（牛、馬、羊）；肉食吃動物（獅子、老虎）；雜食都吃（豬、雞）。', wrongReason: '可能把不同食性的動物搞混了。' });
+});
+/* 判斷：誰是不是昆蟲／正確說法 */
+const QST = [   // [說法, 真假]
+  ['光沿著直線前進', 1], ['影子是光被擋住形成的', 1], ['太陽從東邊升起', 1], ['月亮本身不會發光，我們看到的是太陽的反光', 1], ['地球繞著太陽公轉一圈大約是一年', 1], ['地球自轉一圈大約是一天', 1], ['聲音是由物體振動產生的', 1], ['敲鼓時鼓面會振動', 1], ['磁鐵有 N 極和 S 極兩個磁極', 1], ['磁鐵的同極會互相排斥，異極會互相吸引', 1], ['電池、燈泡和導線連成通路，燈泡才會亮', 1], ['水結成冰時，體積會變大', 1], ['水加熱到沸騰會變成水蒸氣', 1], ['植物的葉子可以進行光合作用', 1], ['種子發芽需要水、空氣和適當的溫度', 1], ['蝴蝶的一生會經過卵、幼蟲、蛹、成蟲四個時期', 1], ['蝙蝠是哺乳類動物', 1], ['鯨魚是哺乳類動物', 1], ['企鵝是鳥類', 1], ['蜘蛛不是昆蟲', 1], ['溫度計是用來測量溫度的工具', 1], ['太陽是一顆恆星', 1], ['八大行星中最大的是木星', 1], ['離太陽最近的行星是水星', 1], ['月亮繞著地球轉', 1], ['回收可以減少垃圾，保護環境', 1], ['風力發電不會排放二氧化碳', 1], ['鏡子可以反射光', 1], ['夏天白天的時間比冬天長', 1],
+  ['光會拐彎前進', 0], ['太陽從西邊升起', 0], ['月亮自己會發光', 0], ['地球繞著月亮轉', 0], ['地球自轉一圈要一年', 0], ['聲音可以在真空中傳播', 0], ['磁鐵可以吸住所有的金屬', 0], ['磁鐵的同極會互相吸引', 0], ['燈泡不用接導線也會亮', 0], ['水結成冰時，體積會變小', 0], ['植物的根負責進行光合作用', 0], ['種子發芽一定要有陽光才行', 0], ['蝙蝠是鳥類', 0], ['鯨魚是魚類', 0], ['企鵝是魚類', 0], ['蜘蛛是昆蟲', 0], ['昆蟲都有八隻腳', 0], ['太陽是一顆行星', 0], ['八大行星中最小的是木星', 0], ['離太陽最遠的行星是水星', 0], ['太陽繞著地球轉', 0], ['冬天的白天比夏天的白天長', 0], ['蚯蚓是昆蟲', 0], ['所有的鳥都會飛', 0], ['魚用肺呼吸', 0], ['青蛙一輩子都生活在水裡', 0], ['蝴蝶的幼蟲叫做蝌蚪', 0], ['塑膠瓶可以隨手丟進河裡', 0]
+];
+QX.add({ s: '自然', t: '判斷', lv: [3, 6], w: 9 }, function (lv) {
+  const T = QST.filter(x => x[1] === 1), F = QST.filter(x => x[1] === 0), wantTrue = Math.random() < 0.5;
+  const ok = QX.pick(wantTrue ? T : F), oth = QX.sample(wantTrue ? F : T, 3);
+  return QX.q(QSM('判斷', '自然·科學概念（判斷說法）'), `下面哪一個說法是${wantTrue ? '正確' : '錯誤'}的？`, ok[0], oth.map(x => x[0]), { explanation: `${wantTrue ? '正確' : '錯誤'}的說法是：「${ok[0]}」。\n${wantTrue ? '其他三個說法都是錯的。' : '其他三個說法都是對的。'}`, hint: '先把每個說法想一遍：有學過嗎？有觀察過嗎？再用刪去法。', wrongReason: '可能被看起來很像的說法騙了，要把每個選項都檢查一遍。' });
+});
+/* 實驗：控制變因 */
+const QSE = [
+  { goal: '水分對種子發芽的影響', vary: '澆水的多少', ctl: ['種子的種類', '放置的溫度', '土壤的種類'] },
+  { goal: '陽光對植物生長的影響', vary: '有沒有照到陽光', ctl: ['植物的種類', '澆水的量', '土壤的種類'] },
+  { goal: '水溫對糖溶解快慢的影響', vary: '水的溫度', ctl: ['糖的量', '水的量', '攪拌的方式'] },
+  { goal: '斜坡高度對小球滾動距離的影響', vary: '斜坡的高度', ctl: ['小球的大小和重量', '地面的材質', '放開小球的方式'] },
+  { goal: '手電筒距離對影子大小的影響', vary: '手電筒到物體的距離', ctl: ['物體的大小', '手電筒的亮度', '牆壁的位置'] },
+  { goal: '距離對磁鐵吸引力的影響', vary: '磁鐵和鐵釘之間的距離', ctl: ['磁鐵的種類', '鐵釘的大小', '鐵釘的數量'] },
+  { goal: '擺長對單擺擺動快慢的影響', vary: '擺繩的長度', ctl: ['擺錘的重量', '擺動的角度', '測量的時間長度'] },
+  { goal: '溫度對冰塊融化快慢的影響', vary: '放置的環境溫度', ctl: ['冰塊的大小', '冰塊的形狀', '杯子的材質'] },
+  { goal: '機翼大小對紙飛機飛行距離的影響', vary: '機翼的大小', ctl: ['紙的種類', '摺的方法', '丟出的力量'] },
+  { goal: '重量對彈簧伸長量的影響', vary: '掛上去的重量', ctl: ['彈簧的種類', '彈簧原來的長度', '懸掛的位置'] },
+  { goal: '風對水蒸發快慢的影響', vary: '有沒有風吹', ctl: ['水的量', '杯子的大小', '環境的溫度'] },
+  { goal: '不同材料對保溫效果的影響', vary: '包住杯子的材料', ctl: ['熱水的量', '熱水一開始的溫度', '杯子的種類', '放置的時間'] }
+];
+QX.add({ s: '自然', t: '實驗', lv: [4, 6], w: 9 }, function (lv) {
+  const e = QX.pick(QSE);
+  if (Math.random() < 0.55) return QX.q(QSM('實驗', '自然·科學方法（改變的條件）'), `要做「${e.goal}」的實驗，這個實驗要改變的條件是什麼？`, e.vary, QX.sample(e.ctl, 3), { explanation: `要研究「${e.goal}」，就只改變「${e.vary}」，其他條件（${e.ctl.join('、')}）都要保持一樣，這樣才公平。`, hint: '公平測試口訣：只改變一個條件，其他條件都保持不變。', wrongReason: '可能把「要保持不變的條件」當成「要改變的條件」了。' });
+  const ok = QX.pick(e.ctl), others = QSE.filter(x => x !== e), wr = [e.vary, ...QX.sample([...new Set(others.flatMap(x => x.ctl))].filter(x => !e.ctl.includes(x) && x !== e.vary), 2)];
+  return QX.q(QSM('實驗', '自然·科學方法（控制變因）'), `做「${e.goal}」的實驗時，下面哪一個條件必須保持一樣？`, ok, wr, { explanation: `「${e.vary}」是要改變的條件；其他條件像「${ok}」都要保持一樣，結果才可靠。`, hint: '公平測試口訣：只改變一個條件，其他條件都保持不變。', wrongReason: '要改變的條件不能保持一樣，而和實驗無關的條件也不用控制。' });
+});
+/* 觀察：浮沉、磁鐵、導電、透明 */
+const QSO = {
+  float: ['木塊', '保麗龍', '軟木塞', '乒乓球', '樹葉', '塑膠鴨子'], sink: ['石頭', '鐵釘', '硬幣', '玻璃彈珠', '鑰匙', '迴紋針'],
+  mag: ['鐵釘', '迴紋針', '鐵片'], nomag: ['塑膠尺', '橡皮擦', '木塊', '紙張', '玻璃彈珠', '鋁箔'],
+  cond: ['銅線', '鋁箔', '鐵釘', '迴紋針', '鑰匙'], nocond: ['塑膠尺', '橡皮擦', '木筷', '玻璃杯', '紙張', '毛線'],
+  clear: ['玻璃杯', '保鮮膜', '透明塑膠袋', '乾淨的水'], semi: ['描圖紙', '毛玻璃', '薄薄的白紙'], opaque: ['木板', '紙箱', '鐵片', '石頭']
+};
+QX.add({ s: '自然', t: '觀察', lv: [3, 6], w: 8 }, function (lv) {
+  const k = QX.R(0, 5);
+  if (k === 0) { const f = Math.random() < 0.5, it = QX.pick(f ? QSO.float : QSO.sink), ans = f ? '浮在水面上' : '沉到水底'; return QX.q(QSM('觀察', '自然·物質（浮與沉）'), `把「${it}」放進裝滿水的水槽裡，會看到什麼情形？`, ans, [f ? '沉到水底' : '浮在水面上', '溶解在水裡', '變成水蒸氣飛走'], { explanation: `「${it}」放進水裡會${ans}。\n（比水輕的東西會浮，比水重的東西會沉。）`, hint: '多做幾次實驗：浮的有木塊、保麗龍；沉的有石頭、鐵釘。', wrongReason: '東西會浮還是會沉，要看牠是比水輕還是比水重，不是看大小。' }); }
+  if (k === 1) { const ok = QX.pick(QSO.mag); return QX.q(QSM('觀察', '自然·物理現象（磁鐵）'), `磁鐵可以吸住下面哪一種東西？`, ok, QX.sample(QSO.nomag, 3), { explanation: `磁鐵可以吸住鐵製的東西，像是${ok}。塑膠、木頭、紙張、橡皮擦、鋁箔都吸不住。`, hint: '磁鐵吸「鐵」：鐵釘、迴紋針；塑膠、木頭、紙都不會被吸。', wrongReason: '不是所有金屬都會被磁鐵吸住，鋁箔就吸不住。' }); }
+  if (k === 2) { const good = Math.random() < 0.5, ok = QX.pick(good ? QSO.cond : QSO.nocond); return QX.q(QSM('觀察', '自然·物理現象（電路與導電）'), good ? `要讓燈泡亮起來，下面哪一種材料可以讓電流通過？` : `下面哪一種材料不能讓電流通過？`, ok, QX.sample(good ? QSO.nocond : QSO.cond, 3), { explanation: `${good ? '金屬類的東西（如' + ok + '）可以導電' : ok + '不能導電'}。\n${good ? '塑膠、木頭、玻璃、橡皮擦、紙張不導電。' : '銅線、鋁箔、鐵釘、迴紋針、鑰匙都能導電。'}`, hint: '金屬會導電；塑膠、木頭、玻璃、橡膠、紙不導電。', wrongReason: '金屬大多可以導電；塑膠、木頭、玻璃、橡膠、紙不導電。' }); }
+  if (k === 3) { const kind = QX.pick([['clear', '透明'], ['semi', '半透明'], ['opaque', '不透明']]), ok = QX.pick(QSO[kind[0]]), others = ['clear', 'semi', 'opaque'].filter(x => x !== kind[0]).flatMap(x => QSO[x]);
+    return QX.q(QSM('觀察', '自然·物理現象（光與透明度）'), `下面哪一種東西是${kind[1]}的？`, ok, QX.sample(others, 3), { explanation: `光可以${kind[0] === 'clear' ? '完全穿過透明的東西，像' : kind[0] === 'semi' ? '穿過一部分半透明的東西，像' : '穿過的很少，不透明的東西像'}${ok}。`, hint: '透明：看得清楚；半透明：模模糊糊；不透明：完全看不到另一邊。', wrongReason: '要想想看：光能不能穿過它？穿過以後看得清不清楚？' }); }
+  if (k === 4) { const S = [['冰塊放在太陽下，慢慢變成水', '熔化'], ['濕衣服掛在太陽下慢慢變乾', '蒸發'], ['冰水杯外面出現小水珠', '凝結'], ['把水放進冷凍庫變成冰塊', '凝固'], ['雪人被太陽曬得越來越小', '熔化'], ['地上的水坑慢慢變乾', '蒸發'], ['冬天哈氣時出現白白的水霧', '凝結'], ['冷凍庫裡的水變硬了', '凝固']];
+    const [s, a] = QX.pick(S); return QX.q(QSM('觀察', '自然·物質（水的三態變化）'), `「${s}」，這是什麼現象？`, a, ['熔化', '蒸發', '凝結', '凝固'].filter(x => x !== a), { explanation: `「${s}」是${a}。\n水的三態：冰（固態）→水（液態）→水蒸氣（氣態）。固變液＝熔化、液變氣＝蒸發、氣變液＝凝結、液變固＝凝固。`, hint: '水的三態：加熱往右（熔化、蒸發），降溫往左（凝結、凝固）。', wrongReason: '要先判斷是從什麼狀態變成什麼狀態，再選名字。' }); }
+  const plant = [['胡蘿蔔', '根', '🥕'], ['白蘿蔔', '根', ''], ['高麗菜', '葉', '🥬'], ['菠菜', '葉', ''], ['花椰菜', '花', '🥦'], ['番茄', '果實', '🍅'], ['青椒', '果實', ''], ['玉米', '種子', '🌽'], ['芹菜', '莖', ''], ['馬鈴薯', '莖', '🥔']], [v, part, em] = QX.pick(plant);
+  return QX.q(QSM('觀察', '自然·植物（植物的構造）'), `我們吃${v}的時候，吃的是植物的哪一個部分？`, part, ['根', '莖', '葉', '花', '果實', '種子'].filter(x => x !== part), Object.assign({ explanation: `${v}是植物的「${part}」。\n植物有根、莖、葉、花、果實、種子六個部分。` , hint: '根吸水、莖運送、葉做養分、花結果、種子長新苗。', wrongReason: '要想想看這個蔬菜長在植物的哪個位置。' }, em ? { pic: { id: 'veg_' + v, e: em } } : {}));
+});
+/* 植物構造功能 */
+QX.add({ s: '自然', t: '判斷', lv: [3, 6], w: 5 }, function (lv) {
+  const P = [['根', '吸收水分和養分，並固定植物'], ['莖', '支撐植物，並把水分和養分運送到全身'], ['葉', '進行光合作用，製造養分'], ['花', '結出果實和種子，讓植物繁殖後代'], ['果實', '保護種子，也能幫助種子傳播'], ['種子', '發芽後可以長成新的植物']], [p, f] = QX.pick(P);
+  return QX.q(QSM('判斷', '自然·植物（構造與功能）'), `植物的「${p}」有什麼功能？`, f, QX.sample(P.filter(x => x[0] !== p).map(x => x[1]), 3), { explanation: `「${p}」的功能是：${f}。`, hint: '根吸水、莖運送、葉做養分、花結果、種子長新苗。', wrongReason: '可能把植物不同部分的功能搞混了。' });
+});
+/* 圖片辨識：天氣與自然物 */
+const QSP = [['☀️', '晴天'], ['☁️', '陰天'], ['🌧️', '下雨天'], ['⛈️', '打雷下雨'], ['❄️', '下雪'], ['🌈', '彩虹'], ['🌪️', '龍捲風'], ['💨', '颳大風'], ['🌙', '月亮'], ['⭐', '星星'], ['🌍', '地球'], ['🧲', '磁鐵'], ['🔋', '電池'], ['💡', '燈泡'], ['🌡️', '溫度計'], ['🔭', '望遠鏡'], ['🔬', '顯微鏡'], ['🌱', '幼苗'], ['🌻', '向日葵'], ['🌵', '仙人掌'], ['🌋', '火山'], ['⚡', '閃電']];
+QX.add({ s: '自然', t: '圖片辨識', lv: [2, 6], w: 7 }, function (lv) {
+  const [e, n] = QX.pick(QSP);
+  return QX.q(QSM('圖片辨識', '自然·認識自然現象與工具'), `圖片中的是什麼？`, n, QX.sample(QSP.filter(x => x[1] !== n).map(x => x[1]), 3), { pic: { id: 'na_' + n, e }, explanation: `圖片是 ${e}，它是「${n}」。`, hint: '仔細看圖片的形狀和顏色，再想想平常在哪裡看過。', wrongReason: '可能把外形相近的東西搞混了。' });
+});
+/* 工具 */
+QX.add({ s: '自然', t: '觀察', lv: [3, 6], w: 4 }, function (lv) {
+  const T = [['要觀察很小的東西，例如細胞或小昆蟲的細節', '顯微鏡', ['溫度計', '量尺', '望遠鏡']], ['要觀察遠處的星星', '望遠鏡', ['顯微鏡', '溫度計', '指南針']], ['要知道水有多熱', '溫度計', ['望遠鏡', '磁鐵', '放大鏡']], ['要找出方向（東南西北）', '指南針', ['溫度計', '放大鏡', '電池']], ['要量一枝鉛筆的長度', '尺', ['溫度計', '放大鏡', '指南針']], ['要把葉子上的小細節看得更清楚', '放大鏡', ['溫度計', '指南針', '尺']]], [s, a, w] = QX.pick(T);
+  return QX.q(QSM('觀察', '自然·科學方法（觀察與測量工具）'), `${s}，可以使用什麼工具？`, a, w, { explanation: `${s}，適合使用「${a}」。`, hint: '把工具和用途成對記：溫度計量溫度、望遠鏡看遠處、顯微鏡看很小的東西。', wrongReason: '每種工具有自己的用途，要想想看題目要觀察或測量什麼。' });
+});
+/* 行星 */
+const QSPL = ['水星', '金星', '地球', '火星', '木星', '土星', '天王星', '海王星'];
+QX.add({ s: '自然', t: '判斷', lv: [5, 6], w: 5 }, function (lv) {
+  const k = QX.R(0, 3);
+  if (k === 0) { const i = QX.R(0, 7); return QX.q(QSM('判斷', '自然·天文（太陽系的行星）'), `在八大行星中，離太陽第 ${i + 1} 近的是哪一顆？`, QSPL[i], QX.others(QSPL, QSPL[i], 3), { explanation: `行星從近到遠排：${QSPL.join('、')}。\n第 ${i + 1} 顆是${QSPL[i]}。`, hint: '行星順序口訣：水金地火木土天海，從近到遠。', wrongReason: '要把行星從近到遠的順序背熟。' }); }
+  if (k === 1) return QX.q(QSM('判斷', '自然·天文（太陽系的行星）'), `八大行星中，體積最大的是哪一顆？`, '木星', ['地球', '火星', '金星', '水星'].slice(0, 3), { explanation: '木星是八大行星中最大的一顆。', hint: '木星最大，像「老大」一樣。', wrongReason: '八大行星裡，木星是體積最大的。' });
+  if (k === 2) return QX.q(QSM('判斷', '自然·天文（太陽系的行星）'), `哪一顆行星有明顯又漂亮的光環？`, '土星', ['木星', '火星', '金星', '水星'].slice(0, 3), { explanation: '土星有明顯又漂亮的光環。', hint: '土星戴著大大的「帽子」（光環）。', wrongReason: '有明顯光環的是土星。' });
+  const f = Math.random() < 0.5; return QX.q(QSM('判斷', '自然·天文（太陽系的行星）'), `八大行星中，離太陽${f ? '最近' : '最遠'}的是哪一顆？`, f ? '水星' : '海王星', QX.others(QSPL, f ? '水星' : '海王星', 3), { explanation: `行星從近到遠：${QSPL.join('、')}。${f ? '水星最近' : '海王星最遠'}。`, hint: '行星順序口訣：水金地火木土天海。', wrongReason: '要把行星從近到遠的順序背熟。' });
+});
+/* 能源與環保 */
+QX.add({ s: '自然', t: '判斷', lv: [5, 6], w: 3 }, function (lv) {
+  const re = ['太陽能', '風力', '水力'], nr = ['石油', '煤', '天然氣'], f = Math.random() < 0.5;
+  return QX.q(QSM('判斷', '自然·環境（能源）'), f ? `下面哪一種能源，用完了就不會再有？` : `下面哪一種能源，可以一直使用、不會用完？`, QX.pick(f ? nr : re), QX.sample(f ? re : nr, 3), { explanation: f ? '石油、煤、天然氣是億萬年形成的，用完就沒有了。' : '太陽能、風力、水力可以不斷再生，不會用完。', hint: '石油煤炭會用完；太陽、風、水會一直有。', wrongReason: '要分清楚哪些能源會用完、哪些可以再生。' });
+});
+/* 參數題：計算 */
+QX.add({ s: '自然', t: '實驗', lv: [3, 6], w: 6 }, function (lv) {
+  const k = QX.R(0, 3);
+  if (k === 0) { const a = QX.R(10, 24), d = QX.R(2, 12), b = a + d; return QX.q(QSM('實驗', '自然·測量（溫度計與溫度差）'), `早上氣溫是 ${a}°C，中午氣溫是 ${b}°C，中午比早上高幾度？`, d, [], { type: '應用', explanation: `${b} − ${a} = ${d}，所以高 ${d} 度。`, hint: '溫差＝高的溫度 − 低的溫度。', wrongReason: '求相差多少，要用大的減小的。' }); }
+  if (k === 1) { const g = QX.R(1, 4), n = QX.R(2, 8), L = QX.R(8, 20); return QX.q(QSM('實驗', '自然·力與運動（彈簧）'), `彈簧原來長 ${L} 公分，每掛 100 公克的重物就伸長 ${g} 公分。掛上 ${n} 個 100 公克的重物，彈簧長度是幾公分？`, L + g * n, [], { type: '應用', explanation: `伸長：${g} × ${n} = ${g * n} 公分\n原來長 ${L} 公分，所以現在長：${L} + ${g * n} = ${L + g * n} 公分。`, hint: '先算伸長多少，再加上原來的長度。', wrongReason: '別忘了要加上彈簧「原來」的長度。' }); }
+  if (k === 2 && lv >= 5) { const t = QX.R(2, 9), v = QX.R(2, 9); return QX.q(QSM('實驗', '自然·力與運動（速率）'), `小車 ${t} 秒跑了 ${t * v} 公尺，平均每秒跑幾公尺？`, v, [], { type: '應用', explanation: `速率＝距離 ÷ 時間\n${t * v} ÷ ${t} = ${v}，所以每秒跑 ${v} 公尺。`, hint: '速率＝距離 ÷ 時間。', wrongReason: '求每秒跑多遠，要用距離除以時間。' }); }
+  const h = QX.R(1, 5), g = QX.R(1, 3), d = QX.R(3, 8); return QX.q(QSM('實驗', '自然·植物（生長觀察記錄）'), `豆苗第 1 天高 ${h} 公分，之後每天長高 ${g} 公分。第 ${d} 天，豆苗高幾公分？`, h + g * (d - 1), [], { type: '應用', explanation: `第 1 天之後，又過了 ${d - 1} 天。\n長高：${g} × ${d - 1} = ${g * (d - 1)} 公分\n${h} + ${g * (d - 1)} = ${h + g * (d - 1)} 公分。`, hint: '第 1 天是起點，所以要算「過了幾天」。', wrongReason: '第 1 天是起點，長高的天數要比「第幾天」少 1。' });
+});
+QX.add({ s: '自然', t: '觀察', lv: [5, 6], w: 3 }, function (lv) {
+  const M = [['初一', '新月（看不到月亮）'], ['初七', '上弦月'], ['初八', '上弦月'], ['十五', '滿月'], ['十六', '滿月'], ['廿二', '下弦月'], ['廿三', '下弦月']], [d, a] = QX.pick(M);
+  return QX.q(QSM('觀察', '自然·天文（月相變化）'), `農曆${d}的晚上，月亮最可能是哪一種樣子？`, a, ['新月（看不到月亮）', '上弦月', '滿月', '下弦月'].filter(x => x !== a), { explanation: `農曆初一是新月；初七、初八是上弦月；十五、十六是滿月；廿二、廿三是下弦月。`, hint: '月相口訣：初一新月、初八上弦、十五滿月、廿三下弦。', wrongReason: '月相每天都在變，要記住幾個重要的日子。' });
+});
+
+
+/* ===================== 社會題庫（歷史／地理／公民） ===================== */
+const QSOM = (t, kp) => ({ s: '社會', t, kp });
+const QSOC = [['基隆市', '北部'], ['臺北市', '北部'], ['新北市', '北部'], ['桃園市', '北部'], ['臺中市', '中部'], ['彰化縣', '中部'], ['南投縣', '中部'], ['臺南市', '南部'], ['高雄市', '南部'], ['屏東縣', '南部'], ['宜蘭縣', '東部'], ['花蓮縣', '東部'], ['臺東縣', '東部'], ['澎湖縣', '離島'], ['金門縣', '離島'], ['連江縣', '離島']];
+const QSOL = [['日月潭', '南投縣'], ['阿里山', '嘉義縣'], ['太魯閣', '花蓮縣'], ['墾丁', '屏東縣'], ['臺北101', '臺北市'], ['安平古堡', '臺南市'], ['九份', '新北市'], ['龜山島', '宜蘭縣'], ['蘭嶼', '臺東縣'], ['綠島', '臺東縣'], ['淡水老街', '新北市'], ['野柳', '新北市'], ['鹿港老街', '彰化縣'], ['澎湖跨海大橋', '澎湖縣'], ['高美濕地', '臺中市'], ['清境農場', '南投縣'], ['七星潭', '花蓮縣'], ['駁二藝術特區', '高雄市'], ['西子灣', '高雄市'], ['鵝鑾鼻燈塔', '屏東縣'], ['金門風獅爺', '金門縣']];
+/* 地理：縣市地區 */
+QX.add({ s: '社會', t: '地理', lv: [3, 6], w: 7 }, function (lv) {
+  const [c, r] = QX.pick(QSOC);
+  if (Math.random() < 0.5) return QX.q(QSOM('地理', '社會·地理（臺灣的行政區）'), `${c}位在臺灣的哪一個地區？`, r, QX.others(['北部', '中部', '南部', '東部', '離島'], r, 3), { explanation: `${c}位在臺灣的${r}。\n臺灣常分成北部、中部、南部、東部和離島五個地區。`, hint: '把縣市放進地圖裡記：北部（基北桃）、中部（中彰投）、南部（南高屏）、東部（宜花東）、離島（澎金馬）。', wrongReason: '可能把相鄰地區的縣市搞混了，要對照臺灣地圖。' });
+  return QX.q(QSOM('地理', '社會·地理（臺灣的行政區）'), `下面哪一個縣市位在臺灣的${r}？`, c, QX.sample(QSOC.filter(x => x[1] !== r).map(x => x[0]), 3), { explanation: `${c}位在臺灣的${r}，其他選項在別的地區。`, hint: '把縣市放進地圖裡記：基北桃、中彰投、南高屏、宜花東、澎金馬。', wrongReason: '可能把相鄰地區的縣市搞混了，要對照臺灣地圖。' });
+});
+/* 地理：景點 */
+QX.add({ s: '社會', t: '地理', lv: [3, 6], w: 6 }, function (lv) {
+  const [p, c] = QX.pick(QSOL);
+  return QX.q(QSOM('地理', '社會·地理（臺灣的名勝）'), `「${p}」位在哪一個縣市？`, c, QX.sample(QSOC.map(x => x[0]).filter(x => x !== c), 3), { explanation: `「${p}」位在${c}。`, hint: '把景點和縣市成對記，想想看你去過或在照片看過的地方。', wrongReason: '可能把景點和附近的縣市搞混了。' });
+});
+/* 地理：自然地理知識 */
+const QSOG = [
+  ['臺灣最高的山是哪一座？', '玉山', ['雪山', '阿里山', '合歡山', '太平山']], ['臺灣最長的河流是哪一條？', '濁水溪', ['淡水河', '高屏溪', '曾文溪', '大甲溪']], ['臺灣最大的天然湖泊是哪一個？', '日月潭', ['澄清湖', '翠峰湖', '鯉魚潭', '明潭']],
+  ['臺灣最大的平原是哪一個？', '嘉南平原', ['宜蘭平原', '屏東平原', '花東縱谷', '臺北盆地']], ['臺灣位在哪一個大洋的西邊？', '太平洋', ['大西洋', '印度洋', '北冰洋']], ['臺灣和中國大陸之間的海峽叫做什麼？', '臺灣海峽', ['巴士海峽', '麻六甲海峽', '白令海峽']],
+  ['臺灣位在地球的哪一個洲？', '亞洲', ['歐洲', '非洲', '南美洲']], ['臺灣南邊和菲律賓之間的海峽叫什麼？', '巴士海峽', ['臺灣海峽', '麻六甲海峽', '白令海峽']],
+  ['北回歸線經過臺灣的哪一個縣市？', '嘉義縣', ['屏東縣', '宜蘭縣', '基隆市', '澎湖縣']]
+];
+QX.add({ s: '社會', t: '地理', lv: [3, 6], w: 5 }, function (lv) {
+  const [q, a, w] = QX.pick(QSOG);
+  return QX.q(QSOM('地理', '社會·地理（臺灣的位置與地形）'), q, a, QX.sample(w, 3), { explanation: `${q}\n正確答案是「${a}」。`, hint: '看著臺灣地圖記：山在中央，平原在西邊，大海在四周。', wrongReason: '可能把名字相近的地方搞混了，要配合地圖一起記。' });
+});
+/* 地理：方位（參數）*/
+const QSOD = { 東: '西', 西: '東', 南: '北', 北: '南' }, QSOP = ['學校', '公園', '郵局', '銀行', '醫院', '市場', '圖書館', '車站', '警察局', '超商'];
+QX.add({ s: '社會', t: '地理', lv: [2, 4], w: 5 }, function (lv) {
+  const [a, b] = QX.sample(QSOP, 2), d = QX.pick(Object.keys(QSOD));
+  return QX.q(QSOM('地理', '社會·地理（方位與地圖）'), `${a}在${b}的${d}邊，那麼${b}在${a}的哪一邊？`, QSOD[d] + '邊', ['東邊', '西邊', '南邊', '北邊'].filter(x => x !== QSOD[d] + '邊'), { explanation: `${a}在${b}的${d}邊，反過來看，${b}就在${a}的${QSOD[d]}邊。\n（東和西相反，南和北相反。）`, hint: '方向口訣：上北下南、左西右東；東西相反、南北相反。', wrongReason: '反過來看的時候，方向也要反過來：東變西、南變北。' });
+});
+QX.add({ s: '社會', t: '地理', lv: [4, 6], w: 5 }, function (lv) {
+  const [a, b, c] = QX.sample(QSOP, 3), d1 = QX.pick(['東', '西', '南', '北']), d2 = QX.pick(d1 === '東' || d1 === '西' ? ['南', '北'] : ['東', '西']);
+  const ew = [d1, d2].find(x => x === '東' || x === '西'), ns = [d1, d2].find(x => x === '南' || x === '北'), ans = ew + ns;
+  return QX.q(QSOM('地理', '社會·地理（八個方位）'), `${b}在${a}的${d1}邊，${c}在${b}的${d2}邊，那麼${c}在${a}的哪一個方向？`, ans, ['東北', '東南', '西北', '西南'].filter(x => x !== ans), { explanation: `先往${d1}邊走，再往${d2}邊走，合起來就是「${ans}」方向。\n（${ew}加${ns}＝${ans}，說法是先說東西、再說南北。）`, hint: '把方向畫在紙上：上北下南左西右東，一步一步畫出來。', wrongReason: '兩個方向要合起來看：東西方向＋南北方向，就是斜的方位。' });
+});
+QX.add({ s: '社會', t: '地理', lv: [4, 6], w: 5 }, function (lv) {
+  const s = QX.pick([10, 20, 50, 100, 200, 500]), k = QX.R(2, 12);
+  return QX.q(QSOM('地理', '社會·地理（比例尺）'), `地圖的比例尺標示 1 公分代表實際 ${s} 公尺。地圖上量得兩地相距 ${k} 公分，實際距離是幾公尺？`, k * s, [k + s, k * s * 10, k * s - s], { type: '應用', explanation: `1 公分代表 ${s} 公尺，${k} 公分就是 ${k} 個 ${s} 公尺。\n${k} × ${s} = ${k * s} 公尺。`, hint: '比例尺：地圖上幾公分 × 每公分代表的實際距離。', wrongReason: '要用地圖上的公分數，乘以每公分代表的實際距離。' });
+});
+/* 歷史 */
+const QSOH = [
+  ['最早住在臺灣的人是誰？', '原住民', ['荷蘭人', '日本人', '西班牙人'], 3], ['1624年，在臺南建立熱蘭遮城的是哪一國人？', '荷蘭人', ['西班牙人', '日本人', '英國人'], 4], ['西班牙人曾經佔領臺灣的哪一個地區？', '北部（基隆、淡水一帶）', ['南部（臺南一帶）', '東部（花蓮一帶）', '中部（臺中一帶）'], 5],
+  ['趕走荷蘭人、在臺灣建立政權的是誰？', '鄭成功', ['劉銘傳', '孫中山', '鄭和'], 4], ['鄭成功是從哪一個地方登陸臺灣的？', '鹿耳門', ['淡水', '基隆', '花蓮'], 5], ['清朝時，臺灣第一任巡撫是誰？', '劉銘傳', ['鄭成功', '沈葆楨', '孫中山'], 5], ['劉銘傳在臺灣興建了什麼？', '鐵路', ['高速公路', '機場', '捷運'], 5],
+  ['臺灣是在哪一年被割讓給日本的？', '1895年', ['1624年', '1945年', '1912年'], 5], ['臺灣是在哪一年光復（回到中華民國）的？', '1945年', ['1895年', '1912年', '1662年'], 5], ['日治時期，八田與一在臺南建造了什麼？', '嘉南大圳', ['鐵路', '臺北車站', '高速公路'], 6],
+  ['中華民國是在哪一年成立的？', '1912年（民國元年）', ['1895年', '1945年', '1949年'], 5], ['推翻清朝、建立中華民國的人是誰？', '孫中山', ['鄭成功', '劉銘傳', '秦始皇'], 5], ['馬偕博士在臺灣北部做了哪些事？', '傳教、行醫、辦學', ['建鐵路', '建水庫', '種茶葉'], 6],
+  ['統一中國、規定文字和度量衡的是哪一位皇帝？', '秦始皇', ['漢武帝', '唐太宗', '康熙'], 5], ['哪一個朝代的張騫出使西域，打通了絲路？', '漢朝', ['唐朝', '宋朝', '明朝'], 6], ['去印度取經的唐朝高僧是誰？', '玄奘', ['鑑真', '鄭和', '張騫'], 6],
+  ['活字印刷術是誰發明的？', '畢昇', ['蔡倫', '張衡', '祖沖之'], 6], ['造紙術是誰改良的？', '蔡倫', ['畢昇', '張衡', '祖沖之'], 6], ['明朝時，七次下西洋的是誰？', '鄭和', ['玄奘', '張騫', '鄭成功'], 6], ['中國古代的四大發明不包含下面哪一個？', '電話', ['造紙術', '印刷術', '指南針'], 6],
+  ['修築萬里長城的朝代大多是哪一朝？', '秦朝', ['唐朝', '宋朝', '清朝'], 6]
+];
+QX.add({ s: '社會', t: '歷史', lv: [3, 6], w: 7 }, function (lv) {
+  const pool = QSOH.filter(x => x[3] <= lv); if (!pool.length) return null; const [q, a, w] = QX.pick(pool);
+  return QX.q(QSOM('歷史', '社會·歷史（臺灣與中國歷史）'), q, a, QX.sample(w, 3), { explanation: `${q}\n正確答案是「${a}」。`, hint: '把事件排成時間線，再配上人物和地點一起記。', wrongReason: '可能把不同時代的人物或事件搞混了。' });
+});
+const QSOY = ['夏朝', '商朝', '周朝', '秦朝', '漢朝', '隋朝', '唐朝', '宋朝', '元朝', '明朝', '清朝'];
+QX.add({ s: '社會', t: '歷史', lv: [5, 6], w: 5 }, function (lv) {
+  const four = QX.sample(QSOY, 4).sort((a, b) => QSOY.indexOf(a) - QSOY.indexOf(b)), early = Math.random() < 0.5, ans = early ? four[0] : four[3];
+  return QX.q(QSOM('歷史', '社會·歷史（朝代順序）'), `下面哪一個朝代出現得最${early ? '早' : '晚'}？`, ans, four.filter(x => x !== ans), { explanation: `朝代順序：${QSOY.join('→')}。\n這四個朝代由早到晚是：${four.join('→')}。`, hint: '朝代順序歌：夏商周、秦漢、隋唐、宋元明清。', wrongReason: '要把朝代的先後順序背熟。' });
+});
+QX.add({ s: '社會', t: '歷史', lv: [4, 6], w: 5 }, function (lv) {
+  if (Math.random() < 0.5) { const y = QX.R(1912, 2030), m = y - 1911; return QX.q(QSOM('歷史', '社會·歷史（民國紀年）'), `西元 ${y} 年，是民國幾年？`, m, [], { type: '計算', explanation: `民國元年是西元 1912 年。\n西元年 − 1911 ＝ 民國年：${y} − 1911 = ${m}。`, hint: '西元轉民國：減 1911；民國轉西元：加 1911。', wrongReason: '民國元年是西元 1912 年，所以要減 1911，不是減 1912。' }); }
+  const m = QX.R(1, 119), y = m + 1911; return QX.q(QSOM('歷史', '社會·歷史（民國紀年）'), `民國 ${m} 年，是西元幾年？`, y, [], { type: '計算', explanation: `民國年 ＋ 1911 ＝ 西元年：${m} + 1911 = ${y}。`, hint: '西元轉民國：減 1911；民國轉西元：加 1911。', wrongReason: '民國元年是西元 1912 年，所以要加 1911。' });
+});
+/* 節日（文化） */
+const QSOF = [['春節', '農曆正月初一', '貼春聯、領紅包'], ['元宵節', '農曆正月十五', '提燈籠、吃湯圓'], ['端午節', '農曆五月五日', '吃粽子、划龍舟'], ['中秋節', '農曆八月十五', '賞月、吃月餅'], ['重陽節', '農曆九月九日', '登高、敬老'], ['兒童節', '國曆四月四日', '慶祝小朋友的節日'], ['教師節', '國曆九月二十八日', '感謝老師'], ['國慶日', '國曆十月十日', '慶祝中華民國的生日'], ['勞動節', '國曆五月一日', '感謝辛苦工作的人']];
+QX.add({ s: '社會', t: '歷史', lv: [3, 6], w: 5 }, function (lv) {
+  const [n, d, c] = QX.pick(QSOF);
+  if (Math.random() < 0.5) return QX.q(QSOM('歷史', '社會·文化（節日與習俗）'), `${n}是在什麼時候？`, d, QX.sample(QSOF.filter(x => x[0] !== n).map(x => x[1]), 3), { explanation: `${n}在${d}。習俗：${c}。`, hint: '把節日和日期編成口訣：端午五月五、中秋八月十五。', wrongReason: '可能把節日的日期搞混了。' });
+  return QX.q(QSOM('歷史', '社會·文化（節日與習俗）'), `下面哪一個習俗和「${n}」有關？`, c, QX.sample(QSOF.filter(x => x[0] !== n).map(x => x[2]), 3), { explanation: `${n}的習俗是：${c}。`, hint: '把節日和習俗成對記：端午—粽子龍舟、中秋—月餅賞月。', wrongReason: '可能把不同節日的習俗搞混了。' });
+});
+/* 公民 */
+const QSOCV = [
+  ['在圖書館裡，我們應該怎麼做？', '小聲說話、輕輕走路', ['大聲聊天', '跑來跑去', '在裡面吃東西'], 3], ['過馬路的時候，看到紅燈應該怎麼做？', '停下來等待', ['快步跑過去', '閉上眼睛走', '跟著別人走'], 3],
+  ['公車上有老人家上車，沒有座位了，我們可以怎麼做？', '主動讓座', ['假裝沒看到', '把包包放在座位上', '繼續玩手機'], 3], ['寶特瓶用完以後，應該怎麼處理？', '洗乾淨後資源回收', ['丟進河裡', '直接埋在土裡', '隨手丟在路邊'], 3],
+  ['同學正在發言，我們應該怎麼做？', '安靜聆聽', ['大聲插嘴', '做自己的事', '笑他說得不好'], 3], ['借了同學的東西，應該怎麼做？', '用完後記得還給他，並說謝謝', ['當作自己的', '假裝忘記', '弄壞了就不說'], 3],
+  ['排隊的時候，應該怎麼做？', '依照先後順序，不插隊', ['擠到前面', '推擠別人', '幫朋友佔位置'], 3], ['發現地上有別人掉的錢包，應該怎麼做？', '交給老師或警察，讓失主找回', ['自己留下來', '丟進垃圾桶', '拿去買東西'], 3],
+  ['班上要選班長，最公平的方法是什麼？', '大家投票', ['老師隨便指定', '誰跑最快誰當', '誰的聲音大誰當'], 4], ['投票結果出來了，我們應該怎麼做？', '尊重大家投票的結果', ['大吵大鬧', '不接受結果', '偷偷改票'], 4],
+  ['班上同學的意見和我不同，我們應該怎麼做？', '聽他說完，互相尊重', ['罵他', '不跟他說話', '要他一定聽我的'], 4], ['想要節約用水，可以怎麼做？', '刷牙時關上水龍頭', ['讓水龍頭一直開著', '用水沖地板玩', '洗手時開到最大'], 3],
+  ['想要節約用電，可以怎麼做？', '不用的電燈隨手關', ['白天也開所有的燈', '讓電視一直開著', '沒人時開著電風扇'], 3], ['下面哪一種行為是愛護公物？', '愛惜公園的椅子', ['在牆壁上亂畫', '把公共設施拆壞', '在椅子上刻字'], 3],
+  ['學校規定不可以在走廊奔跑，主要是為了什麼？', '避免大家受傷', ['讓走廊更乾淨', '讓老師輕鬆', '比賽跑步'], 3], ['在電影院裡看電影，應該怎麼做？', '保持安靜，手機調成靜音', ['大聲講電話', '踢前面的椅子', '吃很大聲的零食'], 3],
+  ['發生火災時，應該撥打哪一支電話？', '119', ['110', '1999', '165'], 3], ['遇到壞人或有危險時，應該撥打哪一支電話？', '110', ['119', '1999', '165'], 3],
+  ['消防員的工作是什麼？', '滅火和救人', ['送信', '教書', '治病'], 3], ['警察的工作是什麼？', '維護社會的安全', ['滅火', '種菜', '開店'], 3], ['郵差的工作是什麼？', '送信和包裹', ['滅火', '治療病人', '教學生'], 3], ['醫生的工作是什麼？', '治療病人', ['送信', '打掃街道', '維修電器'], 3], ['清潔隊員的工作是什麼？', '收垃圾、打掃街道', ['送信', '治療病人', '種菜'], 3],
+  ['依照法律，國民必須接受國民教育，這是我們的什麼？', '權利，也是義務', ['只是老師的規定', '只是爸媽的要求', '選擇要不要都可以'], 5], ['繳稅是每一個國民的什麼？', '義務', ['權利', '特權', '禮物'], 5], ['班規是由全班一起討論出來的，這是一種什麼精神？', '民主', ['獨裁', '比賽', '競爭'], 5],
+  ['與鄰居相處時，應該怎麼做？', '互相幫忙、互相尊重', ['吵吵鬧鬧', '互相比較', '互不理睬'], 4], ['晚上在社區裡，怎麼做才不會吵到鄰居？', '放低音量、不大聲喧嘩', ['大聲唱歌', '開很大聲的音樂', '在走廊跑跳'], 3],
+  ['吃剩的菜渣，垃圾分類時屬於哪一類？', '廚餘', ['紙類', '塑膠類', '玻璃'], 4], ['寶特瓶、鋁罐、紙類，應該放在哪一桶？', '資源回收桶', ['一般垃圾桶', '廚餘桶', '不用分類'], 3],
+  ['在公共場所遇到需要幫助的人，我們可以怎麼做？', '在安全的情況下協助，或請大人幫忙', ['假裝沒看到', '嘲笑他', '拍照上傳'], 4], ['在網路上看到別人的隱私照片，應該怎麼做？', '不轉傳，也不留言嘲笑', ['馬上轉傳', '留言取笑', '下載保存'], 5],
+  ['家人一起生活，每個人都要做什麼？', '分擔家事', ['只有媽媽做家事', '什麼都不做', '只負責玩'], 3], ['發生地震時，在教室裡應該怎麼做？', '躲到桌子下，保護頭部', ['跑到窗戶旁邊', '搭電梯下樓', '躲在最高的地方'], 3],
+  ['颱風來的時候，應該怎麼做？', '待在安全的室內，不要外出', ['去海邊看大浪', '去河邊玩水', '爬到屋頂上'], 3], ['下面哪一種是環保的做法？', '自備環保杯和購物袋', ['每次都用新的塑膠袋', '把保麗龍丟進河裡', '開著冷氣又開窗戶'], 3],
+  ['我們可以自由選擇喜歡的興趣，這是一種什麼？', '自由', ['義務', '處罰', '工作'], 5], ['人人都可以表達自己的意見，但也要尊重別人，這是什麼觀念？', '自由與尊重', ['只有自己最重要', '想說什麼都可以罵人', '不用理別人'], 6]
+];
+QX.add({ s: '社會', t: '公民', lv: [3, 6], w: 9 }, function (lv) {
+  const pool = QSOCV.filter(x => x[3] <= lv), [q, a, w] = QX.pick(pool);
+  return QX.q(QSOM('公民', '社會·公民（生活規範與公民素養）'), q, a, QX.sample(w, 3), { explanation: `${q}\n正確答案是「${a}」。\n這樣做可以${/環|水|電|垃圾|回收/.test(q + a) ? '保護環境' : /尊重|投票|民主|意見/.test(q + a) ? '維護公平，尊重每一個人' : '讓大家都安全、舒服'}。`, hint: '遇到情境題，想想：這樣做會不會幫助別人、遵守規則、保護環境？', wrongReason: '可能只想到自己方便，沒有想到會不會影響別人或環境。' });
+});
+
+/* ===================== 生活題庫（幼兒園～二年級） ===================== */
+const QLD = {
+  水果: [['🍎', '蘋果'], ['🍌', '香蕉'], ['🍉', '西瓜'], ['🍇', '葡萄'], ['🍓', '草莓'], ['🍊', '橘子'], ['🍍', '鳳梨'], ['🍑', '桃子'], ['🍐', '梨子'], ['🥭', '芒果']],
+  蔬菜: [['🥕', '胡蘿蔔'], ['🥦', '花椰菜'], ['🌽', '玉米'], ['🥔', '馬鈴薯'], ['🥬', '青菜'], ['🍆', '茄子']],
+  動物: [['🐶', '小狗'], ['🐱', '小貓'], ['🐰', '兔子'], ['🐘', '大象'], ['🐵', '猴子'], ['🐯', '老虎'], ['🐷', '小豬'], ['🐮', '乳牛'], ['🐔', '小雞'], ['🦆', '鴨子'], ['🐸', '青蛙'], ['🐢', '烏龜'], ['🦁', '獅子'], ['🐼', '熊貓']],
+  交通工具: [['🚗', '汽車'], ['🚌', '公車'], ['🚲', '腳踏車'], ['🚆', '火車'], ['✈️', '飛機'], ['🚢', '輪船'], ['🚑', '救護車'], ['🚒', '消防車']],
+  衣物: [['👕', '上衣'], ['👖', '褲子'], ['👟', '鞋子'], ['🧢', '帽子'], ['🧦', '襪子'], ['🧥', '外套'], ['👗', '洋裝']],
+  文具: [['📖', '書'], ['✏️', '鉛筆'], ['🎒', '書包'], ['✂️', '剪刀'], ['📏', '尺'], ['🖍️', '蠟筆']],
+  食物: [['🍚', '飯'], ['🍞', '麵包'], ['🥛', '牛奶'], ['🥚', '雞蛋'], ['🍪', '餅乾'], ['🍰', '蛋糕'], ['🍜', '麵']],
+  天氣: [['☀️', '晴天'], ['☁️', '陰天'], ['🌧️', '下雨'], ['❄️', '下雪'], ['🌈', '彩虹'], ['💨', '刮風']]
+};
+const QLM = (t, kp) => ({ s: '生活', t, kp });
+QX.add({ s: '生活', t: '圖片辨識', lv: [0, 2], w: 9 }, function (lv) {
+  const dom = QX.pick(Object.keys(QLD)), [e, n] = QX.pick(QLD[dom]);
+  return QX.q(QLM('圖片辨識', '生活·認識身邊的事物'), `圖片是什麼？`, n, QX.sample(QLD[dom].filter(x => x[1] !== n).map(x => x[1]), 3), { pic: { id: 'lf_' + n, e }, explanation: `圖片是 ${e}，它是「${n}」，是一種${dom}。`, hint: '看圖片，想一想平常在哪裡看過，名字怎麼唸。', wrongReason: '可能把長得像的東西搞混了，再仔細看看圖片。' });
+});
+QX.add({ s: '生活', t: '分類', lv: [0, 2], w: 8 }, function (lv) {
+  const doms = Object.keys(QLD).filter(x => x !== '天氣'), dom = QX.pick(doms), n = QX.pick(QLD[dom])[1], others = QX.sample(doms.filter(x => x !== dom), 3).map(x => QX.pick(QLD[x])[1]);
+  return QX.q(QLM('分類', '生活·分類與歸類'), `下面哪一個是「${dom}」？`, n, others, { explanation: `「${n}」是${dom}。其他的不是${dom}。`, hint: '先想想「${dom}」有哪些，再把不一樣的刪掉。'.replace('${dom}', dom), wrongReason: '可能把不同類的東西搞混了，想想它們各是什麼。' });
+});
+QX.add({ s: '生活', t: '分類', lv: [1, 2], w: 6 }, function (lv) {
+  const doms = Object.keys(QLD).filter(x => x !== '天氣'), [a, b] = QX.sample(doms, 2), three = QX.sample(QLD[a], 3).map(x => x[1]), odd = QX.pick(QLD[b])[1];
+  return QX.q(QLM('分類', '生活·分類與歸類'), `下面哪一個和其他三個「不一樣」？`, odd, three, { explanation: `${three.join('、')}都是${a}；「${odd}」是${b}，所以不一樣。`, hint: '先找出三個一樣的，剩下那個就是不一樣的。', wrongReason: '要先想想每一個是什麼類別，再找出不一樣的那個。' });
+});
+const QLF = [
+  ['早上起床以後，要先做什麼？', '刷牙洗臉', ['馬上吃糖果', '繼續睡覺', '玩玩具'], 0], ['吃飯前一定要做什麼？', '洗手', ['跑步', '看電視', '玩水'], 0], ['晚上睡覺前要做什麼？', '刷牙', ['吃餅乾', '打球', '玩沙'], 0],
+  ['過馬路要走哪裡？', '斑馬線', ['草地', '馬路中間', '停車場'], 0], ['看到紅燈要怎麼做？', '停下來', ['快快跑', '慢慢走', '閉眼走'], 0], ['看到綠燈可以怎麼做？', '先左右看看，再過馬路', ['低頭玩手機再走', '馬上衝出去', '閉眼睛走'], 0],
+  ['搭車時要怎麼做？', '繫好安全帶，坐好', ['站在椅子上', '把頭伸出窗外', '在車上跑來跑去'], 0], ['不認識的人說要請你吃糖，你要怎麼做？', '說「不要」，馬上告訴大人', ['跟他走', '收下糖果', '告訴他家在哪裡'], 0],
+  ['打噴嚏的時候要怎麼做？', '用手肘或衛生紙遮住口鼻', ['對著別人打', '用手直接遮住再摸東西', '忍住不要打'], 1], ['有人跌倒了，我們可以怎麼做？', '關心他，需要時請老師幫忙', ['哈哈大笑', '走開不理', '推他一下'], 0],
+  ['說話的時候，什麼是有禮貌的？', '說「請」、「謝謝」、「對不起」', ['大聲吼叫', '搶別人的東西', '不理人'], 0], ['早上看到老師，要怎麼打招呼？', '說「老師早」', ['不說話', '做鬼臉', '轉身就跑'], 0],
+  ['東西用完以後要怎麼做？', '放回原來的地方', ['丟在地上', '藏起來', '隨便亂放'], 0], ['在教室裡走路要怎麼走？', '慢慢走', ['用力跑', '跳著走', '倒著跑'], 0], ['不舒服的時候，要怎麼做？', '告訴爸媽或老師', ['自己忍著', '亂吃藥', '躲起來'], 0],
+  ['玩玩具的時候，要怎麼和別人相處？', '輪流玩、分享', ['搶過來', '都自己玩', '把玩具藏起來'], 0], ['吃完東西，垃圾要丟到哪裡？', '垃圾桶', ['地上', '抽屜裡', '朋友的書包'], 0], ['喝水要喝什麼最好？', '白開水', ['汽水', '咖啡', '酒'], 0],
+  ['看書的時候，要注意什麼，眼睛才會健康？', '光線夠亮，坐姿端正', ['躺著看', '在黑暗裡看', '靠很近看'], 1], ['想要牙齒健康，要少吃什麼？', '糖果和甜食', ['蔬菜', '白開水', '飯'], 1],
+  ['下雨天出門要帶什麼？', '雨傘或雨衣', ['太陽眼鏡', '游泳圈', '風箏'], 0], ['天氣很冷時，要穿什麼？', '外套', ['泳衣', '短褲', '涼鞋'], 0], ['天氣很熱時，要穿什麼？', '短袖', ['厚外套', '毛帽', '圍巾'], 0],
+  ['遇到地震，要先躲到哪裡？', '堅固的桌子下面', ['窗戶旁邊', '樓梯口', '電梯裡'], 1], ['不小心弄壞別人的東西，要怎麼做？', '說對不起，並想辦法賠償', ['假裝不知道', '怪別人', '偷偷丟掉'], 1],
+  ['垃圾可以分成哪三類？', '廚餘、資源回收、一般垃圾', ['紅、黃、綠', '大、中、小', '好、壞、舊'], 1], ['在電梯裡要怎麼做？', '不亂按按鈕，安靜等待', ['一直按所有按鈕', '在裡面跳', '大聲尖叫'], 1], ['在公共場所，說話要怎麼樣？', '小聲說話', ['大聲喊叫', '吹口哨', '唱很大聲的歌'], 0],
+  ['爸爸的爸爸，我們叫他什麼？', '爺爺', ['外公', '叔叔', '伯伯'], 0], ['爸爸的媽媽，我們叫她什麼？', '奶奶', ['外婆', '阿姨', '姑姑'], 0], ['媽媽的爸爸，我們叫他什麼？', '外公', ['爺爺', '舅舅', '叔叔'], 0], ['媽媽的媽媽，我們叫她什麼？', '外婆', ['奶奶', '阿姨', '姑姑'], 0],
+  ['爸爸的弟弟，我們叫他什麼？', '叔叔', ['伯伯', '舅舅', '外公'], 1], ['爸爸的哥哥，我們叫他什麼？', '伯伯', ['叔叔', '舅舅', '外公'], 1], ['媽媽的姊姊或妹妹，我們叫她什麼？', '阿姨', ['姑姑', '奶奶', '外婆'], 1], ['媽媽的哥哥或弟弟，我們叫他什麼？', '舅舅', ['叔叔', '伯伯', '外公'], 1],
+  ['我們用什麼看東西？', '眼睛', ['耳朵', '鼻子', '嘴巴'], 0], ['我們用什麼聽聲音？', '耳朵', ['眼睛', '鼻子', '手'], 0], ['我們用什麼聞味道？', '鼻子', ['耳朵', '眼睛', '腳'], 0], ['我們用什麼嚐味道？', '舌頭', ['鼻子', '耳朵', '眼睛'], 0],
+  ['紅色和黃色混在一起，會變成什麼顏色？', '橘色', ['綠色', '紫色', '藍色'], 1], ['藍色和黃色混在一起，會變成什麼顏色？', '綠色', ['橘色', '紫色', '紅色'], 1], ['紅色和藍色混在一起，會變成什麼顏色？', '紫色', ['橘色', '綠色', '黃色'], 1], ['紅色和白色混在一起，會變成什麼顏色？', '粉紅色', ['綠色', '紫色', '黑色'], 1], ['黑色和白色混在一起，會變成什麼顏色？', '灰色', ['粉紅色', '橘色', '紫色'], 1],
+  ['下面哪一種動物會飛？', '小鳥', ['烏龜', '大象', '小狗'], 0], ['哪一種動物生活在水裡？', '魚', ['小狗', '老虎', '小雞'], 0], ['哪一種動物會下蛋？', '小雞', ['小狗', '小貓', '兔子'], 0], ['哪一種動物喜歡吃青草？', '乳牛', ['獅子', '老虎', '貓頭鷹'], 1],
+  ['太陽下山以後，是什麼時候？', '晚上', ['早上', '中午', '下午'], 0], ['一個星期有幾天？', '七天', ['五天', '六天', '十天'], 0], ['一年有幾個季節？', '四個', ['二個', '三個', '五個'], 1], ['春天、夏天、秋天，下一個季節是什麼？', '冬天', ['春天', '夏天', '秋天'], 1]
+];
+QX.add({ s: '生活', t: '生活常識', lv: [0, 2], w: 9 }, function (lv) {
+  const pool = QLF.filter(x => x[3] <= lv), [q, a, w] = QX.pick(pool);
+  return QX.q(QLM('生活常識', '生活·生活習慣與安全'), q, a, QX.sample(w, 3), { explanation: `${q}\n正確答案是「${a}」。`, hint: '想一想：這樣做安不安全？有沒有禮貌？對身體好不好？', wrongReason: '可能沒有想清楚哪一個做法最安全、最有禮貌。' });
+});
+
+/* ===================== 擴充：資料判讀與參數化題型（自然／社會／生活）===================== */
+/* 自然：氣溫記錄表 */
+QX.add({ s: '自然', t: '觀察', lv: [3, 6], w: 8 }, function (lv) {
+  const days = ['星期一', '星期二', '星期三', '星期四', '星期五'], t = QX.sample(Array.from({ length: 19 }, (_, i) => 12 + i), 5);
+  const pass = `小明記錄五天中午的氣溫：` + days.map((d, i) => `${d} ${t[i]}°C`).join('、') + '。';
+  const k = QX.R(0, 3), mk = (stem, ans, wr, why, kp) => QX.q({ s: '自然', t: '觀察', kp: '自然·測量（氣溫記錄表）', ty: '應用' }, stem, ans, wr, { passage: pass, explanation: why, hint: '讀表格時，用手指一欄一欄對著看，再比大小。', wrongReason: '可能看錯了哪一天，或比大小時弄反了。' });
+  const mx = Math.max(...t), mn = Math.min(...t);
+  if (k === 0) return mk('哪一天的氣溫最高？', days[t.indexOf(mx)], QX.others(days, days[t.indexOf(mx)], 3), `最高的是 ${mx}°C，是${days[t.indexOf(mx)]}。`);
+  if (k === 1) return mk('哪一天的氣溫最低？', days[t.indexOf(mn)], QX.others(days, days[t.indexOf(mn)], 3), `最低的是 ${mn}°C，是${days[t.indexOf(mn)]}。`);
+  const [i, j] = QX.sample([0, 1, 2, 3, 4], 2).sort((a, b) => a - b), d = Math.abs(t[i] - t[j]);
+  if (k === 2) return mk(`${days[i]}和${days[j]}的氣溫相差幾度？`, d, [], `${Math.max(t[i], t[j])} − ${Math.min(t[i], t[j])} = ${d} 度。`);
+  const up = t[j] > t[i];
+  return mk(`從${days[i]}到${days[j]}，氣溫${up ? '上升' : '下降'}了幾度？`, d, [], `${days[i]} ${t[i]}°C，${days[j]} ${t[j]}°C，${up ? '上升' : '下降'}了 ${Math.max(t[i], t[j])} − ${Math.min(t[i], t[j])} = ${d} 度。`);
+});
+/* 自然：植物生長記錄 */
+QX.add({ s: '自然', t: '觀察', lv: [3, 6], w: 7 }, function (lv) {
+  const inc = QX.sample([1, 2, 3, 4, 5], 4), h = [QX.R(2, 6)]; inc.forEach(x => h.push(h[h.length - 1] + x));
+  const pass = `小華每天量豆苗的高度：` + h.map((x, i) => `第 ${i + 1} 天 ${x} 公分`).join('、') + '。';
+  const mk = (stem, ans, wr, why) => QX.q({ s: '自然', t: '觀察', kp: '自然·植物（生長記錄表）', ty: '應用' }, stem, ans, wr, { passage: pass, explanation: why, hint: '先算每天長高多少，再比較。', wrongReason: '要用後一天的高度減前一天的高度，不要看錯天數。' });
+  if (Math.random() < 0.5) { const mi = inc.indexOf(Math.max(...inc)), lab = i => `第 ${i + 1} 天到第 ${i + 2} 天`; return mk('哪一段時間，豆苗長得最多？', lab(mi), [0, 1, 2, 3].filter(x => x !== mi).map(lab), `每段長高：${inc.join('、')} 公分，最多的是 ${inc[mi]} 公分，也就是${lab(mi)}。`); }
+  const a = QX.R(0, 3), b = QX.R(a + 1, 4); return mk(`第 ${b + 1} 天比第 ${a + 1} 天高了幾公分？`, h[b] - h[a], [], `${h[b]} − ${h[a]} = ${h[b] - h[a]} 公分。`);
+});
+/* 自然：天平 */
+QX.add({ s: '自然', t: '實驗', lv: [4, 6], w: 6 }, function (lv) {
+  let a = QX.R(1, 6), b = QX.pick([10, 20, 50, 100]), c = QX.R(1, 6), d = QX.pick([10, 20, 50, 100]);
+  if (a * b === c * d) c += 1;
+  const L = a * b, R = c * d;
+  if (Math.random() < 0.5) return QX.q({ s: '自然', t: '實驗', kp: '自然·測量（天平與重量）' }, `天平左邊放 ${a} 個 ${b} 公克的砝碼，右邊放 ${c} 個 ${d} 公克的砝碼，哪一邊比較重？`, L > R ? '左邊' : '右邊', ['左邊', '右邊', '一樣重', '無法比較'].filter(x => x !== (L > R ? '左邊' : '右邊')), { explanation: `左邊：${a} × ${b} = ${L} 公克\n右邊：${c} × ${d} = ${R} 公克\n${L > R ? '左邊' : '右邊'}比較重。`, hint: '先把每一邊的總重量算出來，再比大小。', wrongReason: '要先算出兩邊各有多重，再比較。' });
+  const big = Math.max(L, R), small = Math.min(L, R);
+  return QX.q({ s: '自然', t: '實驗', kp: '自然·測量（天平與重量）', ty: '應用' }, `天平左邊放了 ${big} 公克的物品，右邊已經放了 ${small} 公克的砝碼。要讓天平平衡，右邊還要再加幾公克？`, big - small, [], { explanation: `要平衡，兩邊要一樣重。\n${big} − ${small} = ${big - small} 公克。`, hint: '平衡＝兩邊一樣重，差多少就補多少。', wrongReason: '差多少公克，就要補多少公克。' });
+});
+/* 自然：動物（胎生或卵生） */
+QX.add({ s: '自然', t: '判斷', lv: [3, 6], w: 5 }, function (lv) {
+  const pool = QSA.filter(x => !['鯊魚', '熱帶魚', '鯨魚', '海豚'].includes(x[0]) || x[2] === '哺乳類'), a = QX.pick(pool.filter(x => x[2] !== '魚類' || x[0] === '魚')), ans = a[2] === '哺乳類' ? '胎生' : '卵生';
+  return QX.q({ s: '自然', t: '判斷', kp: '自然·動物（繁殖方式）' }, `${a[0]}是「胎生」還是「卵生」的動物？`, ans, ['胎生', '卵生', '分裂生殖', '種子繁殖'].filter(x => x !== ans), { explanation: `${a[0]}屬於${a[2]}，${ans === '胎生' ? '哺乳類寶寶在媽媽肚子裡長大，生下來就會喝奶，是胎生' : '會產卵，小寶寶從蛋裡孵化出來，是卵生'}。`, hint: '哺乳類是胎生；鳥、爬蟲、兩生類、昆蟲大多是卵生。', wrongReason: '鯨魚、海豚住在水裡，但牠們是胎生的哺乳類，不是卵生。' });
+});
+QX.add({ s: '自然', t: '實驗', lv: [5, 6], w: 5 }, function (lv) {
+  const k = QX.R(0, 2);
+  if (k === 0) { const t = QX.R(2, 20), v = QX.R(2, 20); return QX.q({ s: '自然', t: '實驗', kp: '自然·力與運動（速率）', ty: '應用' }, `小明騎腳踏車，每分鐘騎 ${v * 10} 公尺，騎了 ${t} 分鐘，一共騎了幾公尺？`, v * 10 * t, [], { explanation: `路程＝速率 × 時間\n${v * 10} × ${t} = ${v * 10 * t} 公尺。`, hint: '路程＝速率 × 時間。', wrongReason: '求走了多遠，要用每分鐘的距離乘以分鐘數。' }); }
+  if (k === 1) { const t = QX.R(2, 12), v = QX.R(2, 15); return QX.q({ s: '自然', t: '實驗', kp: '自然·力與運動（速率）', ty: '應用' }, `小車以每秒 ${v} 公尺的速率前進，要跑 ${v * t} 公尺，需要幾秒？`, t, [], { explanation: `時間＝距離 ÷ 速率\n${v * t} ÷ ${v} = ${t} 秒。`, hint: '時間＝距離 ÷ 速率。', wrongReason: '求要多久，要用距離除以速率。' }); }
+  const w1 = QX.pick([50, 100, 150, 200]), x = QX.R(1, 6), m = QX.R(2, 5); return QX.q({ s: '自然', t: '實驗', kp: '自然·力與運動（彈簧）', ty: '應用' }, `彈簧掛 ${w1} 公克的重物時，伸長 ${x} 公分。掛 ${w1 * m} 公克的重物時，伸長幾公分？`, x * m, [], { explanation: `重量變成 ${m} 倍，伸長也變成 ${m} 倍。\n${x} × ${m} = ${x * m} 公分。`, hint: '彈簧伸長量和掛的重量成比例：重量變幾倍，伸長也變幾倍。', wrongReason: '重量變幾倍，伸長就變幾倍，不是加上去。' });
+});
+
+/* 社會：統計資料判讀 */
+QX.add({ s: '社會', t: '公民', lv: [4, 6], w: 8 }, function (lv) {
+  const sets = [['上學方式', ['走路', '搭公車', '騎腳踏車', '家長接送'], '人'], ['最喜歡的休閒活動', ['看書', '運動', '看電視', '玩遊戲'], '人'], ['社區裡的商店', ['便利商店', '麵包店', '書店', '水果店'], '家'], ['同學的出生季節', ['春天', '夏天', '秋天', '冬天'], '人']];
+  const [title, cats, u] = QX.pick(sets), n = QX.sample(Array.from({ length: 14 }, (_, i) => 3 + i), 4);
+  const pass = `調查「${title}」的結果：` + cats.map((c, i) => `${c} ${n[i]} ${u}`).join('、') + '。';
+  const mx = Math.max(...n), mn = Math.min(...n), k = QX.R(0, 3);
+  const mk = (stem, ans, wr, why) => QX.q({ s: '社會', t: '公民', kp: '社會·資料判讀（統計表）', ty: '應用' }, stem, ans, wr, { passage: pass, explanation: why, hint: '看統計表時，先找出每一項的數字，再比大小或計算。', wrongReason: '可能看錯了項目，或是把「最多」和「最少」弄反了。' });
+  if (k === 0) return mk(`哪一項最多？`, cats[n.indexOf(mx)], QX.others(cats, cats[n.indexOf(mx)], 3), `數字最大的是 ${mx}，是「${cats[n.indexOf(mx)]}」。`);
+  if (k === 1) return mk(`哪一項最少？`, cats[n.indexOf(mn)], QX.others(cats, cats[n.indexOf(mn)], 3), `數字最小的是 ${mn}，是「${cats[n.indexOf(mn)]}」。`);
+  if (k === 2) return mk(`全部加起來一共有多少${u}？`, n.reduce((a, b) => a + b, 0), [], `${n.join(' + ')} = ${n.reduce((a, b) => a + b, 0)} ${u}。`);
+  const [i, j] = QX.sample([0, 1, 2, 3], 2); return mk(`「${cats[i]}」比「${cats[j]}」${n[i] > n[j] ? '多' : '少'}幾${u}？`, Math.abs(n[i] - n[j]), [], `${Math.max(n[i], n[j])} − ${Math.min(n[i], n[j])} = ${Math.abs(n[i] - n[j])} ${u}。`);
+});
+/* 社會：歷史年代計算 */
+QX.add({ s: '社會', t: '歷史', lv: [5, 6], w: 6 }, function (lv) {
+  const E = [['荷蘭人在臺南建熱蘭遮城', 1624], ['鄭成功趕走荷蘭人', 1662], ['臺灣被割讓給日本', 1895], ['中華民國成立', 1912], ['臺灣光復', 1945]], [e, y] = QX.pick(E), Y = QX.R(y + 5, 2025);
+  return QX.q({ s: '社會', t: '歷史', kp: '社會·歷史（年代與時間）', ty: '計算' }, `${e}是西元 ${y} 年。到西元 ${Y} 年，已經過了幾年？`, Y - y, [], { explanation: `${Y} − ${y} = ${Y - y} 年。`, hint: '算過了幾年：用較晚的年份減較早的年份。', wrongReason: '要用晚的年份減早的年份。' });
+});
+/* 社會：場所行為 */
+const QSOB = {
+  圖書館: [['小聲說話', '輕輕走路', '愛惜書本'], ['大聲聊天', '在書上亂畫', '跑來跑去']], 電影院: [['保持安靜', '手機調成靜音', '準時入場'], ['大聲講電話', '踢前面的椅子', '把垃圾丟在座位下']], 公車: [['讓座給需要的人', '依序排隊上車', '抓好扶手'], ['在車上大聲喧嘩', '把腳放在座位上', '擠到前面插隊']],
+  教室: [['舉手發言', '輕聲走路', '保持桌面整潔'], ['上課大聲說話', '亂丟垃圾', '在教室追逐']], 醫院: [['保持安靜', '依序等候', '尊重醫護人員'], ['大聲吵鬧', '亂跑亂跳', '插隊看診']], 博物館: [['遵守參觀規定', '輕聲討論', '不亂摸展品'], ['用手亂摸展品', '大聲喧嘩', '在展場吃東西']], 公園: [['垃圾帶走', '愛護花草', '遵守遊樂設施規定'], ['亂摘花朵', '亂丟垃圾', '在草地上踐踏']], 電梯: [['先讓人出來再進去', '不亂按按鈕', '遇到老人讓他先進'], ['在裡面跳來跳去', '亂按所有按鈕', '擠進去']],
+  餐廳: [['輕聲說話', '用餐後收拾桌面', '不浪費食物'], ['大聲喧嘩', '在座位間奔跑', '把食物丟在地上']], 游泳池: [['先沖水再下水', '遵守救生員指示', '在池邊慢慢走'], ['在池邊奔跑', '推別人下水', '不做暖身就跳進去']], 捷運: [['靠右站、左邊讓人通行', '讓座給需要的人', '不在車廂內飲食'], ['在車廂內大聲通話', '擋在門口不下車', '把腳踩在座位上']]
+};
+QX.add({ s: '社會', t: '公民', lv: [3, 6], w: 6 }, function (lv) {
+  const p = QX.pick(Object.keys(QSOB)), [ok, bad] = QSOB[p], good = Math.random() < 0.5, a = QX.pick(good ? ok : bad);
+  return QX.q({ s: '社會', t: '公民', kp: '社會·公民（公共場所的禮儀）' }, `在${p}，下面哪一種行為是${good ? '正確' : '不恰當'}的？`, a, QX.sample(good ? bad : ok, 3), { explanation: `在${p}，「${a}」${good ? '是有禮貌、遵守規則的做法' : '會影響別人或造成危險，是不恰當的'}。`, hint: '想一想：這樣做會不會吵到別人、造成危險或弄髒環境？', wrongReason: '可能只想到自己方便，沒有想到會不會影響別人。' });
+});
+/* 社會：節日（反向）*/
+QX.add({ s: '社會', t: '歷史', lv: [3, 6], w: 3 }, function (lv) {
+  const [n, d, c] = QX.pick(QSOF);
+  return QX.q({ s: '社會', t: '歷史', kp: '社會·文化（節日與習俗）' }, `「${d}」是哪一個節日？`, n, QX.sample(QSOF.filter(x => x[0] !== n).map(x => x[0]), 3), { explanation: `${d}是「${n}」，習俗：${c}。`, hint: '把節日和日期編成口訣：端午五月五、中秋八月十五。', wrongReason: '可能把節日的日期搞混了。' });
+});
+
+/* 生活：購物算錢 */
+const QLI = ['糖果', '橡皮擦', '貼紙', '鉛筆', '餅乾', '氣球', '小汽車', '布丁', '蘋果', '麵包', '筆記本', '果汁', '尺', '彈珠', '蠟筆'];
+QX.add({ s: '生活', t: '購物算錢', lv: [1, 2], w: 8 }, function (lv) {
+  const it = QX.pick(QLI), k = QX.R(0, 2);
+  if (k === 0) { const p = QX.R(2, 10), n = QX.R(2, 5); return QX.q({ s: '生活', t: '購物算錢', kp: '生活·認識錢幣與購物', ty: '應用' }, `一個${it} ${p} 元，買 ${n} 個要多少元？`, p * n, [], { explanation: `${n} 個，每個 ${p} 元：${p} × ${n} = ${p * n} 元。`, hint: '每個一樣的價錢，買幾個就用乘法或加好幾次。', wrongReason: '可能把「幾個」和「每個多少錢」弄混了。' }); }
+  if (k === 1) { const m = QX.R(10, 99), p = QX.R(1, Math.min(m - 1, 60)); return QX.q({ s: '生活', t: '購物算錢', kp: '生活·認識錢幣與購物', ty: '應用' }, `小美有 ${m} 元，買一個${it}花了 ${p} 元，還剩下多少元？`, m - p, [], { explanation: `${m} − ${p} = ${m - p} 元。`, hint: '買東西花掉錢，用減法算還剩多少。', wrongReason: '花錢變少了，要用減法。' }); }
+  const p = QX.R(3, 9), n = QX.R(2, 6), m = p * n + QX.R(0, p - 1); return QX.q({ s: '生活', t: '購物算錢', kp: '生活·認識錢幣與購物', ty: '應用' }, `一個${it} ${p} 元，小明有 ${m} 元，最多可以買幾個？`, n, [], { explanation: `${m} ÷ ${p}：${p} × ${n} = ${p * n}，再多買一個就不夠了。\n最多可以買 ${n} 個。`, hint: '一個一個加起來，看到哪裡錢不夠為止。', wrongReason: '要算看看錢夠買幾個，不夠的零頭不能再買一個。' });
+});
+/* 生活：月曆與星期 */
+QX.add({ s: '生活', t: '月曆與時間', lv: [1, 2], w: 7 }, function (lv) {
+  const W = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'], d1 = QX.R(1, 20), w = QX.R(0, 6), off = QX.R(1, 10), d2 = d1 + off;
+  return QX.q({ s: '生活', t: '月曆與時間', kp: '生活·月曆與星期', ty: '應用' }, `這個月 ${d1} 號是${W[w]}，${d2} 號是星期幾？`, W[(w + off) % 7], QX.others(W, W[(w + off) % 7], 3), { explanation: `${d1} 號到 ${d2} 號，過了 ${off} 天。\n一星期有 7 天，從${W[w]}往後數 ${off} 天，是${W[(w + off) % 7]}。`, hint: '一星期七天，每隔 7 天，星期幾會一樣。', wrongReason: '可能數錯了天數，記得一星期有七天。' });
+});
+QX.add({ s: '生活', t: '月曆與時間', lv: [1, 2], w: 6 }, function (lv) {
+  const h = QX.R(1, 12), k = QX.R(1, 5), r = ((h - 1 + k) % 12) + 1;
+  return QX.q({ s: '生活', t: '月曆與時間', kp: '生活·時間與鐘面', ty: '應用' }, `現在是 ${h} 點整，再過 ${k} 小時是幾點？`, `${r} 點`, QX.others([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(x => x + ' 點'), `${r} 點`, 3), { explanation: `${h} 點再過 ${k} 小時：${h} + ${k} = ${h + k}${h + k > 12 ? '，超過 12 點要減 12，變成 ' + r : ''}。\n所以是 ${r} 點。`, hint: '鐘面只有 12 個數字，超過 12 就從 1 重新數。', wrongReason: '鐘面超過 12 點，就要回到 1 點重新數。' });
+});
+const QLM2 = [['鉛筆', 'pencil'], ['橡皮擦', ''], ['蠟筆', ''], ['尺', ''], ['書', ''], ['剪刀', ''], ['膠水', ''], ['筆記本', '']];
+QX.add({ s: '生活', t: '比長短', lv: [0, 2], w: 6 }, function (lv) {
+  const [a, b] = QX.sample(QLM2.map(x => x[0]), 2); let x = QX.R(3, 20), y = QX.R(3, 20); if (x === y) y += 1;
+  if (Math.random() < 0.5) return QX.q({ s: '生活', t: '比長短', kp: '生活·比較長短與測量' }, `${a}長 ${x} 公分，${b}長 ${y} 公分，哪一個比較長？`, x > y ? a : b, [x > y ? b : a, '一樣長', '不一定'], { explanation: `${x} 和 ${y} 比，${Math.max(x, y)} 比較大，所以${x > y ? a : b}比較長。`, hint: '比長短，就是比數字，數字大的比較長。', wrongReason: '要比較兩個數字，大的比較長。' });
+  return QX.q({ s: '生活', t: '比長短', kp: '生活·比較長短與測量', ty: '應用' }, `${a}長 ${Math.max(x, y)} 公分，${b}長 ${Math.min(x, y)} 公分，${a}比${b}長幾公分？`, Math.max(x, y) - Math.min(x, y), [], { explanation: `${Math.max(x, y)} − ${Math.min(x, y)} = ${Math.max(x, y) - Math.min(x, y)} 公分。`, hint: '比較長多少，用大的減小的。', wrongReason: '要用長的減短的。' });
+});
+
+/* ===================== 考卷系統（小測驗／單元／月考／期中／期末）+ 弱科補強 ===================== */
+const EXAM_TYPES = {
+  quiz: { name: '小測驗', n: 10, icon: '📝', sub: true, unit: false },
+  unit: { name: '單元測驗', n: 20, icon: '📘', sub: true, unit: true },
+  monthly: { name: '月考', n: 50, icon: '📗', sub: false, unit: false },
+  mid: { name: '期中考', n: 80, icon: '📙', sub: false, unit: false },
+  final: { name: '期末考', n: 100, icon: '🏆', sub: false, unit: false }
+};
+const SUBJ_ID = { 國語: 'chinese', 數學: 'math', 英文: 'english', 自然: 'science', 社會: 'social', 生活: 'life' };
+const Exam = {
+  si(s, size) { return Art.ico('subj_' + (SUBJ_ID[s] || 'x'), SUBJ_ICON[s] || '', size || 18, true); },
+  ui: { kind: 'quiz', subject: 'ALL', topic: '' },
+  _pending: null, topicCache: {},
+  letter(score) { return score >= 90 ? '優' : score >= 80 ? '甲' : score >= 70 ? '乙' : score >= 60 ? '丙' : '丁'; },
+  // 某年級某科目目前會出現的單元（用抽樣自動整理，新增題型後會自動出現）
+  topics(subject, lv) {
+    const key = lv + '|' + subject; if (this.topicCache[key]) return this.topicCache[key];
+    const cnt = {}; for (let i = 0; i < 160; i++) { try { const q = QG.make(lv, [], false, { subject }); if (q && q.subject === subject && q.topic) cnt[q.topic] = (cnt[q.topic] || 0) + 1; } catch (e) {} }
+    return (this.topicCache[key] = Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(x => x[0]).slice(0, 12));
+  },
+  plan(kind, subject, topic, n, lv) {
+    const subs = Taxo.subjects(lv), out = [];
+    if (subject !== 'ALL' && subs.includes(subject)) { for (let i = 0; i < n; i++) out.push({ subject, topicPrefix: topic || '' }); return out; }
+    // 最大餘數法：每一科至少 1 題，其餘依比例分配
+    const W = Taxo.W[lv <= 2 ? 'low' : lv <= 4 ? 'mid' : 'high'], tot = subs.reduce((a, k) => a + W[k], 0);
+    const raw = subs.map(k => n * W[k] / tot), cnt = raw.map(x => Math.max(1, Math.floor(x)));
+    let left = n - cnt.reduce((a, b) => a + b, 0);
+    const order = raw.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0]);
+    for (let t = 0; left > 0; t++, left--) cnt[order[t % order.length][1]]++;
+    for (let t = 0; left < 0; t++, left++) { const i = cnt.indexOf(Math.max(...cnt)); cnt[i]--; }
+    subs.forEach((k, i) => { for (let j = 0; j < cnt[i]; j++) out.push({ subject: k }); });
+    return out;
+  },
+  init(cfg) {
+    const n = cfg.plan.length, lens = []; for (let r = n; r > 0; r -= 10) lens.push(Math.min(10, r));
+    return { kind: cfg.kind, name: cfg.title, n, plan: cfg.plan, idx: 0, done: 0, groupDone: 0, groupLens: lens, seen: new Set(), log: [], t0: Date.now(), faints: 0 };
+  },
+  begin(cfg) {
+    const G = Game; if (G.battle) return;
+    const lv = G.state.grade | 0, zone = Math.max(0, Math.min(DB.zones.length - 1, lv));
+    const mons = G.monstersForZone(zone, Math.ceil(cfg.plan.length / 10)).map(m => G.makeFighter(m, false));
+    this._pending = cfg; G.beginBattle(-1, mons, '📝 ' + cfg.title, false);
+  },
+  go() {
+    const G = Game, lv = G.state.grade | 0, u = this.ui, T = EXAM_TYPES[u.kind];
+    const subject = T.sub ? u.subject : 'ALL', topic = T.unit && subject !== 'ALL' ? u.topic : '';
+    const title = T.name + (subject !== 'ALL' ? '・' + subject : '') + (topic ? '・' + topic : '');
+    this.begin({ kind: u.kind, title, plan: this.plan(u.kind, subject, topic, T.n, lv) });
+  },
+  goWeak() {
+    const G = Game, lv = G.state.grade | 0; if (G.battle) return;
+    const w = Perf.weakKps(lv).slice(0, 3);
+    if (!w.length) { G.toast('目前沒有明顯的弱點，繼續加油！多答幾題，系統就能幫你找出要加強的地方。'); return; }
+    const plan = []; for (let i = 0; i < 20; i++) { const x = w[i % w.length]; plan.push({ subject: x.subject, kp: x.kp }); }
+    this.begin({ kind: 'weak', title: '弱科補強', plan });
+  },
+  // 取下一題
+  makeQ(B) {
+    const X = B.exam, spec = X.plan[X.idx]; if (!spec) return null;
+    const s = Game.state, hist = (B.recent || []).concat(s.recentQ || []); let q = null;
+    for (let t = 0; t < 8; t++) { q = QG.make(s.grade, hist, false, spec); if (q && !X.seen.has(q.q + '|' + q.a)) break; }
+    if (q) X.seen.add(q.q + '|' + q.a);
+    X.idx++; return q;
+  },
+  afterAnswer(B, e, ok, q, pick) {
+    const X = B.exam; X.done++; X.groupDone++;
+    X.log.push({ subject: q.subject, kp: q.kp, topic: q.topic, ok, q: q.q, a: q.a, pick, passage: q.passage || '', exp: String(q.explanation || '').split('\n')[0] });
+    const glen = X.groupLens[B.index] || 10;
+    e.hp = X.groupDone >= glen ? 0 : Math.max(1, Math.round(e.maxHp * (1 - X.groupDone / glen)));     // 血條代表這一組考題的進度
+  },
+  bossFilter(B) {
+    const subs = Taxo.subjects(Game.state.grade | 0); B.bossIdx = B.bossIdx | 0;
+    const subject = subs[B.bossIdx % subs.length]; B.bossIdx++; return { subject };
+  },
+  bossLogPush(B, q, ok) { (B.bossLog = B.bossLog || []).push({ subject: q.subject, ok }); },
+  // 完成考試：成績單與獎勵
+  finish(B) {
+    const G = Game, s = G.state, X = B.exam, n = X.n, c = X.log.filter(x => x.ok).length, score = Math.round(c / n * 100);
+    const gold = Math.round(n * 6 * (0.5 + score / 100));
+    const gt = { quiz: [[100, 1]], unit: [[90, 1], [100, 2]], monthly: [[70, 2], [90, 3], [100, 4]], mid: [[60, 3], [80, 5], [90, 6], [100, 8]], final: [[60, 4], [80, 7], [90, 10], [100, 12]], weak: [[80, 1]] }[X.kind] || [];
+    let gems = 0; gt.forEach(([m, g]) => { if (score >= m) gems = g; });
+    const day = Dedup.day(); if (!s.examDay || s.examDay.d !== day) s.examDay = { d: day, g: 0 };
+    const room = Math.max(0, 20 - s.examDay.g); gems = Math.min(gems, room); s.examDay.g += gems;       // 每天最多 20 顆寶石，避免一直刷
+    s.gold += gold; s.dia = (s.dia | 0) + gems; G.gainExp(Math.round(n * 3 * (0.5 + score / 100)));
+    const by = {}; X.log.forEach(x => { const b = (by[x.subject] = by[x.subject] || { n: 0, c: 0 }); b.n++; if (x.ok) b.c++; });
+    s.exams = s.exams || []; s.exams.unshift({ t: Date.now(), kind: X.kind, name: X.name, n, c, score, bySubj: by, gold, gems }); s.exams.length = Math.min(s.exams.length, 30);
+    s.hp = s.maxHp;
+    const kpBad = {}; X.log.filter(x => !x.ok).forEach(x => { kpBad[x.kp] = (kpBad[x.kp] || 0) + 1; });
+    const sug = Object.entries(kpBad).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => `${x[0]}（錯 ${x[1]} 題）`);
+    const wrong = X.log.filter(x => !x.ok), sec = Math.round((Date.now() - X.t0) / 1000), stars = score >= 90 ? 3 : score >= 70 ? 2 : score >= 60 ? 1 : 0;
+    const esc = t => G.esc(t);
+    const bars = Object.entries(by).map(([k, v]) => `<div class="subj-row"><span>${this.si(k)}${k}</span><div class="progress"><i style="width:${Math.round(v.c / v.n * 100)}%"></i></div><b>${v.c}/${v.n}</b></div>`).join('');
+    const rev = wrong.slice(0, 15).map((x, i) => `<div class="ex-rev"><b>${i + 1}. ${esc(x.q)}</b><div>你的答案：<span class="bad">${esc(x.pick)}</span>　正確答案：<span class="good">${esc(x.a)}</span></div><small>🏷️ ${esc(x.kp)}　${esc(x.exp)}</small></div>`).join('');
+    document.getElementById('exam-box').innerHTML = `<h2>📝 ${esc(X.name)} 成績單</h2><div class="bm-body">
+      <div class="ex-score"><b>${score}</b><small>分</small><span class="ex-grade">${this.letter(score)}</span></div>
+      <div class="rw-stars">${'★'.repeat(stars)}<s>${'★'.repeat(3 - stars)}</s></div>
+      <p class="center" style="margin:4px 0 8px;font-weight:800">答對 ${c}／${n} 題　·　用時 ${Math.floor(sec / 60)} 分 ${sec % 60} 秒${X.faints ? `　·　體力歸零 ${X.faints} 次` : ''}</p>
+      ${bars}
+      <div class="rw-row" style="margin-top:8px"><span class="bt-chip">🪙 +${gold}</span><span class="bt-chip">💎 +${gems}</span></div>
+      ${gems === 0 && gt.length && room <= 0 ? '<p class="muted center">今天的考試寶石已領滿（每天最多 20 顆）</p>' : ''}
+      ${sug.length ? `<p style="margin:8px 0 2px;font-weight:900;color:#4a3320">🎯 建議加強</p><p>${esc(sug.join('、'))}</p>` : '<p class="center" style="font-weight:900">太棒了，沒有需要特別加強的地方！</p>'}
+      ${wrong.length ? `<p style="margin:8px 0 2px;font-weight:900;color:#4a3320">📋 錯題檢討（${wrong.length} 題）</p>${rev}` : ''}
+      <button class="btn green block" type="button" style="margin-top:10px" onclick="Game.closeExam()">完成</button></div>`;
+    document.getElementById('exam-result').classList.add('active');
+    try { SoundFX.playWin(); } catch (_) {}
+    G.checkAchievements(); G.save(); G.renderAll();
+  },
+
+  /* ----- 介面：段考中心 ----- */
+  setKind(k) { this.ui.kind = k; if (!EXAM_TYPES[k].sub) this.ui.subject = 'ALL'; this.ui.topic = ''; this.renderCard(); },
+  setSubject(s) { this.ui.subject = s; this.ui.topic = ''; this.renderCard(); },
+  setTopic(t) { this.ui.topic = this.ui.topic === t ? '' : t; this.renderCard(); },
+  renderCard() {
+    const el = document.getElementById('exam-card'); if (!el) return;
+    const G = Game, lv = G.state.grade | 0, u = this.ui, T = EXAM_TYPES[u.kind], subs = Taxo.subjects(lv);
+    if (u.subject !== 'ALL' && !subs.includes(u.subject)) u.subject = 'ALL';
+    const kinds = Object.entries(EXAM_TYPES).map(([k, t]) => `<button type="button" class="ctab${k === u.kind ? ' on' : ''}" onclick="Exam.setKind('${k}')">${Art.ico('exam_' + k, t.icon, 18, true)} ${t.name}（${t.n} 題）</button>`).join('');
+    const subj = T.sub ? ['ALL'].concat(subs).map(s => `<button type="button" class="ctab${u.subject === s ? ' on' : ''}" onclick="Exam.setSubject('${s}')">${s === 'ALL' ? '🎯 全科綜合' : this.si(s) + ' ' + s}</button>`).join('') : `<span class="muted">${T.name}會考：${subs.join('、')}</span>`;
+    const units = T.unit && u.subject !== 'ALL' ? `<p class="muted" style="margin:8px 0 4px">選一個單元（不選＝這一科全部）：</p><div class="c-tabs">${this.topics(u.subject, lv).map(t => `<button type="button" class="ctab${u.topic === t ? ' on' : ''}" onclick="Exam.setTopic('${t.replace(/'/g, "\\'")}')">${t}</button>`).join('')}</div>` : '';
+    const hist = (G.state.exams || []).slice(0, 3).map(e => `<div class="muted" style="font-size:12px">${new Date(e.t).getMonth() + 1}/${new Date(e.t).getDate()}　${e.name}　${e.score} 分（${this.letter(e.score)}）</div>`).join('');
+    const weak = Perf.weakKps(lv);
+    el.innerHTML = `<h3>📝 段考中心</h3>
+      <p class="muted" style="margin-bottom:8px">${LV[lv][0]}開放：${subs.join('、')}。答對＝角色攻擊，答錯＝怪物攻擊！</p>
+      <div class="c-tabs">${kinds}</div><div class="c-tabs">${subj}</div>${units}
+      <button class="btn orange block" type="button" onclick="Exam.go()">▶ 開始${T.name}（${T.n} 題）</button>
+      <button class="btn purple block" type="button" style="margin-top:8px" onclick="Exam.goWeak()">💪 弱科補強${weak.length ? '（發現 ' + weak.length + ' 個弱點）' : ''}</button>
+      ${hist ? '<p style="margin:10px 0 2px;font-weight:900;color:#4a3320">最近成績</p>' + hist : ''}`;
+  },
+  /* ----- 家長模式：各科成績與弱點 ----- */
+  parentHtml() {
+    const G = Game, lv = G.state.grade | 0, rows = Perf.subjects(lv).map(x => {
+      const p = x.rate == null ? 0 : Math.round(x.rate * 100);
+      return `<div class="subj-row"><span>${this.si(x.subject)}${x.subject}</span><div class="progress"><i style="width:${p}%"></i></div><b>${x.n ? x.c + '/' + x.n + ' · ' + p + '%' : '尚未作答'}</b></div>`;
+    }).join('');
+    const weak = Perf.weakKps(lv).slice(0, 6).map(w => `<div class="subj-row"><span style="flex:1">${w.kp}</span><b>${w.c}/${w.n} · ${Math.round(w.rate * 100)}%</b></div>`).join('');
+    const ex = (G.state.exams || []).slice(0, 5).map(e => `<div class="subj-row"><span style="flex:1">${new Date(e.t).getMonth() + 1}/${new Date(e.t).getDate()} ${e.name}</span><b>${e.score} 分（${this.letter(e.score)}）</b></div>`).join('');
+    return `<p style="margin:14px 0 6px;font-weight:900;color:#4a3320">📊 各科答題表現（${LV[lv][0]}）</p>${rows}
+      <p style="margin:10px 0 2px;font-weight:900;color:#4a3320">🎯 需要加強的知識點（正確率 70% 以下、至少答 4 題）</p>${weak || '<p class="muted">目前沒有明顯的弱點。</p>'}
+      ${weak ? '<div class="tip-box">💪 請孩子到「冒險」頁的「段考中心」按「弱科補強」，系統會自動出這些知識點的題目。</div>' : ''}
+      <p style="margin:10px 0 2px;font-weight:900;color:#4a3320">📝 最近考試</p>${ex || '<p class="muted">還沒有考試紀錄。</p>'}`;
   }
 };
 
@@ -3430,6 +4462,7 @@ const Game = {
       rewards: { gold: 0, exp: 0, wood: 0, stone: 0, steel: 0 },
       energy: 0, selectedSkill: 0, bossShield: 0, bossRage: false
     };
+    if (Exam._pending) { this.battle.exam = Exam.init(Exam._pending); Exam._pending = null; }
     // 隱藏主介面，避免戰鬥時透出下方頁面
     const app = document.getElementById('app');
     if (app) app.style.visibility = 'hidden';
@@ -3472,7 +4505,7 @@ const Game = {
     if (bg) bg.textContent = (s.gold | 0).toLocaleString();
     if (bd) bd.textContent = (s.dia | 0).toLocaleString();
     if (bh) bh.textContent = (s.hp | 0) + '/' + (s.maxHp | 0);
-    if (bq && B) bq.textContent = Math.min(B.index + 1, B.queue.length) + '/' + B.queue.length;
+    if (bq && B) bq.textContent = B.exam ? Math.min(B.exam.done + 1, B.exam.n) + '/' + B.exam.n : Math.min(B.index + 1, B.queue.length) + '/' + B.queue.length;
 
     // 場景：Boss 戰換色調 / 換背景圖
     const scene = document.getElementById('battle-scene');
@@ -3675,19 +4708,26 @@ const Game = {
     if (B.weak && s.wrongLog.length) {
       const w = QG.pick(s.wrongLog);
       q = { subj: w.subj, q: w.q, a: w.a, opts: QG.shuffle(w.opts), wrongRef: w, swatch: w.sw };
-    } else q = QG.make(s.grade, hist, !!e.isBoss);
+    } else if (B.exam) {
+      q = Exam.makeQ(B); if (!q) { this.finishStage(true); return; }
+    } else if (e.isBoss) q = QG.make(s.grade, hist, true, Exam.bossFilter(B));   // Boss 關卡＝段考模式：各科輪流出題
+    else q = QG.make(s.grade, hist, false);
     B.recent.push(q.q); if (B.recent.length > 100) B.recent.shift();
     s.recentQ = s.recentQ || []; s.recentQ.push(q.q); if (s.recentQ.length > 120) s.recentQ.shift();
+    Taxo.fill(q, s.grade | 0); try { Dedup.mark(q); } catch (_) {}
     B.curQ = q; B.waiting = true;
     setTimeout(() => { try { Voice.autoRead(q, B); } catch (e) {} }, 450);
-    const qb = document.getElementById('q-box'); qb.toggleAttribute('data-zyq', q.subj === '注音'); qb.textContent = q.q; qb.classList.toggle('long', String(q.q).length > 26);
+    const qb = document.getElementById('q-box'); qb.toggleAttribute('data-zyq', q.subj === '注音' || !!q.noZyQuote); qb.textContent = q.q;
+    const qp = document.getElementById('q-pass'), qi = document.getElementById('q-pic');
+    if (qp) { qp.textContent = q.passage || ''; qp.style.display = q.passage ? 'block' : 'none'; qp.scrollTop = 0; }
+    if (qi) { qi.innerHTML = q.pic ? Art.ico('quiz_' + QX.picId(q.pic.e), q.pic.e, 72, true) : ''; qi.style.display = q.pic ? 'block' : 'none'; } qb.classList.toggle('long', String(q.q).length > 26);
     const opts = document.getElementById('opts'); opts.innerHTML = '';
     opts.className = 'opts' + (q.opts.some(o => COLOR_RE.test(o)) ? ' neutral' : '');
     q.opts.forEach((o, oi) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'opt-btn o' + (oi % 4); b.dataset.v = o;
       const ol = document.createElement('span'); ol.className = 'ol'; ol.textContent = String.fromCharCode(65 + oi);
-      const ot = document.createElement('span'); ot.className = 'ot'; ot.textContent = o; if (q.subj === '注音') ot.setAttribute('data-nozy', '');
+      const ot = document.createElement('span'); ot.className = 'ot'; ot.textContent = o; if (q.subj === '注音' || q.noZyOpts) ot.setAttribute('data-nozy', '');
       const mk = document.createElement('span'); mk.className = 'mark';
       if (q.swatch && SWATCH[o]) { const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = SWATCH[o]; b.append(ol, sw, ot, mk); }
       else b.append(ol, ot, mk);
@@ -3706,7 +4746,7 @@ const Game = {
       };
       opts.appendChild(h);
     }
-    document.getElementById('battle-hint').textContent = `${LV[s.grade][0]} · ${q.subj} · 答對即可攻擊`;
+    document.getElementById('battle-hint').textContent = B.exam ? `📝 ${B.exam.name} · 第 ${B.exam.idx}/${B.exam.n} 題 · ${q.subject}` : (e.isBoss && !B.weak ? `📝 段考模式 · ${q.subject} · 答對破盾` : `${LV[s.grade][0]} · ${q.subject}${q.topic ? ' · ' + q.topic : ''} · 答對即可攻擊`);
     this.showFighters();
   },
 
@@ -3732,6 +4772,7 @@ const Game = {
     st.total++;
     const m = this.classMult(), sk = this.skillBonus(), pb = this.petBonus(), kb = this.kBonus();
     const cat = this.kCount(q, ok);
+    try { Perf.rec(q, ok); } catch (_) {}
     let txt, who; this._fxSkill = null;
     if (ok) {
       st.correct++; s.stats.correct++; B.correct++; B.combo++;
@@ -3796,7 +4837,7 @@ const Game = {
     } else {
       st.wrong++; B.combo = 0;
       s.wrongLog = s.wrongLog.filter(w => w.q !== q.q);
-      s.wrongLog.push({ subj: q.subj, q: q.q, a: q.a, opts: q.opts.slice(), sw: !!q.swatch, g: s.grade, t: Date.now() });
+      s.wrongLog.push({ subj: q.subj, q: q.q, a: q.a, opts: q.opts.slice(), sw: !!q.swatch, g: s.grade, subject: q.subject, kp: q.kp, topic: q.topic, t: Date.now() });
       if (!this.explainOn()) Voice.say('wrong');
       if (s.wrongLog.length > 80) s.wrongLog.shift();
       if (Math.random() < sk.ice + pb.ice) { txt = '❄️ 擋下！'; who = 'enemy'; }
@@ -3807,6 +4848,7 @@ const Game = {
       }
       try { SoundFX.playWrongGentle(); } catch (_) {}
     }
+    if (B.exam) Exam.afterAnswer(B, e, ok, q, opt); else if (e.isBoss && !B.weak) Exam.bossLogPush(B, q, ok);
     this.showFighters(); this.fx(who, txt, /💥/.test(txt)); this.save();
     // Boss 階段：100% 普通 → 50% 生氣 → 20% 狂暴
     if (e && e.isBoss && e.hp > 0) {
@@ -3821,8 +4863,11 @@ const Game = {
       }
     }
     this.later(B, () => {
-      if (s.hp <= 0) this.finishStage(false);
-      else if (e.hp <= 0) this.onEnemyDown();
+      if (s.hp <= 0) {
+        if (B.exam) { s.hp = Math.round(s.maxHp * 0.5); B.exam.faints = (B.exam.faints | 0) + 1; this.toast('💫 考試不會中途失敗，體力恢復一半！'); this.showFighters(); }
+        else { this.finishStage(false); return; }
+      }
+      if (e.hp <= 0) this.onEnemyDown();
       else this.nextQuestion();
     }, Math.max(750, this._fxTotal || 0));
   },
@@ -3830,6 +4875,7 @@ const Game = {
   onEnemyDown() {
     const B = this.battle, e = this.currentEnemy(), s = this.state;
     if (!e) return;
+    if (B.exam) B.exam.groupDone = 0;
     const z = Math.max(0, B.zoneId), sk = this.skillBonus(), m = this.classMult(), pb = this.petBonus();
     const base = (e.isBoss ? 40 : 12) * (1 + z * 0.25), r = B.rewards;
     r.gold += Math.round(base * (1 + sk.gold + pb.res) * m.gold);
@@ -3890,7 +4936,8 @@ const Game = {
     document.getElementById('pause-menu').classList.remove('active');
     const app = document.getElementById('app');
     if (app) app.style.visibility = '';
-    const r = B.rewards, f = win ? 1 : 0.3;
+    if (B.exam && win) { Exam.finish(B); return; }
+    const r = B.rewards, f = win ? 1 : (B.exam ? 0 : 0.3);
     const acc = B.total ? B.correct / B.total : 0;
     const stars = win ? (acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1) : 0;
     const city = win ? this.cityIncome() : 0;
@@ -3928,9 +4975,12 @@ const Game = {
       `<p>答對 ${B.correct}/${B.total}</p>
        <div class="rw-row">${chip('🪙', x.r.gold)}${chip('✨', x.r.exp)}${chip('🪵', x.r.wood)}${chip('🪨', x.r.stone)}${chip('⚙️', x.r.steel)}</div>` +
       (B.drops ? `<p class="muted" style="margin:6px 0 2px">答題與 Boss 掉落</p><div class="rw-row">${Object.entries(B.drops).map(([k, v]) => `<span class="bt-chip">${RES[k].icon} +${v}</span>`).join('')}</div>` : '') +
+      (B.bossLog && B.bossLog.length ? `<p class="muted" style="margin:6px 0 2px">📝 Boss 段考模式成績</p><div class="rw-row">${Object.entries(B.bossLog.reduce((m, z) => { (m[z.subject] = m[z.subject] || [0, 0])[1]++; if (z.ok) m[z.subject][0]++; return m; }, {})).map(([k, v]) => `<span class="bt-chip">${SUBJ_ICON[k] || ''}${k} ${v[0]}/${v[1]}</span>`).join('')}</div>` : '') +
       (win && x.city ? `<p class="muted">城市收租 🪙${x.city}</p>` : '');
     document.getElementById('result-modal').classList.add('active');
   },
+
+  closeExam() { document.getElementById('exam-result').classList.remove('active'); this.openLevelUp(); },
 
   closeResult() {
     document.getElementById('result-modal').classList.remove('active');
@@ -4428,6 +5478,7 @@ const Game = {
        </div>
        <p style="margin:14px 0 2px;font-weight:900;color:#4a3320">📚 科目表現</p>${rows}
         ${kingdomBlock}
+        ${Exam.parentHtml()}
        <div class="tip-box">💡 建議：正確率穩定超過 85% 就升一級題庫，每天打一次錯題魔王。</div>
        <button class="btn purple block" type="button" style="margin-top:12px" onclick="Game.startWeakBoss()">👾 開始錯題複習戰</button>`;
   },
@@ -4498,7 +5549,7 @@ const Game = {
 
   showExplain(q, picked, done) {
     const lv = this.state.grade | 0, b = Explain.build(q, lv, picked);
-    const why = q.custom ? q.wrongReason : b.wrongReason, exp = q.explanation || b.explanation, hint = q.hint || b.hint;
+    const why = (q.custom || q.rich) ? q.wrongReason : b.wrongReason, exp = q.explanation || b.explanation, hint = q.trick || q.hint || b.hint;
     const lines = String(exp).split('\n').filter(x => x.trim()).map(l =>
       `<div class="exl"><span class="ex-line${/[=＝]/.test(l) && /\d/.test(l) && l.length < 46 ? ' eq' : ''}">${this.esc(l)}</span></div>`).join('');
     const box = document.getElementById('ex-box');
@@ -4510,8 +5561,9 @@ const Game = {
           <div class="ex-a good"><small>正確答案</small><b>${this.esc(q.a)}</b></div>
         </div>
         <div class="ex-sec"><h4>🔎 錯誤原因</h4><p>${this.esc(why)}</p></div>
-        <div class="ex-sec"><h4>📘 解析</h4>${lines}</div>
-        <div class="ex-sec"><h4>💡 提示</h4><p>${this.esc(hint)}</p></div>
+        <div class="ex-sec"><h4>🧩 解題過程</h4>${lines}</div>
+        <div class="ex-sec"><h4>🧠 記憶技巧</h4><p>${this.esc(hint)}</p></div>
+        ${q.kp ? `<div class="ex-kp">🏷️ 知識點：${this.esc(q.kp)}</div>` : ''}
       </div>
       <div class="ex-btns">
         <button type="button" class="btn blue sm" style="flex:0 0 56px" onclick="Voice.readExplain()" aria-label="唸給我聽">🔊</button>
@@ -4549,6 +5601,7 @@ const Game = {
     this.renderTop(); this.renderHome(); this.renderAdventure(); this.renderMap();
     this.renderCity(); this.renderPets(); this.renderEquip();
     this.renderCodex(); this.renderAchieve(); this.renderParent();
+    try { Exam.renderCard(); } catch (e) {}
     try { ZY.sync(); } catch (e) {}
   }
 };
@@ -4557,7 +5610,7 @@ const Game = {
 /* ===== 注音引擎：把所有國字自動標上注音（不改動遊戲邏輯／題目文字） ===== */
 const ZY_DATA = {"c":"一丁七丈三上下不丐丑且丕世丘丙丞丟並丫中丰串丸丹主乃久么之乍乎乏乒乓乖乘乙九乞也乩乳乾亂了予事二于云互五井亙些亞亟亡亢交亥亦亨享京亭亮亳人什仁仃仄仆仇今介仍仔仕他仗付仙仞仟代令以仰仲仳件任份仿企伉伊伋伍伏伐休伕伙伯估伴伶伸伺似伽佃但佇佈位低住佐佑佔何佗余佚佛作佝佞你佣佩佬佯佰佳併佺佻佾使侃來侈例侍侏侑侖供依侮侯侵侶侷便係促俄俊俎俏俐俑俗俘俚保俞俟俠信修俯俱俳俸俺俾倀倆倉個倌倍倏們倒倔倖倘候倚借倡倣倥倦倨倩倪倫倭值偃假偉偌偎偏偕做停健偭偯側偵偶偷偺偽傀傅傍傑傖傘備傚傢催傭傯傲傳債傷傻傾僅僇僎像僑僕僖僚僥僧僩僭僮僱僵價僻儀儂億儅儈儉儐儒儔儕儘償儡優儲儳儷儸儻儼儿兀允元兄充兆兇先光克兌免兒兔兕兗兜兢入內全兩八公六兮共兵其具典兼冀冉冊再冑冒冕冗冠冢冤冥冪冬冰冶冷冽准凋凌凍凜凝几凡凰凱凳凶凸凹出函刀刁刃分切刈刊刎刑划刖列初判別刨利刪刮到制刷券刺刻剁剃則削剋剌前剎剔剖剛剜剝剩剪副割剴創剷剽剿劂劃劇劈劉劊劍劑劓力功加劣助努劫劬劻劾勁勃勇勉勒動勗勘務勛勝勞募勢勣勤勦勰勳勵勸勺勻勾勿包匆匈匍匏匐匕化北匙匝匠匡匣匪匯匱匹匾匿區十千卅升午卉半卑卒卓協南博卜卞占卡卦卮卯印危即卵卷卸卹卻卿厄厚厝原厥厭厲去參又叉及友反叔取受叛叟叢口古句另叨叩只叫召叭叮可台叱史右叵司叻叼吁吃各吆合吉吊吋同名后吏吐向吒君吝吞吟吠否吧吩含听吭吮吱吳吵吶吸吹吻吼吾呀呂呃呆呈告呎呢周呱味呵呶呷呸呻呼命咀咄咆咋和咎咐咒咕咖咚咦咧咨咩咪咫咬咯咱咳咸咻咽咿哀品哂哄哇哈哉哎哞員哥哦哨哩哪哭哮哲哺哼哽唁唆唇唉唏唐唔唧唬售唯唱唳唷唸唾啁啃啄商啊問啕啖啗啜啞啟啡啣啤啦啪啻啼啾喀喂喃善喇喉喊喋喔喘喙喚喜喝喟喧喪喫喬單喱喲喳喵喻嗅嗆嗇嗉嗎嗑嗓嗚嗜嗟嗡嗣嗤嗥嗦嗨嗯嗶嗷嗽嗾嘀嘆嘈嘉嘍嘎嘐嘔嘖嘗嘛嘟嘩嘮嘯嘰嘲嘴嘶嘹嘻嘿噎噓噗噙噢噤噥器噩噪噫噬噯噱噴噶噸噹嚀嚅嚇嚎嚏嚐嚕嚥嚨嚮嚴嚶嚷嚼囀囁囂囈囉囊囌囑囚四囝回因囤囪囫困固囿圃圄圈圉國圍園圓圖團土在圩圬圭圯地圳圻圾址均坊坍坎坏坐坑坡坤坦坩坪坷坼垂垃型垓垠垢垣垮埂埃埋城埔域埠埤執培基堂堅堆堉堊堝堠堡堤堪堯堰報場堵塊塋塌塑塒塔塗塘塚塞塢填塭塵塹塽塾墀境墅墊墓墜增墟墦墨墩墮墳墾壁壅壇壎壑壓壕壘壙壞壟壢壤壩士壬壯壹壺壽夏夔夕外夙多夜夠夢夤夥大天太夫夭央失夷夸夾奄奇奈奉奎奏奐契奔奕套奘奚奠奢奧奩奪奭奮女奴奶奸她好妁如妃妄妊妍妒妓妖妙妝妞妣妤妥妨妮妯妳妹妻妾姅姆姊始姍姐姑姒姓委姘姚姜姣姥姦姨姪姬姻姿威娃娉娌娑娓娘娛娜娟娠娣娥娩娶娼婀婁婆婉婊婚婢婦婪婷婿媒媚媛媧媲媳媼媽媾嫁嫂嫉嫌嫖嫗嫘嫡嫣嫦嫩嫵嫻嬈嬉嬋嬌嬝嬤嬪嬰嬴嬸孀孃子孑孓孔孕字存孚孛孜孝孟季孤孩孫孰孱孳孵學孺孽孿它宅宇守安宋完宏宗官宙定宛宜客宣室宥宦宮宰害宴宵家宸容宿寂寄寅密寇富寐寒寓寞察寡寢寤寥實寧寨審寫寬寮寰寵寶寸寺封射將專尉尊尋對導小少尖尚尢尤尬就尷尸尹尺尼尾尿局屁居屆屈屋屍屎屏屐屑展屘屜屝屠屢層履屨屬屯山屹岌岐岑岔岡岩岫岱岳岷岸峒峙峨峪峭峰峴島峻峽崁崆崇崎崑崔崖崗崙崛崢崤崧崩崴嵇嵌嵐嵩嵯嶄嶇嶔嶝嶸嶺嶼嶽巉巍巒巔巖川州巡巢工左巧巨巫差己已巳巴巷巽巾市布帆希帑帕帖帘帚帛帝帟帥師席帳帶帷常帽幀幃幅幌幔幕幗幛幟幡幢幣幫干平年并幸幹幻幼幽幾庇床序底庖店庚府庠度座庫庭庵庶康庸庾廁廂廄廈廉廊廓廖廚廝廟廠廢廣廬廳延廷建廾廿弁弄弈弊弋式弒弓弔引弗弘弛弟弦弧弩弭弱張強弼彆彈彊彌彎彗彙彝形彤彥彩彪彫彬彭彰影彷役彼彿往征待徇很徉徊律後徐徑徒得徘徙徜從徠御徨復循徬微徵德徹徽心必忌忍忖志忘忙忝忠忪快忱念忸忽忿怎怏怒怔怕怖怛思怠怡急性怨怩怪怫怯怵恃恆恍恐恕恙恢恣恤恥恨恩恪恫恬恭息恰恿悄悅悉悌悍悔悖悚悟悠患您悲悴悵悶悸悻悼悽情惆惇惋惑惕惘惚惜惟惠惡惦惰惱想惴惶惹惺惻愀愁愆愈愉愍愎意愒愕愚愛愜感愣愧愴愷愾愿慄慇慈態慌慍慎慕慘慚慝慟慢慣慧慨慫慮慰慵慶慷慼慾憂憊憋憎憐憑憔憚憤憧憩憫憬憮憲憶憾懂懇懈應懊懋懍懣懦懲懵懶懷懸懺懼懾懿戀戈戊戌戍戎成我戒戕或戚戛戟戡戢截戮戰戲戳戴戶戾房所扁扇扈扉手扌才扎扑扒打扔托扛扣扭扮扯扳扶批扼找承技抄抆抉把抑抒抓投抖抗折抨披抬抱抵抹押抽抿拂拄拆拇拈拉拋拌拍拎拐拒拓拔拖拗拘拙拚招拜括拭拮拯拱拳拴拷拼拽拾拿持挂指挈按挑挖挨挪挫振挺挽挾捂捆捉捌捍捎捏捐捕捧捨捩捫捱捲捶捷捺捻掀掃掄授掉掌掏排掖掘掙掛掠採探掣接控推掩措掬揀揆揉揍描提插揖揚換握揣揩揪揭揮援揹搆損搏搓搔搖搗搜搞搪搬搭搴搶搽搾摀摑摒摔摘摟摧摩摭摯摸摹摺摻撇撈撐撒撓撕撙撚撞撢撤撥撩撫撬播撮撰撲撳撻撼撾撿擁擂擄擅擇擊擋操擎擒擔擘據擠擢擦擬擭擰擱擲擴擷擺擻擾攀攆攏攔攘攙攜攝攣攤攪攫攬支收攸改攻放政故效敉敏救敔敕敖敗敘教敝敞敢散敦敬敲整敵敷數斂斃文斐斑斕斗料斛斜斟斡斤斥斧斫斬斯新斷方於施旁旅旋旌旎族旖旗既日旦旨早旬旭旱旺昀昂昆昇昊昌明昏易昔昕星映昤春昧昨昭是昱晁時晃晅晉晌晏晒晚晝晞晤晦晨普景晰晴晶晷智晾暄暇暈暉暍暑暖暗暘暝暢暨暫暮暱暴暸暹曄曆曇曉曖曙曜曝曠曦曩曬曰曲曳更曷書曹曼曾替最會月有朋服朔朕朗望朝期朦朧木未末本札朮朱朴朵朽杆杉李杏材村杓杖杗杜杞束杠杪杭杯杰東杲杳杵杷杼松板枇枉枋析枓枕林枚果枝枯枰枴架枸柄柏某柑柒染柔柙柚柝柞柢查柩柬柯柱柳柴柵柿栓栗栘校栩株核根格栽桀桁桂桃桅框案桌桐桑桓桔桶桿梁梂梃梅梆梓梔梗條梟梡梢梧梨梭梯械梱梳梵棄棉棋棍棒棕棗棘棚棟棠棣棧森棲棵棹棺棻椅植椎椒椰楊楓楔楚楛楝楞楠楣楨楫業楮極楷楹概榆榔榕榛榜榣榦榨榫榭榮榴榷榻槁槃構槌槍槐槓槨槭槳槽樁樂樅樊樑樓標樞樟模樣樵樸樹樺樽橄橇橈橋橘橙機橡橢橫橾檀檄檐檔檗檜檠檢檣檬檮檯檳檸檻櫂櫃櫓櫚櫛櫝櫥櫬櫺櫻欄權欐欖欠次欣欲欺欽款歇歉歌歎歐歙歜歟歡止正此步武歧歪歲歷歸歹死歿殃殆殉殊殖殘殤殮殯殲段殷殺殼殿毀毅毆毋母每毒毓比毗毚毛毫毬毯毽氅氈氏氐民氓氖氛氟氣氤氦氧氨氫氬氮氯氳水氵永氾汀汁求汍汎汐汕汗汙汛汝汞江池污汨汪汰汲汴汶決汽汾沁沂沃沅沆沈沉沌沍沐沒沔沖沘沙沛沫沬沮沱河沸油治沼沽沾沿況泄泅泉泊泌泓法泖泗泛泜泠泡波泣泥注泯泰泱泳泵洋洌洎洗洛洞津洧洩洪洫洮洱洲洵洶洸洹活洽派流浙浚浥浦浩浪浬浮浴海浸浹涅涇消涉涊涌涎涓涔涕涪涮涯液涵涸涼涿淄淅淆淇淋淌淑淒淘淙淚淞淡淤淦淨淪淫淬淮深淳淵混淹淺添清渙渚減渝渠渡渣渤渥渦測渭港渲渴游渺渾湃湄湊湍湎湔湖湘湛湟湣湧湩湮湯湲溉源準溘溜溝溢溥溧溪溫溯溴溶溺溼滂滄滅滇滋滌滑滓滔滕滬滯滲滴滷滾滿漁漂漆漏漓演漕漠漢漣漩漪漫漬漯漱漲漳漸漾漿潑潔潘潛潟潠潤潦潭潮潯潰潸潺潼澀澄澆澈澎澗澠澡澤澦澧澱澳澴澶澹激濁濂濃濕濘濛濟濠濡濤濩濫濬濮濯濰濱濺濾瀆瀉瀋瀏瀑瀕瀘瀚瀛瀝瀟瀨瀰瀲瀾灌灑灘灞灣灤火灰灶灸灼災炊炎炒炕炙炤炫炬炭炮炯炳炸為烈烊烏烘烙烤烯烹烽焉焊焙焚焜無焦焰然煆煉煌煎煖煙煜煞煤煥煦照煨煩煬煮煽熄熊熒熔熙熟熨熬熱熹熾燃燄燈燉燎燐燒燕燙燜營燠燥燦燧燬燭燮燴燸燻燼燾爆爍爐爛爨爪爬爭爰爵父爸爹爺爻爽爾牆片版牌牒牖牘牙牛牝牟牠牡牢牧物牯牲牴特牽犀犁犄犒犖犛犢犧犬犯狀狂狄狎狐狗狙狠狡狩狷狸狹狼狽猓猖猙猛猜猥猩猴猶猷猾猿獄獅獎獐獗獨獰獲獵獷獸獺獻玀玄玆率玉王玖玟玥玨玩玫玲玳玷玻珀珊珍珞珠珪班珮現球琅理琉琊琍琛琢琥琦琨琪琯琳琴琵琶琺琿瑁瑕瑙瑚瑛瑜瑞瑟瑣瑤瑩瑪瑭瑯瑰瑾璀璃璋璘璜璞璟璣璦璧璨璩環璽璿瓊瓏瓔瓖瓚瓜瓠瓢瓣瓤瓦瓶瓷甄甌甍甕甘甚甜生產甥甦用甩甫甬甭田由甲申男甸甽畋界畎畏畔留畚畜畝畢略畦番畫異當畸畿疆疇疊疋疏疑疙疚疝疢疣疤疥疫疲疳疵疸疹疼疽疾痂病症痊痍痔痕痘痙痛痞痠痢痣痰痱痲痳痴痺痿瘀瘁瘉瘋瘍瘓瘟瘠瘡瘢瘤瘦瘧瘩瘴瘸瘺療癆癌癒癖癘癟癡癢癥癩癬癮癱癲癸登發白百皂的皆皇皈皋皎皓皖皚皮皰皴皺皿盂盃盅盆盈益盍盎盒盔盛盜盞盟盡監盤盥盧盪目盯盲直相盹盼盾省眇眉看真眠眨眩眶眷眸眺眼眾睏睛睜睞睡睢督睥睦睨睪睫睬睹睽睿瞄瞇瞋瞌瞎瞑瞞瞟瞠瞥瞧瞪瞬瞭瞰瞳瞻瞼瞽瞿矇矓矗矚矛矜矢矣知矩短矮矯石矽砂砌砍研砝砟砠砥砧砭砰砲破砷砸硃硎硝硫硬硯硼硿碉碌碎碑碓碗碘碟碣碧碩碰碳確碼碾磁磅磊磋磐磕磚磧磨磬磯磴磷磺礁礎礙礦礪礫礬示社祀祁祆祇祈祉祐祕祖祗祚祝神祟祠祥票祭祺祿禁禍禎福禦禧禪禮禱禳禹禺禽禾禿秀私秈秉秋科秒秘租秣秤秦秧秩移稀稅稈程稍稔稚稜稞稟稠種稱稷稻稼稽稿穀穆穋穌積穎穗穠穡穢穩穫穴究穹空穿突窄窈窒窕窖窗窘窟窠窩窪窮窯窺窿竄竅竇竊立站竟章竣童竭端競竹竺竽竿笆笑笙笛笞笠符笨第笮筆等筋筍筏筐筑筒答策筠筧筮筵筷箄箇箋箏箔箕算箝箠管箭箱箴箸節篁範篆篇築篌篙篛篠篡篤篦篩篷篾簇簌簍簑簞簡簣簧簪簫簷簸簽簾簿籀籃籌籍籐籟籠籣籤籥籬籮籲米籽粉粒粕粗粟粥粱粳粵粹粽精糊糕糖糙糜糝糞糟糠糢糧糯糰糸系糾紀紂約紅紆紇紉紊紋納紐純紕紗紙級紛紜素紡索紫紮累細紱紲紳紹紼絀終絃組絆結絕絛絞絡絢給絨絮絰統絲絳絹綁綏綑經綜綞綠綢綬維綰綱網綴綵綸綺綻綽綾綿緇緊緒緘緙線緝緞締緣編緩緬緯緲練緹緻縈縉縊縐縑縛縝縞縣縫縮縯縱縲縴縵縷縹總績縿繁繃繅繆繈繒織繕繙繚繞繡繩繪繫繭繳繹繼繽纂續纏纓纔纖纜缶缸缺缽罄罈罌罐罔罕罟罩罪置罰署罵罷罹羅羈羊羋羌美羔羚羞群羨義羯羲羶羸羹羼羽羿翁翅翌翎習翔翕翟翠翡翩翮翰翱翳翹翻翼耀老考耄者耆耋而耍耐耑耒耕耗耘耙耜耦耨耳耶耽耿聆聊聒聖聘聚聞聯聰聱聲聳聶職聽聾聿肄肅肆肇肉肋肌肓肖肘肚肛肝股肢肥肩肪肫肯肱育肴肺胃胄背胎胖胚胛胝胞胡胤胥胭胯胰胱胳胴胸胼能脂脅脆脈脊脖脣脤脩脫脯脰脹脾腆腋腌腎腐腑腓腔腕腥腦腫腮腰腱腳腴腸腹腺腿膀膂膈膊膏膘膚膛膜膝膠膨膩膳膺膽膾膿臀臂臃臆臉臍臏臘臚臟臢臣臥臧臨自臬臭至致臺臻臼臾舀舂舅與興舉舊舌舍舐舒舔舛舜舞舟舢舨航舫般舵舶舷船艇艋艘艙艦艮良艱色艷艸艹艾芋芍芒芙芝芟芣芥芬芭芯芰花芳芷芸芹芻芽芾苑苒苓苔苗苛苜苞苟苣若苦苧苯英茁茂范茄茅茆茉茗茨茫茱茲茴茵茶茸茹荀荃草荊荏荐荒荔荷荸荻荼莆莉莊莎莒莓莖莘莞莠莢莧莫莽菁菅菇菊菌菔菜菟菠菩華菰菱菲菴菸菽萃萄萇萊萋萌萍萎萬萱萵萸萼落葆葉著葛葡董葦葩葫葬葭葵葷蒂蒐蒙蒜蒞蒲蒸蒼蒿蓀蓄蓆蓉蓊蓋蓑蓓蓬蓮蓿蔆蔑蔓蔔蔗蔚蔡蔣蔥蔬蔭蔽蕃蕈蕉蕊蕙蕞蕨蕩蕪蕭蕾薄薇薊薑薔薛薜薦薨薩薪薯薰薹薺藉藍藏藐藕藝藤藥藩藪藷藹藺藻蘆蘇蘊蘋蘑蘗蘚蘭蘸蘿虎虐虔處虛虜虞號虧虫虱虹虺虻蚊蚌蚓蚜蚣蚤蚩蚪蚯蚱蚵蚶蛀蛄蛆蛇蛉蛋蛐蛔蛙蛛蛞蛟蛤蛭蛹蛻蛾蜀蜂蜃蜆蜇蜈蜊蜓蜘蜜蜢蜥蜩蜴蜷蜻蜿蝌蝓蝕蝗蝙蝟蝠蝦蝨蝴蝶蝸螂螃融螞螟螢螫螳螺螻蟀蟆蟈蟋蟑蟒蟠蟬蟯蟲蟹蟻蟾蠅蠍蠔蠕蠟蠡蠢蠣蠱蠶蠹蠻血行衍術街衙衛衝衡衢衣表衫衰衷衹衽袁袂袈袋袍袒袖袞被袱裁裂裊裒裔裕裘裙補裝裟裡裨裯裳裴裸裹製褂複褊褐褒褓褕褚褡褥褪褫褲褶褸褻褽襄襖襞襟襠襤襪襬襯襲西要覃覆見規覓視覜覦親覬覲覺覽觀角觔解觴觸觼言訁訂訃計訊訌討訏訐訑訓訕訖託記訛訝訟訢訣訥訪設許訴訶診註証訾詁詆詐詔評詖詛詞詠詢詣試詨詩詫詬詭詮詰話該詳詹詻詼誅誇誌認誑誓誕誘誚語誠誡誣誤誥誦誧誨說誰課誶誹誼調諂諄談諉請諍諒論諛諜諦諧諫諭諮諱諳諶諷諸諺諼諾謀謁謂謄謊謎謐謗謙講謝謠謨謫謬謹譁譆證譎譏識譙譚譜譟警譫譬譯議譴護譽讀變讒讓讖讚讜谷谿豁豆豈豉豌豎豐豔豕豚象豢豪豫豬豭豳豹豺貂貉貊貌貍貓貝貞負財貢貧貨販貪貫責貯貲貳貴貶買貸費貼貽貿賀賁賂賃賄賅資賈賊賑賒賓賜賞賠賡賢賣賤賦質賬賭賴賸賺賻購賽贅贈贊贍贏贓贖贗贛赤赦赧赫赭走赳赴起趁超越趕趙趟趣趨足趴趺趾跆跋跌跎跑跚跛距跟跡跤跦跨跪路跳跺跼踏踐踝踞踟踡踢踩踫踱踴踵踹蹂蹄蹈蹉蹊蹋蹕蹙蹟蹣蹤蹦蹬蹲蹴蹶蹺蹼躁躂躅躇躉躊躋躍躑躓躡躪身躬躲躺軀車軋軌軍軏軒軔軛軟軸軻軼軾較載輊輒輓輔輕輛輜輝輞輟輥輦輩輪輯輳輸輻輾輿轂轄轅轉轍轎轔轟轡辛辜辟辣辦辨辭辮辯辰辱農迂迄迅迆迎近返迢迤迥迦迨迪迫迭述迴迷迸迺追退送逃逅逆逍透逐途逕逖逗這通逛逝逞速造逢連逮週進逵逶逸逼逾遁遂遇遊運遍過遏遐遑道達違遘遙遛遜遝遞遠遢遣遨適遭遮遲遴遵遷選遺遼遽避邀邁邂邃還邇邈邊邋邏邐邑邕邢那邦邪邱邵邶邸郁郃郊郎郝郡郢部郭郵都郾鄂鄉鄒鄗鄘鄙鄞鄧鄭鄰鄱鄴鄹酈酉酊酋酌配酒酗酣酥酩酪酬酴酵酷酸醃醇醉醋醒醜醞醣醫醬醮醱醴醺釀釁釅釆采釉釋里重野量釐金釒釗釘釙釜針釣釦釧釩釭釵鈇鈉鈍鈐鈑鈔鈕鈞鈣鈴鈷鈸鈹鈽鈾鈿鉀鉅鉉鉋鉍鉑鉗鉚鉛鉤鉸鉻鉼銀銅銑銓銖銘銜銨銬銲銳銷銻銼鋁鋅鋇鋒鋤鋪鋰鋸鋼錄錐錕錘錙錚錠錡錢錦錨錫錮錯錳錶鍊鍋鍍鍔鍚鍛鍥鍬鍰鍵鍾鎂鎊鎔鎖鎗鎘鎚鎢鎧鎬鎮鎰鎳鏃鏈鏍鏑鏖鏗鏘鏜鏝鏟鏡鏢鏤鏨鏽鐃鐘鐫鐮鐲鐳鐵鐸鐺鑄鑑鑒鑠鑣鑤鑪鑰鑲鑷鑼鑽鑾鑿長門閂閃閉開閎閏閑閒間閔閘閡閣閤閥閨閩閭閱閻闆闈闊闋闌闐闔闕闖關闡闢阜阡阪阬阮阱防阻阿陀陂附陋陌降限陘陛陝陞陡院陣除陪陬陰陲陳陴陵陶陷陸陽隄隅隆隊隋隍階隔隕隘隙際障隧隨險隱隴隸隹隻雀雁雄雅集雇雉雊雋雌雍雒雕雖雙雛雜雞離難雨雩雪雯雲零雷雹電需霄霆震霉霍霎霏霑霓霖霜霞霤霧霪霰露霸霹霽霾靂靄靈青靖靛靜非靠靡面靦靨革靴靶靼鞅鞋鞍鞏鞘鞠鞣鞦鞭韁韃韆韉韋韌韓韜韭音韶韹韻響頁頂頃項順須頊頌預頑頒頓頗領頜頡頤頫頭頰頷頸頹頻顆題額顎顏顓願顛類顥顧顫顯顰顱風颯颱颳颶颺颼飄飛食飢飧飩飪飭飯飲飴飼飽飾餃餅餉養餌餐餒餓餘餚餛餞餡館餮餵餽餾餿饅饉饑饒饕饗饜饞首香馥馨馬馭馮馱馳馴駁駐駑駒駕駙駛駝駟駢駭駱駿騁騎騖騙騫騰騵騷騾驀驃驅驍驕驗驚驛驟驢驥驪骨骯骰骷骸骼髁髏髑髒髓體髖高髡髦髭髮髯髻鬃鬆鬍鬚鬢鬣鬥鬧鬨鬱鬲鬼魁魂魄魅魍魎魏魑魔魘魚魯魷鮑鮪鮫鮭鮮鯀鯈鯉鯊鯖鯛鯧鯨鯽鰍鰓鰥鰭鰱鰻鰾鱉鱔鱖鱗鱟鱷鱸鳥鳩鳳鳴鳶鴃鴆鴉鴒鴕鴛鴣鴦鴨鴻鴿鵑鵝鵠鵡鵪鵬鵲鶉鶯鶴鶸鷂鷓鷗鷥鷲鷹鷺鸚鸛鸞鹵鹹鹼鹽鹿麂麋麒麓麗麝麟麥麩麴麵麻麼麾黃黌黍黎黏黑黔默黛黜黝點黠黨黯黴黷鼇鼎鼓鼕鼙鼠鼬鼯鼴鼻鼾齊齋齒齜齟齡齣齦齧齪齬齲齷龍龐龔龜","z":"ㄧ ㄉㄧㄥ ㄑㄧ ㄓㄤˋ ㄙㄢ ㄕㄤˋ ㄒㄧㄚˋ ㄅㄨˋ ㄍㄞˋ ㄔㄡˇ ㄑㄧㄝˇ ㄆㄧ ㄕˋ ㄑㄧㄡ ㄅㄧㄥˇ ㄔㄥˊ ㄉㄧㄡ ㄅㄧㄥˋ ㄧㄚ ㄓㄨㄥ ㄈㄥ ㄔㄨㄢˋ ㄨㄢˊ ㄉㄢ ㄓㄨˇ ㄋㄞˇ ㄐㄧㄡˇ ㄇㄜ˙ ㄓ ㄓㄚˋ ㄏㄨ ㄈㄚˊ ㄆㄧㄥ ㄆㄤ ㄍㄨㄞ ㄔㄥˊ ㄧˇ ㄐㄧㄡˇ ㄑㄧˇ ㄧㄝˇ ㄐㄧ ㄖㄨˇ ㄍㄢ ㄌㄨㄢˋ ㄌㄜ˙ ㄩˇ ㄕˋ ㄦˋ ㄩˊ ㄩㄣˊ ㄏㄨˋ ㄨˇ ㄐㄧㄥˇ ㄍㄣˋ ㄒㄧㄝ ㄧㄚˋ ㄐㄧˊ ㄨㄤˊ ㄎㄤˋ ㄐㄧㄠ ㄏㄞˋ ㄧˋ ㄏㄥ ㄒㄧㄤˇ ㄐㄧㄥ ㄊㄧㄥˊ ㄌㄧㄤˋ ㄅㄛˊ ㄖㄣˊ ㄕㄣˊ ㄖㄣˊ ㄉㄧㄥ ㄗㄜˋ ㄆㄨ ㄔㄡˊ ㄐㄧㄣ ㄐㄧㄝˋ ㄖㄥˊ ㄗㄞˇ ㄕˋ ㄊㄚ ㄓㄤˋ ㄈㄨˋ ㄒㄧㄢ ㄖㄣˋ ㄑㄧㄢ ㄉㄞˋ ㄌㄧㄥˋ ㄧˇ ㄧㄤˇ ㄓㄨㄥˋ ㄆㄧˇ ㄐㄧㄢˋ ㄖㄣˋ ㄈㄣˋ ㄈㄤˇ ㄑㄧˇ ㄎㄤˋ ㄧ ㄐㄧˊ ㄨˇ ㄈㄨˊ ㄈㄚˊ ㄒㄧㄡ ㄈㄨ ㄏㄨㄛˇ ㄅㄛˊ ㄍㄨ ㄅㄢˋ ㄌㄧㄥˊ ㄕㄣ ㄘˋ ㄙˋ ㄍㄚ ㄉㄧㄢˋ ㄉㄢˋ ㄓㄨˋ ㄅㄨˋ ㄨㄟˋ ㄉㄧ ㄓㄨˋ ㄗㄨㄛˇ ㄧㄡˋ ㄓㄢˋ ㄏㄜˊ ㄊㄨㄛˊ ㄩˊ ㄧˋ ㄈㄨˊ ㄗㄨㄛˋ ㄍㄡ ㄋㄧㄥˋ ㄋㄧˇ ㄩㄥ ㄆㄟˋ ㄌㄠˇ ㄧㄤˊ ㄅㄞˇ ㄐㄧㄚ ㄅㄧㄥˋ ㄑㄩㄢˊ ㄊㄧㄠ ㄧˋ ㄕˇ ㄎㄢˇ ㄌㄞˊ ㄔˇ ㄌㄧˋ ㄕˋ ㄓㄨ ㄧㄡˋ ㄌㄨㄣˊ ㄍㄨㄥ ㄧ ㄨˇ ㄏㄡˊ ㄑㄧㄣ ㄌㄩˇ ㄐㄩˊ ㄅㄧㄢˋ ㄒㄧˋ ㄘㄨˋ ㄜˊ ㄐㄩㄣˋ ㄗㄨˇ ㄑㄧㄠˋ ㄌㄧˋ ㄩㄥˇ ㄙㄨˊ ㄈㄨˊ ㄌㄧˇ ㄅㄠˇ ㄩˊ ㄑㄧˊ ㄒㄧㄚˊ ㄒㄧㄣˋ ㄒㄧㄡ ㄈㄨˇ ㄐㄩˋ ㄆㄞˊ ㄈㄥˋ ㄢˇ ㄅㄧˇ ㄔㄤ ㄌㄧㄚˇ ㄘㄤ ㄍㄜˋ ㄍㄨㄢ ㄅㄟˋ ㄕㄨ ㄇㄣ˙ ㄉㄠˇ ㄐㄩㄝˊ ㄒㄧㄥˋ ㄊㄤˇ ㄏㄡˋ ㄧˇ ㄐㄧㄝˋ ㄔㄤˋ ㄈㄤˇ ㄎㄨㄥ ㄐㄩㄢˋ ㄐㄩˋ ㄑㄧㄢˋ ㄋㄧˊ ㄌㄨㄣˊ ㄨㄛ ㄓˊ ㄧㄢˇ ㄐㄧㄚˇ ㄨㄟˇ ㄖㄨㄛˋ ㄨㄟ ㄆㄧㄢ ㄒㄧㄝˊ ㄗㄨㄛˋ ㄊㄧㄥˊ ㄐㄧㄢˋ ㄇㄧㄢˇ ㄧˇ ㄘㄜˋ ㄓㄣ ㄡˇ ㄊㄡ ㄗㄚˊ ㄨㄟˇ ㄍㄨㄟ ㄈㄨˋ ㄅㄤˋ ㄐㄧㄝˊ ㄘㄤ ㄙㄢˇ ㄅㄟˋ ㄒㄧㄠˋ ㄐㄧㄚ ㄘㄨㄟ ㄩㄥ ㄗㄨㄥˇ ㄠˋ ㄔㄨㄢˊ ㄓㄞˋ ㄕㄤ ㄕㄚˇ ㄑㄧㄥ ㄐㄧㄣˇ ㄌㄨˋ ㄓㄨㄢˋ ㄒㄧㄤˋ ㄑㄧㄠˊ ㄆㄨˊ ㄒㄧ ㄌㄧㄠˊ ㄐㄧㄠˇ ㄙㄥ ㄒㄧㄢˋ ㄐㄧㄢˋ ㄊㄨㄥˊ ㄍㄨˋ ㄐㄧㄤ ㄐㄧㄚˋ ㄆㄧˋ ㄧˊ ㄋㄨㄥˊ ㄧˋ ㄉㄤˋ ㄎㄨㄞˋ ㄐㄧㄢˇ ㄅㄧㄣ ㄖㄨˊ ㄔㄡˊ ㄔㄞˊ ㄐㄧㄣˇ ㄔㄤˊ ㄌㄟˇ ㄧㄡ ㄔㄨˇ ㄔㄢˊ ㄌㄧˋ ㄌㄨㄛˊ ㄊㄤˇ ㄧㄢˇ ㄦˊ ㄨˋ ㄩㄣˇ ㄩㄢˊ ㄒㄩㄥ ㄔㄨㄥ ㄓㄠˋ ㄒㄩㄥ ㄒㄧㄢ ㄍㄨㄤ ㄎㄜˋ ㄉㄨㄟˋ ㄇㄧㄢˇ ㄦˊ ㄊㄨˋ ㄙˋ ㄧㄢˇ ㄉㄡ ㄐㄧㄥ ㄖㄨˋ ㄋㄟˋ ㄑㄩㄢˊ ㄌㄧㄤˇ ㄅㄚ ㄍㄨㄥ ㄌㄧㄡˋ ㄒㄧ ㄍㄨㄥˋ ㄅㄧㄥ ㄑㄧˊ ㄐㄩˋ ㄉㄧㄢˇ ㄐㄧㄢ ㄐㄧˋ ㄖㄢˇ ㄘㄜˋ ㄗㄞˋ ㄓㄡˋ ㄇㄠˋ ㄇㄧㄢˇ ㄖㄨㄥˇ ㄍㄨㄢ ㄓㄨㄥˇ ㄩㄢ ㄇㄧㄥˊ ㄇㄧˋ ㄉㄨㄥ ㄅㄧㄥ ㄧㄝˇ ㄌㄥˇ ㄌㄧㄝˋ ㄓㄨㄣˇ ㄉㄧㄠ ㄌㄧㄥˊ ㄉㄨㄥˋ ㄌㄧㄣˇ ㄋㄧㄥˊ ㄐㄧˇ ㄈㄢˊ ㄏㄨㄤˊ ㄎㄞˇ ㄉㄥˋ ㄒㄩㄥ ㄊㄨ ㄠ ㄔㄨ ㄏㄢˊ ㄉㄠ ㄉㄧㄠ ㄖㄣˋ ㄈㄣ ㄑㄧㄝ ㄧˋ ㄎㄢ ㄨㄣˇ ㄒㄧㄥˊ ㄏㄨㄚˋ ㄩㄝˋ ㄌㄧㄝˋ ㄔㄨ ㄆㄢˋ ㄅㄧㄝˊ ㄆㄠˊ ㄌㄧˋ ㄕㄢ ㄍㄨㄚ ㄉㄠˋ ㄓˋ ㄕㄨㄚ ㄑㄩㄢˋ ㄘˋ ㄎㄜˋ ㄉㄨㄛˋ ㄊㄧˋ ㄗㄜˊ ㄒㄩㄝ ㄎㄜˋ ㄌㄚˊ ㄑㄧㄢˊ ㄕㄚ ㄊㄧ ㄆㄡ ㄍㄤ ㄨㄢ ㄅㄛ ㄕㄥˋ ㄐㄧㄢˇ ㄈㄨˋ ㄍㄜ ㄎㄞˇ ㄔㄨㄤˋ ㄔㄢˇ ㄆㄧㄠ ㄐㄧㄠˇ ㄐㄩㄝˊ ㄏㄨㄚˋ ㄐㄩˋ ㄆㄧ ㄌㄧㄡˊ ㄍㄨㄟˋ ㄐㄧㄢˋ ㄐㄧˋ ㄧˋ ㄌㄧˋ ㄍㄨㄥ ㄐㄧㄚ ㄌㄧㄝˋ ㄓㄨˋ ㄋㄨˇ ㄐㄧㄝˊ ㄑㄩˊ ㄎㄨㄤ ㄏㄜˊ ㄐㄧㄣˋ ㄅㄛˊ ㄩㄥˇ ㄇㄧㄢˇ ㄌㄟ ㄉㄨㄥˋ ㄒㄩˋ ㄎㄢ ㄨˋ ㄒㄩㄣ ㄕㄥˋ ㄌㄠˊ ㄇㄨˋ ㄕˋ ㄐㄧ ㄑㄧㄣˊ ㄔㄠ ㄒㄧㄝˊ ㄒㄩㄣ ㄌㄧˋ ㄑㄩㄢˋ ㄕㄠˊ ㄩㄣˊ ㄍㄡ ㄨˋ ㄅㄠ ㄘㄨㄥ ㄒㄩㄥ ㄆㄨˊ ㄆㄠˊ ㄈㄨˊ ㄅㄧˇ ㄏㄨㄚˋ ㄅㄟˇ ㄕ˙ ㄗㄚ ㄐㄧㄤˋ ㄎㄨㄤ ㄒㄧㄚˊ ㄈㄟˇ ㄏㄨㄟˋ ㄍㄨㄟˋ ㄆㄧˇ ㄅㄧㄢˇ ㄋㄧˋ ㄑㄩ ㄕˊ ㄑㄧㄢ ㄙㄚˋ ㄕㄥ ㄨˇ ㄏㄨㄟˋ ㄅㄢˋ ㄅㄟ ㄗㄨˊ ㄓㄨㄛˊ ㄒㄧㄝˊ ㄋㄢˊ ㄅㄛˊ ㄅㄛ˙ ㄅㄧㄢˋ ㄓㄢˋ ㄎㄚˇ ㄍㄨㄚˋ ㄓ ㄇㄠˇ ㄧㄣˋ ㄨㄟ ㄐㄧˊ ㄌㄨㄢˇ ㄐㄩㄢˇ ㄒㄧㄝˋ ㄒㄩˋ ㄑㄩㄝˋ ㄑㄧㄥ ㄜˋ ㄏㄡˋ ㄘㄨㄛˋ ㄩㄢˊ ㄐㄩㄝˊ ㄧㄢˋ ㄌㄧˋ ㄑㄩˋ ㄘㄢ ㄧㄡˋ ㄔㄚ ㄐㄧˊ ㄧㄡˇ ㄈㄢˇ ㄕㄨ ㄑㄩˇ ㄕㄡˋ ㄆㄢˋ ㄙㄡˇ ㄘㄨㄥˊ ㄎㄡˇ ㄍㄨˇ ㄐㄩˋ ㄌㄧㄥˋ ㄉㄠ ㄎㄡˋ ㄓˇ ㄐㄧㄠˋ ㄓㄠˋ ㄅㄚ ㄉㄧㄥ ㄎㄜˇ ㄊㄞˊ ㄔˋ ㄕˇ ㄧㄡˋ ㄆㄛˇ ㄙ ㄌㄜˋ ㄉㄧㄠ ㄒㄩ ㄔ ㄍㄜˋ ㄧㄠ ㄏㄜˊ ㄐㄧˊ ㄉㄧㄠˋ ㄘㄨㄣˋ ㄊㄨㄥˊ ㄇㄧㄥˊ ㄏㄡˋ ㄌㄧˋ ㄊㄨˇ ㄒㄧㄤˋ ㄓㄚ ㄐㄩㄣ ㄌㄧㄣˋ ㄊㄨㄣ ㄧㄣˊ ㄈㄟˋ ㄈㄡˇ ㄅㄚ˙ ㄈㄣ ㄏㄢˊ ㄊㄧㄥ ㄎㄥ ㄕㄨㄣˇ ㄓ ㄨˊ ㄔㄠˇ ㄋㄚˋ ㄒㄧ ㄔㄨㄟ ㄨㄣˇ ㄏㄡˇ ㄨˊ ㄧㄚ˙ ㄌㄩˇ ㄜˋ ㄉㄞ ㄔㄥˊ ㄍㄠˋ ㄔˇ ㄋㄜ˙ ㄓㄡ ㄍㄨ ㄨㄟˋ ㄏㄜ ㄋㄠˊ ㄍㄚ ㄆㄟ ㄕㄣ ㄏㄨ ㄇㄧㄥˋ ㄐㄩˇ ㄉㄨㄛ ㄆㄠˊ ㄗㄚˇ ㄏㄜˊ ㄐㄧㄡˋ ㄈㄨˋ ㄓㄡˋ ㄍㄨ ㄎㄚ ㄉㄨㄥ ㄧˊ ㄌㄧㄝˇ ㄗ ㄇㄧㄝ ㄇㄧ ㄓˇ ㄧㄠˇ ㄍㄜ ㄗㄢˊ ㄎㄜˊ ㄒㄧㄢˊ ㄒㄧㄡ ㄧㄢˋ ㄧ ㄞ ㄆㄧㄣˇ ㄕㄣˇ ㄏㄨㄥˇ ㄨㄚ ㄏㄚ ㄗㄞ ㄞ ㄇㄡ ㄩㄢˊ ㄍㄜ ㄛˊ ㄕㄠˋ ㄌㄧ ㄋㄚˇ ㄎㄨ ㄒㄧㄠ ㄓㄜˊ ㄅㄨˇ ㄏㄥ ㄍㄥˇ ㄧㄢˋ ㄙㄨㄛ ㄔㄨㄣˊ ㄞ ㄒㄧ ㄊㄤˊ ㄨˊ ㄐㄧ ㄏㄨˇ ㄕㄡˋ ㄨㄟˊ ㄔㄤˋ ㄌㄧˋ ㄧㄛ ㄋㄧㄢˋ ㄊㄨㄛˋ ㄓㄠ ㄎㄣˇ ㄓㄨㄛˊ ㄕㄤ ㄚ˙ ㄨㄣˋ ㄊㄠˊ ㄉㄢˋ ㄉㄢˋ ㄔㄨㄞˋ ㄧㄚˇ ㄑㄧˇ ㄈㄟ ㄒㄧㄢˊ ㄆㄧˊ ㄌㄚ˙ ㄆㄚ ㄔˋ ㄊㄧˊ ㄐㄧㄡ ㄎㄚ ㄨㄟˋ ㄋㄢˊ ㄕㄢˋ ㄌㄚˇ ㄏㄡˊ ㄏㄢˇ ㄉㄧㄝˊ ㄛ ㄔㄨㄢˇ ㄏㄨㄟˋ ㄏㄨㄢˋ ㄒㄧˇ ㄏㄜ ㄎㄨㄟˋ ㄒㄩㄢ ㄙㄤˋ ㄔ ㄑㄧㄠˊ ㄉㄢ ㄌㄧˊ ㄧㄛ ㄓㄚ ㄇㄧㄠ ㄩˋ ㄒㄧㄡˋ ㄑㄧㄤ ㄙㄜˋ ㄙㄨˋ ㄇㄚ˙ ㄎㄜ ㄙㄤˇ ㄨ ㄕˋ ㄐㄧㄝ ㄨㄥ ㄙˋ ㄔ ㄏㄠˊ ㄙㄨㄛ˙ ㄏㄞ ㄣˊ ㄅㄧˋ ㄠˊ ㄙㄡˋ ㄙㄡˇ ㄉㄧˊ ㄊㄢˋ ㄘㄠˊ ㄐㄧㄚ ㄌㄡˊ ㄍㄚ ㄒㄧㄠ ㄡˇ ㄗㄜˊ ㄔㄤˊ ㄇㄚ˙ ㄉㄨ ㄏㄨㄚ ㄌㄠˊ ㄒㄧㄠˋ ㄐㄧ ㄔㄠˊ ㄗㄨㄟˇ ㄙ ㄌㄧㄠˊ ㄒㄧ ㄏㄟ ㄧㄝ ㄒㄩ ㄆㄨ ㄑㄧㄣˊ ㄛ ㄐㄧㄣˋ ㄋㄨㄥˊ ㄑㄧˋ ㄜˋ ㄗㄠˋ ㄧ ㄕˋ ㄞ ㄐㄩㄝˊ ㄆㄣ ㄍㄚˊ ㄉㄨㄣ ㄉㄤ ㄋㄧㄥˊ ㄖㄨˊ ㄒㄧㄚˋ ㄏㄠˊ ㄊㄧˋ ㄔㄤˊ ㄌㄨˇ ㄧㄢˋ ㄌㄨㄥˊ ㄒㄧㄤˋ ㄧㄢˊ ㄧㄥ ㄖㄤˇ ㄐㄩㄝˊ ㄓㄨㄢˋ ㄋㄧㄝˋ ㄒㄧㄠ ㄧˋ ㄌㄨㄛ ㄋㄤˊ ㄙㄨ ㄓㄨˇ ㄑㄧㄡˊ ㄙˋ ㄐㄧㄢˇ ㄏㄨㄟˊ ㄧㄣ ㄉㄨㄣˋ ㄘㄨㄥ ㄏㄨˊ ㄎㄨㄣˋ ㄍㄨˋ ㄧㄡˋ ㄆㄨˇ ㄩˇ ㄑㄩㄢ ㄩˇ ㄍㄨㄛˊ ㄨㄟˊ ㄩㄢˊ ㄩㄢˊ ㄊㄨˊ ㄊㄨㄢˊ ㄊㄨˇ ㄗㄞˋ ㄨㄟˊ ㄨ ㄍㄨㄟ ㄧˊ ㄉㄧˋ ㄓㄣˋ ㄑㄧˊ ㄙㄜˋ ㄓˇ ㄐㄩㄣ ㄈㄤ ㄊㄢ ㄎㄢˇ ㄏㄨㄞˋ ㄗㄨㄛˋ ㄎㄥ ㄆㄛ ㄎㄨㄣ ㄊㄢˇ ㄍㄢ ㄆㄧㄥˊ ㄎㄜˇ ㄔㄜˋ ㄔㄨㄟˊ ㄌㄜˋ ㄒㄧㄥˊ ㄍㄞ ㄧㄣˊ ㄍㄡˋ ㄩㄢˊ ㄎㄨㄚˇ ㄍㄥˇ ㄞ ㄇㄞˊ ㄔㄥˊ ㄆㄨˇ ㄩˋ ㄅㄨˋ ㄆㄧˊ ㄓˊ ㄆㄟˊ ㄐㄧ ㄊㄤˊ ㄐㄧㄢ ㄉㄨㄟ ㄩˋ ㄜˋ ㄍㄨㄛ ㄏㄡˋ ㄅㄠˇ ㄉㄧ ㄎㄢ ㄧㄠˊ ㄧㄢˋ ㄅㄠˋ ㄔㄤˇ ㄉㄨˇ ㄎㄨㄞˋ ㄧㄥˊ ㄊㄚ ㄙㄨˋ ㄕˊ ㄊㄚˇ ㄊㄨˊ ㄊㄤˊ ㄓㄨㄥˇ ㄙㄞ ㄨˋ ㄊㄧㄢˊ ㄨㄣ ㄔㄣˊ ㄑㄧㄢˋ ㄕㄨㄤˇ ㄕㄨˊ ㄔˊ ㄐㄧㄥˋ ㄕㄨˋ ㄉㄧㄢˋ ㄇㄨˋ ㄓㄨㄟˋ ㄗㄥ ㄒㄩ ㄈㄢˊ ㄇㄛˋ ㄉㄨㄣ ㄉㄨㄛˋ ㄈㄣˊ ㄎㄣˇ ㄅㄧˋ ㄩㄥ ㄊㄢˊ ㄒㄩㄣ ㄏㄜˋ ㄧㄚ ㄏㄠˊ ㄌㄟˇ ㄎㄨㄤˋ ㄏㄨㄞˋ ㄌㄨㄥˇ ㄌㄧˋ ㄖㄤˇ ㄅㄚˋ ㄕˋ ㄖㄣˊ ㄓㄨㄤˋ ㄧ ㄏㄨˊ ㄕㄡˋ ㄒㄧㄚˋ ㄎㄨㄟˊ ㄒㄧ ㄨㄞˋ ㄙㄨˋ ㄉㄨㄛ ㄧㄝˋ ㄍㄡˋ ㄇㄥˋ ㄧㄣˊ ㄏㄨㄛˇ ㄉㄚˋ ㄊㄧㄢ ㄊㄞˋ ㄈㄨ ㄧㄠ ㄧㄤ ㄕ ㄧˊ ㄎㄨㄚ ㄐㄧㄚ ㄧㄢˇ ㄑㄧˊ ㄋㄞˋ ㄈㄥˋ ㄎㄨㄟˊ ㄗㄡˋ ㄏㄨㄢˋ ㄑㄧˋ ㄅㄣ ㄧˋ ㄊㄠˋ ㄗㄤˋ ㄒㄧ ㄉㄧㄢˋ ㄕㄜ ㄠˋ ㄌㄧㄢˊ ㄉㄨㄛˊ ㄕˋ ㄈㄣˋ ㄋㄩˇ ㄋㄨˊ ㄋㄞˇ ㄐㄧㄢ ㄊㄚ ㄏㄠˇ ㄕㄨㄛˋ ㄖㄨˊ ㄈㄟ ㄨㄤˋ ㄖㄣˋ ㄧㄢˊ ㄉㄨˋ ㄐㄧˋ ㄧㄠ ㄇㄧㄠˋ ㄓㄨㄤ ㄋㄧㄡ ㄅㄧˇ ㄩˊ ㄊㄨㄛˇ ㄈㄤˊ ㄋㄧ ㄓㄡˊ ㄋㄧˇ ㄇㄟˋ ㄑㄧ ㄑㄧㄝˋ ㄅㄢˋ ㄇㄨˇ ㄗˇ ㄕˇ ㄕㄢ ㄐㄧㄝˇ ㄍㄨ ㄙˋ ㄒㄧㄥˋ ㄨㄟˇ ㄆㄧㄣ ㄧㄠˊ ㄐㄧㄤ ㄐㄧㄠ ㄌㄠˇ ㄐㄧㄢ ㄧˊ ㄓˊ ㄐㄧ ㄧㄣ ㄗ ㄨㄟ ㄨㄚˊ ㄆㄧㄥ ㄌㄧˇ ㄙㄨㄛ ㄨㄟˇ ㄋㄧㄤˊ ㄩˊ ㄋㄚˋ ㄐㄩㄢ ㄕㄣ ㄉㄧˋ ㄜˊ ㄇㄧㄢˇ ㄑㄩˇ ㄔㄤ ㄜ ㄌㄡˊ ㄆㄛˊ ㄨㄢˇ ㄅㄧㄠˇ ㄏㄨㄣ ㄅㄧˋ ㄈㄨˋ ㄌㄢˊ ㄊㄧㄥˊ ㄒㄩˋ ㄇㄟˊ ㄇㄟˋ ㄩㄢˋ ㄨㄚ ㄆㄧˋ ㄒㄧˊ ㄠˇ ㄇㄚ ㄍㄡˋ ㄐㄧㄚˋ ㄙㄠˇ ㄐㄧˊ ㄒㄧㄢˊ ㄆㄧㄠˊ ㄩˋ ㄌㄟˊ ㄉㄧˊ ㄧㄢ ㄔㄤˊ ㄋㄣˋ ㄨˇ ㄒㄧㄢˊ ㄖㄠˊ ㄒㄧ ㄔㄢˊ ㄐㄧㄠ ㄋㄧㄠˇ ㄇㄚ ㄆㄧㄣˊ ㄧㄥ ㄧㄥˊ ㄕㄣˇ ㄕㄨㄤ ㄋㄧㄤˊ ㄗˇ ㄐㄧㄝˊ ㄐㄩㄝˊ ㄎㄨㄥˇ ㄩㄣˋ ㄗˋ ㄘㄨㄣˊ ㄈㄨˊ ㄅㄟˋ ㄗ ㄒㄧㄠˋ ㄇㄥˋ ㄐㄧˋ ㄍㄨ ㄏㄞˊ ㄙㄨㄣ ㄕㄨˊ ㄘㄢˋ ㄗ ㄈㄨ ㄒㄩㄝˊ ㄖㄨˊ ㄋㄧㄝˋ ㄌㄨㄢˊ ㄊㄚ ㄓㄞˊ ㄩˇ ㄕㄡˇ ㄢ ㄙㄨㄥˋ ㄨㄢˊ ㄏㄨㄥˊ ㄗㄨㄥ ㄍㄨㄢ ㄓㄡˋ ㄉㄧㄥˋ ㄨㄢˇ ㄧˊ ㄎㄜˋ ㄒㄩㄢ ㄕˋ ㄧㄡˋ ㄏㄨㄢˋ ㄍㄨㄥ ㄗㄞˇ ㄏㄞˋ ㄧㄢˋ ㄒㄧㄠ ㄐㄧㄚ ㄔㄣˊ ㄖㄨㄥˊ ㄙㄨˋ ㄐㄧˋ ㄐㄧˋ ㄧㄣˊ ㄇㄧˋ ㄎㄡˋ ㄈㄨˋ ㄇㄟˋ ㄏㄢˊ ㄩˋ ㄇㄛˋ ㄔㄚˊ ㄍㄨㄚˇ ㄑㄧㄣˇ ㄨˋ ㄌㄧㄠˊ ㄕˊ ㄋㄧㄥˊ ㄓㄞˋ ㄕㄣˇ ㄒㄧㄝˇ ㄎㄨㄢ ㄌㄧㄠˊ ㄏㄨㄢˊ ㄔㄨㄥˇ ㄅㄠˇ ㄘㄨㄣˋ ㄙˋ ㄈㄥ ㄕㄜˋ ㄐㄧㄤ ㄓㄨㄢ ㄨㄟˋ ㄗㄨㄣ ㄒㄩㄣˊ ㄉㄨㄟˋ ㄉㄠˇ ㄒㄧㄠˇ ㄕㄠˇ ㄐㄧㄢ ㄕㄤˋ ㄧㄡˊ ㄧㄡˊ ㄍㄚˋ ㄐㄧㄡˋ ㄍㄢ ㄕ ㄧㄣˇ ㄔˇ ㄋㄧˊ ㄨㄟˇ ㄋㄧㄠˋ ㄐㄩˊ ㄆㄧˋ ㄐㄩ ㄐㄧㄝˋ ㄑㄩ ㄨ ㄕ ㄕˇ ㄆㄧㄥˊ ㄐㄧ ㄒㄧㄝˋ ㄓㄢˇ ㄇㄢˇ ㄊㄧˋ ㄈㄟˋ ㄊㄨˊ ㄌㄩˇ ㄘㄥˊ ㄌㄩˇ ㄐㄩˋ ㄕㄨˇ ㄊㄨㄣˊ ㄕㄢ ㄧˋ ㄐㄧˊ ㄑㄧˊ ㄘㄣˊ ㄔㄚˋ ㄍㄤ ㄧㄢˊ ㄒㄧㄡˋ ㄉㄞˋ ㄩㄝˋ ㄇㄧㄣˊ ㄢˋ ㄉㄨㄥˋ ㄓˋ ㄜˊ ㄩˋ ㄑㄧㄠˋ ㄈㄥ ㄒㄧㄢˋ ㄉㄠˇ ㄐㄩㄣˋ ㄒㄧㄚˊ ㄎㄢˋ ㄎㄨㄥ ㄔㄨㄥˊ ㄑㄧˊ ㄎㄨㄣ ㄘㄨㄟ ㄧㄚˊ ㄍㄤˇ ㄌㄨㄣˊ ㄐㄩㄝˊ ㄓㄥ ㄒㄧㄠˊ ㄙㄨㄥ ㄅㄥ ㄨㄞˇ ㄐㄧ ㄑㄧㄢˋ ㄌㄢˊ ㄙㄨㄥ ㄘㄨㄛˊ ㄓㄢˇ ㄑㄩ ㄑㄧㄣ ㄉㄥˋ ㄖㄨㄥˊ ㄌㄧㄥˇ ㄩˇ ㄩㄝˋ ㄔㄢˊ ㄨㄟ ㄌㄨㄢˊ ㄉㄧㄢ ㄧㄢˊ ㄔㄨㄢ ㄓㄡ ㄒㄩㄣˊ ㄔㄠˊ ㄍㄨㄥ ㄗㄨㄛˇ ㄑㄧㄠˇ ㄐㄩˋ ㄨ ㄔㄚ ㄐㄧˇ ㄧˇ ㄙˋ ㄅㄚ ㄒㄧㄤˋ ㄒㄩㄣˋ ㄐㄧㄣ ㄕˋ ㄅㄨˋ ㄈㄢ ㄒㄧ ㄊㄤˇ ㄆㄚˋ ㄊㄧㄝ ㄌㄧㄢˊ ㄓㄡˇ ㄅㄛˊ ㄉㄧˋ ㄧˋ ㄕㄨㄞˋ ㄕ ㄒㄧˊ ㄓㄤˋ ㄉㄞˋ ㄨㄟˊ ㄔㄤˊ ㄇㄠˋ ㄓㄥˋ ㄨㄟˊ ㄈㄨˊ ㄏㄨㄤˇ ㄇㄢˋ ㄇㄨˋ ㄍㄨㄛˊ ㄓㄤˋ ㄓˋ ㄈㄢ ㄔㄨㄤˊ ㄅㄧˋ ㄅㄤ ㄍㄢˋ ㄆㄧㄥˊ ㄋㄧㄢˊ ㄅㄧㄥˋ ㄒㄧㄥˋ ㄍㄢˋ ㄏㄨㄢˋ ㄧㄡˋ ㄧㄡ ㄐㄧˇ ㄅㄧˋ ㄔㄨㄤˊ ㄒㄩˋ ㄉㄧˇ ㄆㄠˊ ㄉㄧㄢˋ ㄍㄥ ㄈㄨˇ ㄒㄧㄤˊ ㄉㄨˋ ㄗㄨㄛˋ ㄎㄨˋ ㄊㄧㄥˊ ㄢ ㄕㄨˋ ㄎㄤ ㄩㄥ ㄩˇ ㄘㄜˋ ㄒㄧㄤ ㄐㄧㄡˋ ㄕㄚˋ ㄌㄧㄢˊ ㄌㄤˊ ㄎㄨㄛˋ ㄌㄧㄠˋ ㄔㄨˊ ㄙ ㄇㄧㄠˋ ㄔㄤˇ ㄈㄟˋ ㄍㄨㄤˇ ㄌㄨˊ ㄊㄧㄥ ㄧㄢˊ ㄊㄧㄥˊ ㄐㄧㄢˋ ㄍㄨㄥˇ ㄋㄧㄢˋ ㄅㄧㄢˋ ㄋㄨㄥˋ ㄧˋ ㄅㄧˋ ㄧˋ ㄕˋ ㄕˋ ㄍㄨㄥ ㄉㄧㄠˋ ㄧㄣˇ ㄈㄨˊ ㄏㄨㄥˊ ㄔˊ ㄉㄧˋ ㄒㄧㄢˊ ㄏㄨˊ ㄋㄨˇ ㄇㄧˇ ㄖㄨㄛˋ ㄓㄤ ㄑㄧㄤˊ ㄅㄧˋ ㄅㄧㄝˋ ㄊㄢˊ ㄐㄧㄤˋ ㄇㄧˊ ㄨㄢ ㄏㄨㄟˋ ㄏㄨㄟˋ ㄧˊ ㄒㄧㄥˊ ㄊㄨㄥˊ ㄧㄢˋ ㄘㄞˇ ㄅㄧㄠ ㄉㄧㄠ ㄅㄧㄣ ㄆㄥˊ ㄓㄤ ㄧㄥˇ ㄆㄤˊ ㄧˋ ㄅㄧˇ ㄈㄨˊ ㄨㄤˇ ㄓㄥ ㄉㄞˋ ㄒㄩㄣˋ ㄏㄣˇ ㄧㄤˊ ㄏㄨㄞˊ ㄌㄩˋ ㄏㄡˋ ㄒㄩˊ ㄐㄧㄥˋ ㄊㄨˊ ㄉㄜˊ ㄆㄞˊ ㄒㄧˇ ㄔㄤˊ ㄘㄨㄥˊ ㄌㄞˊ ㄩˋ ㄏㄨㄤˊ ㄈㄨˋ ㄒㄩㄣˊ ㄆㄤˊ ㄨㄟ ㄓㄥ ㄉㄜˊ ㄔㄜˋ ㄏㄨㄟ ㄒㄧㄣ ㄅㄧˋ ㄐㄧˋ ㄖㄣˇ ㄘㄨㄣˇ ㄓˋ ㄨㄤˋ ㄇㄤˊ ㄊㄧㄢˇ ㄓㄨㄥ ㄙㄨㄥ ㄎㄨㄞˋ ㄔㄣˊ ㄋㄧㄢˋ ㄋㄧㄡˇ ㄏㄨ ㄈㄣˋ ㄗㄣˇ ㄧㄤˋ ㄋㄨˋ ㄓㄥ ㄆㄚˋ ㄅㄨˋ ㄉㄚˊ ㄙ ㄉㄞˋ ㄧˊ ㄐㄧˊ ㄒㄧㄥˋ ㄩㄢˋ ㄋㄧˊ ㄍㄨㄞˋ ㄈㄨˊ ㄑㄧㄝˋ ㄔㄨˋ ㄕˋ ㄏㄥˊ ㄏㄨㄤˇ ㄎㄨㄥˇ ㄕㄨˋ ㄧㄤˋ ㄏㄨㄟ ㄗˋ ㄒㄩˋ ㄔˇ ㄏㄣˋ ㄣ ㄎㄜˋ ㄉㄨㄥˋ ㄊㄧㄢˊ ㄍㄨㄥ ㄒㄧ ㄑㄧㄚˋ ㄩㄥˇ ㄑㄧㄠ ㄩㄝˋ ㄒㄧ ㄊㄧˋ ㄏㄢˋ ㄏㄨㄟˇ ㄅㄟˋ ㄙㄨㄥˇ ㄨˋ ㄧㄡ ㄏㄨㄢˋ ㄋㄧㄣˊ ㄅㄟ ㄘㄨㄟˋ ㄔㄤˋ ㄇㄣˋ ㄐㄧˋ ㄒㄧㄥˋ ㄉㄠˋ ㄑㄧ ㄑㄧㄥˊ ㄔㄡˊ ㄉㄨㄣ ㄨㄢˇ ㄏㄨㄛˋ ㄊㄧˋ ㄨㄤˇ ㄏㄨ ㄒㄧ ㄨㄟˊ ㄏㄨㄟˋ ㄜˋ ㄉㄧㄢˋ ㄉㄨㄛˋ ㄋㄠˇ ㄒㄧㄤˇ ㄓㄨㄟˋ ㄏㄨㄤˊ ㄖㄜˇ ㄒㄧㄥ ㄘㄜˋ ㄑㄧㄠˇ ㄔㄡˊ ㄑㄧㄢ ㄩˋ ㄩˊ ㄇㄧㄣˇ ㄅㄧˋ ㄧˋ ㄎㄞˋ ㄜˋ ㄩˊ ㄞˋ ㄑㄧㄝˋ ㄍㄢˇ ㄌㄥˋ ㄎㄨㄟˋ ㄔㄨㄤˋ ㄎㄞˇ ㄎㄞˋ ㄩㄢˋ ㄌㄧˋ ㄧㄣ ㄘˊ ㄊㄞˋ ㄏㄨㄤ ㄩㄣˋ ㄕㄣˋ ㄇㄨˋ ㄘㄢˇ ㄘㄢˊ ㄊㄜˋ ㄊㄨㄥˋ ㄇㄢˋ ㄍㄨㄢˋ ㄏㄨㄟˋ ㄎㄞˇ ㄙㄨㄥˇ ㄌㄩˋ ㄨㄟˋ ㄩㄥ ㄑㄧㄥˋ ㄎㄤ ㄑㄧ ㄩˋ ㄧㄡ ㄅㄟˋ ㄅㄧㄝ ㄗㄥ ㄌㄧㄢˊ ㄆㄧㄥˊ ㄑㄧㄠˊ ㄉㄢˋ ㄈㄣˋ ㄔㄨㄥ ㄑㄧˋ ㄇㄧㄣˇ ㄐㄧㄥˇ ㄨˇ ㄒㄧㄢˋ ㄧˋ ㄏㄢˋ ㄉㄨㄥˇ ㄎㄣˇ ㄒㄧㄝˋ ㄧㄥ ㄠˋ ㄇㄠˋ ㄌㄧㄣˇ ㄇㄣˋ ㄋㄨㄛˋ ㄔㄥˊ ㄇㄥˇ ㄌㄢˇ ㄏㄨㄞˊ ㄒㄩㄢˊ ㄔㄢˋ ㄐㄩˋ ㄕㄜˋ ㄧˋ ㄌㄧㄢˋ ㄍㄜ ㄨˋ ㄒㄩ ㄕㄨˋ ㄖㄨㄥˊ ㄔㄥˊ ㄨㄛˇ ㄐㄧㄝˋ ㄑㄧㄤ ㄏㄨㄛˋ ㄑㄧ ㄐㄧㄚˊ ㄐㄧˇ ㄎㄢ ㄐㄧˊ ㄐㄧㄝˊ ㄌㄨˋ ㄓㄢˋ ㄒㄧˋ ㄔㄨㄛ ㄉㄞˋ ㄏㄨˋ ㄌㄧˋ ㄈㄤˊ ㄙㄨㄛˇ ㄅㄧㄢˇ ㄕㄢˋ ㄏㄨˋ ㄈㄟ ㄕㄡˇ ㄕㄡ˙ ㄘㄞˊ ㄓㄚ ㄆㄨ ㄅㄚ ㄉㄚˇ ㄖㄥ ㄊㄨㄛ ㄎㄤˊ ㄎㄡˋ ㄋㄧㄡˇ ㄅㄢˋ ㄔㄜˇ ㄅㄢ ㄈㄨˊ ㄆㄧ ㄜˋ ㄓㄠˇ ㄔㄥˊ ㄐㄧˋ ㄔㄠ ㄨㄣˇ ㄐㄩㄝˊ ㄅㄚˇ ㄧˋ ㄕㄨ ㄓㄨㄚ ㄊㄡˊ ㄉㄡˇ ㄎㄤˋ ㄓㄜˊ ㄆㄥ ㄆㄧ ㄊㄞˊ ㄅㄠˋ ㄉㄧˇ ㄇㄛˇ ㄧㄚ ㄔㄡ ㄇㄧㄣˇ ㄈㄨˊ ㄓㄨˇ ㄔㄞ ㄇㄨˇ ㄋㄧㄢ ㄌㄚ ㄆㄠ ㄅㄢˋ ㄆㄞ ㄌㄧㄣ ㄍㄨㄞˇ ㄐㄩˋ ㄊㄨㄛˋ ㄅㄚˊ ㄊㄨㄛ ㄠˇ ㄐㄩ ㄓㄨㄛ ㄆㄢˋ ㄓㄠ ㄅㄞˋ ㄎㄨㄛˋ ㄕˋ ㄐㄧㄝˊ ㄓㄥˇ ㄍㄨㄥˇ ㄑㄩㄢˊ ㄕㄨㄢ ㄎㄠˇ ㄆㄧㄣ ㄓㄨㄞ ㄕˊ ㄋㄚˊ ㄔˊ ㄍㄨㄚˋ ㄓˇ ㄑㄧㄝˋ ㄢˋ ㄊㄧㄠ ㄨㄚ ㄞ ㄋㄨㄛˊ ㄘㄨㄛˋ ㄓㄣˋ ㄊㄧㄥˇ ㄨㄢˇ ㄒㄧㄝˊ ㄨˇ ㄎㄨㄣˇ ㄓㄨㄛ ㄅㄚ ㄏㄢˋ ㄕㄠ ㄋㄧㄝ ㄐㄩㄢ ㄅㄨˇ ㄆㄥˇ ㄕㄜˇ ㄌㄧㄝˋ ㄇㄣˊ ㄞˊ ㄐㄩㄢˇ ㄔㄨㄟˊ ㄐㄧㄝˊ ㄋㄚˋ ㄋㄧㄢˇ ㄒㄧㄢ ㄙㄠˇ ㄌㄨㄣ ㄕㄡˋ ㄉㄧㄠˋ ㄓㄤˇ ㄊㄠ ㄆㄞˊ ㄧㄝ ㄐㄩㄝˊ ㄓㄥ ㄍㄨㄚˋ ㄌㄩㄝˋ ㄘㄞˇ ㄊㄢˋ ㄔㄜˋ ㄐㄧㄝ ㄎㄨㄥˋ ㄊㄨㄟ ㄧㄢˇ ㄘㄨㄛˋ ㄐㄩ ㄐㄧㄢˇ ㄎㄨㄟˊ ㄖㄡˊ ㄗㄡˋ ㄇㄧㄠˊ ㄊㄧˊ ㄔㄚ ㄧ ㄧㄤˊ ㄏㄨㄢˋ ㄨㄛˋ ㄔㄨㄞ ㄎㄞ ㄐㄧㄡ ㄐㄧㄝ ㄏㄨㄟ ㄩㄢˊ ㄅㄟ ㄍㄡˋ ㄙㄨㄣˇ ㄅㄛˊ ㄘㄨㄛ ㄙㄠ ㄧㄠˊ ㄉㄠˇ ㄙㄡ ㄍㄠˇ ㄊㄤˊ ㄅㄢ ㄉㄚ ㄑㄧㄢ ㄑㄧㄤˇ ㄔㄚˊ ㄓㄚˋ ㄨˇ ㄍㄨㄞ ㄅㄧㄥˇ ㄕㄨㄞ ㄓㄞ ㄌㄡˇ ㄘㄨㄟ ㄇㄛˊ ㄓˊ ㄓˋ ㄇㄛ ㄇㄛˊ ㄓㄜˊ ㄘㄢˋ ㄆㄧㄝ ㄌㄠ ㄔㄥ ㄙㄚ ㄋㄠˊ ㄙ ㄗㄨㄣˇ ㄋㄧㄢˇ ㄓㄨㄤˋ ㄉㄢˇ ㄔㄜˋ ㄅㄛ ㄌㄧㄠ ㄈㄨˇ ㄑㄧㄠˋ ㄅㄛ ㄘㄨㄛ ㄓㄨㄢˋ ㄆㄨ ㄑㄧㄣˋ ㄊㄚˋ ㄏㄢˋ ㄨㄛ ㄐㄧㄢˇ ㄩㄥ ㄌㄟˊ ㄌㄨˇ ㄕㄢˋ ㄗㄜˊ ㄐㄧ ㄉㄤˇ ㄘㄠ ㄑㄧㄥˊ ㄑㄧㄣˊ ㄉㄢ ㄅㄞ ㄐㄩˋ ㄐㄧˇ ㄓㄨㄛˊ ㄘㄚ ㄋㄧˇ ㄨㄛˋ ㄋㄧㄥˊ ㄍㄜ ㄓˋ ㄎㄨㄛˋ ㄒㄧㄝˊ ㄅㄞˇ ㄙㄡˇ ㄖㄠˇ ㄆㄢ ㄋㄧㄢˇ ㄌㄨㄥˇ ㄌㄢˊ ㄖㄤˇ ㄔㄢ ㄒㄧㄝˊ ㄕㄜˋ ㄌㄨㄢˊ ㄊㄢ ㄐㄧㄠˇ ㄐㄩㄝˊ ㄌㄢˇ ㄓ ㄕㄡ ㄧㄡ ㄍㄞˇ ㄍㄨㄥ ㄈㄤˋ ㄓㄥˋ ㄍㄨˋ ㄒㄧㄠˋ ㄇㄧˇ ㄇㄧㄣˇ ㄐㄧㄡˋ ㄩˇ ㄔˋ ㄠˊ ㄅㄞˋ ㄒㄩˋ ㄐㄧㄠ ㄅㄧˋ ㄔㄤˇ ㄍㄢˇ ㄙㄢˋ ㄉㄨㄣ ㄐㄧㄥˋ ㄑㄧㄠ ㄓㄥˇ ㄉㄧˊ ㄈㄨ ㄕㄨˋ ㄌㄧㄢˇ ㄅㄧˋ ㄨㄣˊ ㄈㄟˇ ㄅㄢ ㄌㄢˊ ㄉㄡˋ ㄌㄧㄠˋ ㄏㄨˊ ㄒㄧㄝˊ ㄓㄣ ㄨㄛˋ ㄐㄧㄣ ㄔˋ ㄈㄨˇ ㄓㄨㄛˊ ㄓㄢˇ ㄙ ㄒㄧㄣ ㄉㄨㄢˋ ㄈㄤ ㄩˊ ㄕ ㄆㄤˊ ㄌㄩˇ ㄒㄩㄢˊ ㄐㄧㄥ ㄋㄧˇ ㄗㄨˊ ㄧˇ ㄑㄧˊ ㄐㄧˋ ㄖˋ ㄉㄢˋ ㄓˇ ㄗㄠˇ ㄒㄩㄣˊ ㄒㄩˋ ㄏㄢˋ ㄨㄤˋ ㄩㄣˊ ㄤˊ ㄎㄨㄣ ㄕㄥ ㄏㄠˋ ㄔㄤ ㄇㄧㄥˊ ㄏㄨㄣ ㄧˋ ㄒㄧ ㄒㄧㄣ ㄒㄧㄥ ㄧㄥˋ ㄌㄧㄥˊ ㄔㄨㄣ ㄇㄟˋ ㄗㄨㄛˊ ㄓㄠ ㄕˋ ㄩˋ ㄔㄠˊ ㄕˊ ㄏㄨㄤˋ ㄒㄩㄢˇ ㄐㄧㄣˋ ㄕㄤˇ ㄧㄢˋ ㄕㄞˋ ㄨㄢˇ ㄓㄡˋ ㄒㄧ ㄨˋ ㄏㄨㄟˋ ㄔㄣˊ ㄆㄨˇ ㄐㄧㄥˇ ㄒㄧ ㄑㄧㄥˊ ㄐㄧㄥ ㄍㄨㄟˇ ㄓˋ ㄌㄧㄤˋ ㄒㄩㄢ ㄒㄧㄚˊ ㄩㄣ ㄏㄨㄟ ㄧㄝ ㄕㄨˇ ㄋㄨㄢˇ ㄢˋ ㄧㄤˊ ㄇㄧㄥˊ ㄔㄤˋ ㄐㄧˋ ㄗㄢˋ ㄇㄨˋ ㄋㄧˋ ㄅㄠˋ ㄌㄧㄠˊ ㄒㄧㄢ ㄧㄝˋ ㄌㄧˋ ㄊㄢˊ ㄒㄧㄠˇ ㄞˋ ㄕㄨˇ ㄧㄠˋ ㄆㄨˋ ㄎㄨㄤˋ ㄒㄧ ㄋㄤˇ ㄕㄞˋ ㄩㄝ ㄑㄩ ㄧㄝˋ ㄍㄥˋ ㄏㄜˊ ㄕㄨ ㄘㄠˊ ㄇㄢˋ ㄘㄥˊ ㄊㄧˋ ㄗㄨㄟˋ ㄏㄨㄟˋ ㄩㄝˋ ㄧㄡˇ ㄆㄥˊ ㄈㄨˊ ㄕㄨㄛˋ ㄓㄣˋ ㄌㄤˇ ㄨㄤˋ ㄔㄠˊ ㄑㄧ ㄇㄥˊ ㄌㄨㄥˊ ㄇㄨˋ ㄨㄟˋ ㄇㄛˋ ㄅㄣˇ ㄓㄚˊ ㄕㄨˋ ㄓㄨ ㄆㄨˇ ㄉㄨㄛˇ ㄒㄧㄡˇ ㄍㄢ ㄕㄢ ㄌㄧˇ ㄒㄧㄥˋ ㄘㄞˊ ㄘㄨㄣ ㄅㄧㄠ ㄓㄤˋ ㄇㄤˊ ㄉㄨˋ ㄑㄧˇ ㄕㄨˋ ㄍㄤ ㄇㄧㄠˇ ㄏㄤˊ ㄅㄟ ㄐㄧㄝˊ ㄉㄨㄥ ㄍㄠˇ ㄧㄠˇ ㄔㄨˇ ㄆㄚˊ ㄓㄨˋ ㄙㄨㄥ ㄅㄢˇ ㄆㄧˊ ㄨㄤˇ ㄈㄤ ㄒㄧ ㄉㄡˇ ㄓㄣˇ ㄌㄧㄣˊ ㄇㄟˊ ㄍㄨㄛˇ ㄓ ㄎㄨ ㄆㄧㄥˊ ㄍㄨㄞˇ ㄐㄧㄚˋ ㄍㄡˇ ㄅㄧㄥˇ ㄅㄞˇ ㄇㄡˇ ㄍㄢ ㄑㄧ ㄖㄢˇ ㄖㄡˊ ㄒㄧㄚˊ ㄧㄡˋ ㄊㄨㄛˋ ㄓㄚˋ ㄉㄧˇ ㄔㄚˊ ㄐㄧㄡˋ ㄐㄧㄢˇ ㄎㄜ ㄓㄨˋ ㄌㄧㄡˇ ㄔㄞˊ ㄕㄢ ㄕˋ ㄕㄨㄢ ㄌㄧˋ ㄧˊ ㄒㄧㄠˋ ㄒㄩˇ ㄓㄨ ㄏㄜˊ ㄍㄣ ㄍㄜˊ ㄗㄞ ㄐㄧㄝˊ ㄏㄥˊ ㄍㄨㄟˋ ㄊㄠˊ ㄨㄟˊ ㄎㄨㄤ ㄢˋ ㄓㄨㄛ ㄊㄨㄥˊ ㄙㄤ ㄏㄨㄢˊ ㄐㄩˊ ㄊㄨㄥˇ ㄍㄢˇ ㄌㄧㄤˊ ㄑㄧㄡˊ ㄊㄧㄥˇ ㄇㄟˊ ㄅㄤ ㄗˇ ㄓ ㄍㄥˇ ㄊㄧㄠˊ ㄒㄧㄠ ㄏㄨㄣˊ ㄕㄠ ㄨˊ ㄌㄧˊ ㄙㄨㄛ ㄊㄧ ㄒㄧㄝˋ ㄎㄨㄣˇ ㄕㄨ ㄈㄢˋ ㄑㄧˋ ㄇㄧㄢˊ ㄑㄧˊ ㄍㄨㄣˋ ㄅㄤˋ ㄗㄨㄥ ㄗㄠˇ ㄐㄧˊ ㄆㄥˊ ㄉㄨㄥˋ ㄊㄤˊ ㄉㄧˋ ㄓㄢˋ ㄙㄣ ㄑㄧ ㄎㄜ ㄓㄠˋ ㄍㄨㄢ ㄈㄣ ㄧˇ ㄓˊ ㄔㄨㄟˊ ㄐㄧㄠ ㄧㄝ ㄧㄤˊ ㄈㄥ ㄒㄧㄝ ㄔㄨˇ ㄏㄨˋ ㄌㄧㄢˋ ㄌㄥˊ ㄋㄢˊ ㄇㄟˊ ㄓㄣ ㄐㄧˊ ㄧㄝˋ ㄔㄨˇ ㄐㄧˊ ㄎㄞˇ ㄧㄥˊ ㄍㄞˋ ㄩˊ ㄌㄤˊ ㄖㄨㄥˊ ㄓㄣ ㄅㄤˇ ㄧㄠˊ ㄍㄢˋ ㄓㄚˋ ㄙㄨㄣˇ ㄒㄧㄝˋ ㄖㄨㄥˊ ㄌㄧㄡˊ ㄑㄩㄝˋ ㄊㄚˋ ㄍㄠˇ ㄆㄢˊ ㄍㄡˋ ㄔㄨㄟˊ ㄑㄧㄤ ㄏㄨㄞˊ ㄍㄤˋ ㄍㄨㄛˇ ㄑㄧ ㄐㄧㄤˇ ㄘㄠˊ ㄓㄨㄤ ㄌㄜˋ ㄘㄨㄥ ㄈㄢˊ ㄌㄧㄤˊ ㄌㄡˊ ㄅㄧㄠ ㄕㄨ ㄓㄤ ㄇㄛˊ ㄧㄤˋ ㄑㄧㄠˊ ㄆㄨˇ ㄕㄨˋ ㄏㄨㄚˋ ㄗㄨㄣ ㄍㄢˇ ㄑㄧㄠ ㄖㄠˊ ㄑㄧㄠˊ ㄐㄩˊ ㄔㄥˊ ㄐㄧ ㄒㄧㄤˋ ㄊㄨㄛˇ ㄏㄥˊ ㄕㄨ ㄊㄢˊ ㄒㄧˊ ㄧㄢˊ ㄉㄤˋ ㄅㄛˋ ㄍㄨㄟˋ ㄑㄧㄥˊ ㄐㄧㄢˇ ㄑㄧㄤˊ ㄇㄥˊ ㄊㄠˊ ㄊㄞˊ ㄅㄧㄣ ㄋㄧㄥˊ ㄎㄢˇ ㄓㄠˋ ㄍㄨㄟˋ ㄌㄨˇ ㄌㄩˊ ㄓˋ ㄉㄨˊ ㄔㄨˊ ㄔㄣˋ ㄌㄧㄥˊ ㄧㄥ ㄌㄢˊ ㄑㄩㄢˊ ㄌㄧˋ ㄌㄢˇ ㄑㄧㄢˋ ㄘˋ ㄒㄧㄣ ㄩˋ ㄑㄧ ㄑㄧㄣ ㄎㄨㄢˇ ㄒㄧㄝ ㄑㄧㄢˋ ㄍㄜ ㄊㄢˋ ㄡ ㄕㄜˋ ㄔㄨˋ ㄩˊ ㄏㄨㄢ ㄓˇ ㄓㄥˋ ㄘˇ ㄅㄨˋ ㄨˇ ㄑㄧˊ ㄨㄞ ㄙㄨㄟˋ ㄌㄧˋ ㄍㄨㄟ ㄉㄞˇ ㄙˇ ㄇㄛˋ ㄧㄤ ㄉㄞˋ ㄒㄩㄣˋ ㄕㄨ ㄓˊ ㄘㄢˊ ㄕㄤ ㄌㄧㄢˋ ㄅㄧㄣˋ ㄐㄧㄢ ㄉㄨㄢˋ ㄧㄣ ㄕㄚ ㄎㄜˊ ㄉㄧㄢˋ ㄏㄨㄟˇ ㄧˋ ㄡ ㄨˊ ㄇㄨˇ ㄇㄟˇ ㄉㄨˊ ㄩˋ ㄅㄧˇ ㄆㄧˊ ㄔㄢˊ ㄇㄠˊ ㄏㄠˊ ㄑㄧㄡˊ ㄊㄢˇ ㄐㄧㄢˋ ㄔㄤˇ ㄓㄢ ㄕˋ ㄉㄧ ㄇㄧㄣˊ ㄇㄤˊ ㄋㄞˇ ㄈㄣ ㄈㄨˊ ㄑㄧˋ ㄧㄣ ㄏㄞˋ ㄧㄤˇ ㄢ ㄑㄧㄥ ㄧㄚˋ ㄉㄢˋ ㄌㄩˋ ㄩㄣ ㄕㄨㄟˇ ㄕㄨㄟ˙ ㄩㄥˇ ㄈㄢˋ ㄊㄧㄥ ㄓ ㄑㄧㄡˊ ㄨㄢˊ ㄈㄢˋ ㄒㄧ ㄕㄢˋ ㄏㄢˋ ㄨ ㄒㄩㄣˋ ㄖㄨˇ ㄍㄨㄥˇ ㄐㄧㄤ ㄔˊ ㄨ ㄇㄧˋ ㄨㄤ ㄊㄞˋ ㄐㄧˊ ㄅㄧㄢˋ ㄨㄣˋ ㄐㄩㄝˊ ㄑㄧˋ ㄈㄣˊ ㄑㄧㄣˋ ㄧˊ ㄨㄛˋ ㄩㄢˊ ㄏㄤˋ ㄔㄣˊ ㄔㄣˊ ㄉㄨㄣˋ ㄏㄨˋ ㄇㄨˋ ㄇㄟˊ ㄇㄧㄢˇ ㄔㄨㄥ ㄅㄧˇ ㄕㄚ ㄆㄟˋ ㄇㄛˋ ㄇㄟˋ ㄐㄩˇ ㄊㄨㄛˊ ㄏㄜˊ ㄈㄟˋ ㄧㄡˊ ㄓˋ ㄓㄠˇ ㄍㄨ ㄓㄢ ㄧㄢˊ ㄎㄨㄤˋ ㄒㄧㄝˋ ㄑㄧㄡˊ ㄑㄩㄢˊ ㄆㄛ ㄇㄧˋ ㄏㄨㄥˊ ㄈㄚˇ ㄇㄠˇ ㄙˋ ㄈㄢˋ ㄓ ㄌㄧㄥˊ ㄆㄠˋ ㄅㄛ ㄑㄧˋ ㄋㄧˊ ㄓㄨˋ ㄇㄧㄣˇ ㄊㄞˋ ㄧㄤ ㄩㄥˇ ㄅㄥˋ ㄧㄤˊ ㄌㄧㄝˋ ㄐㄧˋ ㄒㄧˇ ㄌㄨㄛˋ ㄉㄨㄥˋ ㄐㄧㄣ ㄨㄟˇ ㄒㄧㄝˋ ㄏㄨㄥˊ ㄒㄩˋ ㄊㄠˊ ㄦˇ ㄓㄡ ㄒㄩㄣˊ ㄒㄩㄥ ㄍㄨㄤ ㄏㄨㄢˊ ㄏㄨㄛˊ ㄑㄧㄚˋ ㄆㄞˋ ㄌㄧㄡˊ ㄓㄜˋ ㄐㄩㄣˋ ㄧˋ ㄆㄨˇ ㄏㄠˋ ㄌㄤˋ ㄌㄧˇ ㄈㄨˊ ㄩˋ ㄏㄞˇ ㄐㄧㄣˋ ㄐㄧㄚ ㄋㄧㄝˋ ㄐㄧㄥ ㄒㄧㄠ ㄕㄜˋ ㄋㄧㄢˇ ㄩㄥˇ ㄒㄧㄢˊ ㄐㄩㄢ ㄘㄣˊ ㄊㄧˋ ㄈㄨˊ ㄕㄨㄢˋ ㄧㄚˊ ㄧㄝˋ ㄏㄢˊ ㄏㄜˊ ㄌㄧㄤˊ ㄓㄨㄛ ㄗ ㄒㄧ ㄒㄧㄠˊ ㄑㄧˊ ㄌㄧㄣˊ ㄊㄤˇ ㄕㄨ ㄑㄧ ㄊㄠˊ ㄘㄨㄥˊ ㄌㄟˋ ㄙㄨㄥ ㄉㄢˋ ㄩ ㄍㄢˋ ㄐㄧㄥˋ ㄌㄨㄣˊ ㄧㄣˊ ㄘㄨㄟˋ ㄏㄨㄞˊ ㄕㄣ ㄔㄨㄣˊ ㄩㄢ ㄏㄨㄣˋ ㄧㄢ ㄑㄧㄢˇ ㄊㄧㄢ ㄑㄧㄥ ㄏㄨㄢˋ ㄓㄨˇ ㄐㄧㄢˇ ㄩˊ ㄑㄩˊ ㄉㄨˋ ㄓㄚ ㄅㄛˊ ㄨㄛˋ ㄨㄛ ㄘㄜˋ ㄨㄟˋ ㄍㄤˇ ㄒㄩㄢˋ ㄎㄜˇ ㄧㄡˊ ㄇㄧㄠˇ ㄏㄨㄣˊ ㄆㄞˋ ㄇㄟˊ ㄘㄡˋ ㄊㄨㄢ ㄇㄧㄢˇ ㄐㄧㄢ ㄏㄨˊ ㄒㄧㄤ ㄓㄢˋ ㄏㄨㄤˊ ㄇㄧㄣˇ ㄩㄥˇ ㄉㄨㄥˋ ㄧㄢ ㄊㄤ ㄩㄢˊ ㄍㄞˋ ㄩㄢˊ ㄓㄨㄣˇ ㄎㄜˋ ㄌㄧㄡ ㄍㄡ ㄧˋ ㄆㄨˇ ㄌㄧˋ ㄒㄧ ㄨㄣ ㄙㄨˋ ㄒㄧㄡˋ ㄖㄨㄥˊ ㄋㄧˋ ㄕ ㄆㄤ ㄘㄤ ㄇㄧㄝˋ ㄉㄧㄢ ㄗ ㄉㄧˊ ㄏㄨㄚˊ ㄗˇ ㄊㄠ ㄊㄥˊ ㄏㄨˋ ㄓˋ ㄕㄣˋ ㄉㄧ ㄌㄨˇ ㄍㄨㄣˇ ㄇㄢˇ ㄩˊ ㄆㄧㄠˋ ㄑㄧ ㄌㄡˋ ㄌㄧˊ ㄧㄢˇ ㄘㄠˊ ㄇㄛˋ ㄏㄢˋ ㄌㄧㄢˊ ㄒㄩㄢˊ ㄧ ㄇㄢˋ ㄗˋ ㄌㄨㄛˋ ㄕㄨˋ ㄓㄤˇ ㄓㄤ ㄐㄧㄢˋ ㄧㄤˋ ㄐㄧㄤ ㄆㄛ ㄐㄧㄝˊ ㄆㄢ ㄑㄧㄢˊ ㄒㄧˋ ㄒㄩㄣˋ ㄖㄨㄣˋ ㄌㄠˇ ㄊㄢˊ ㄔㄠˊ ㄒㄩㄣˊ ㄎㄨㄟˋ ㄕㄢ ㄔㄢˊ ㄊㄨㄥˊ ㄙㄜˋ ㄔㄥˊ ㄐㄧㄠ ㄔㄜˋ ㄆㄥ ㄐㄧㄢˋ ㄇㄧㄢˇ ㄗㄠˇ ㄗㄜˊ ㄩˋ ㄌㄧˇ ㄉㄧㄢˋ ㄠˋ ㄏㄨㄢˊ ㄔㄢˊ ㄉㄢˋ ㄐㄧ ㄓㄨㄛˊ ㄌㄧㄢˊ ㄋㄨㄥˊ ㄕ ㄋㄧㄥˋ ㄇㄥˊ ㄐㄧˋ ㄏㄠˊ ㄖㄨˊ ㄊㄠ ㄏㄨㄛˋ ㄌㄢˋ ㄐㄩㄣˋ ㄆㄨˊ ㄓㄨㄛˊ ㄨㄟˊ ㄅㄧㄣ ㄐㄧㄢˋ ㄌㄩˋ ㄉㄨˊ ㄒㄧㄝˋ ㄕㄣˇ ㄌㄧㄡˊ ㄆㄨˋ ㄅㄧㄣ ㄌㄨˊ ㄏㄢˋ ㄧㄥˊ ㄌㄧˋ ㄒㄧㄠ ㄌㄞˋ ㄇㄧˊ ㄌㄧㄢˋ ㄌㄢˊ ㄍㄨㄢˋ ㄙㄚˇ ㄊㄢ ㄅㄚˋ ㄨㄢ ㄌㄨㄢˊ ㄏㄨㄛˇ ㄏㄨㄟ ㄗㄠˋ ㄐㄧㄡˇ ㄓㄨㄛˊ ㄗㄞ ㄔㄨㄟ ㄧㄢˊ ㄔㄠˇ ㄎㄤˋ ㄓˋ ㄓㄠˋ ㄒㄩㄢˋ ㄐㄩˋ ㄊㄢˋ ㄆㄠˋ ㄐㄩㄥˇ ㄅㄧㄥˇ ㄓㄚˋ ㄨㄟˊ ㄌㄧㄝˋ ㄧㄤˊ ㄨ ㄏㄨㄥ ㄌㄠˋ ㄎㄠˇ ㄒㄧ ㄆㄥ ㄈㄥ ㄧㄢ ㄏㄢˋ ㄅㄟˋ ㄈㄣˊ ㄎㄨㄣ ㄨˊ ㄐㄧㄠ ㄧㄢˋ ㄖㄢˊ ㄒㄧㄚ ㄌㄧㄢˋ ㄏㄨㄤˊ ㄐㄧㄢ ㄋㄨㄢˇ ㄧㄢ ㄩˋ ㄕㄚ ㄇㄟˊ ㄏㄨㄢˋ ㄒㄩˋ ㄓㄠˋ ㄨㄟ ㄈㄢˊ ㄧㄤˊ ㄓㄨˇ ㄕㄢ ㄒㄧ ㄒㄩㄥˊ ㄧㄥˊ ㄖㄨㄥˊ ㄒㄧ ㄕㄨˊ ㄩㄣˋ ㄠˊ ㄖㄜˋ ㄒㄧ ㄔˋ ㄖㄢˊ ㄧㄢˋ ㄉㄥ ㄉㄨㄣˋ ㄌㄧㄠˊ ㄌㄧㄣˊ ㄕㄠ ㄧㄢˋ ㄊㄤˋ ㄇㄣˋ ㄧㄥˊ ㄩˋ ㄗㄠˋ ㄘㄢˋ ㄙㄨㄟˋ ㄏㄨㄟˇ ㄓㄨˊ ㄒㄧㄝˋ ㄏㄨㄟˋ ㄖㄨˊ ㄒㄩㄣ ㄐㄧㄣˋ ㄉㄠˋ ㄅㄠˋ ㄕㄨㄛˋ ㄌㄨˊ ㄌㄢˋ ㄘㄨㄢˋ ㄓㄠˇ ㄆㄚˊ ㄓㄥ ㄩㄢˊ ㄐㄩㄝˊ ㄈㄨˋ ㄅㄚˋ ㄉㄧㄝ ㄧㄝˊ ㄧㄠˊ ㄕㄨㄤˇ ㄦˇ ㄑㄧㄤˊ ㄆㄧㄢˋ ㄅㄢˇ ㄆㄞˊ ㄉㄧㄝˊ ㄧㄡˇ ㄉㄨˊ ㄧㄚˊ ㄋㄧㄡˊ ㄆㄧㄣˋ ㄇㄡˊ ㄊㄚ ㄇㄨˇ ㄌㄠˊ ㄇㄨˋ ㄨˋ ㄍㄨˇ ㄕㄥ ㄉㄧˇ ㄊㄜˋ ㄑㄧㄢ ㄒㄧ ㄌㄧˊ ㄐㄧ ㄎㄠˋ ㄌㄨㄛˋ ㄇㄠˊ ㄉㄨˊ ㄒㄧ ㄑㄩㄢˇ ㄈㄢˋ ㄓㄨㄤˋ ㄎㄨㄤˊ ㄉㄧˊ ㄒㄧㄚˊ ㄏㄨˊ ㄍㄡˇ ㄐㄩ ㄏㄣˇ ㄐㄧㄠˇ ㄕㄡˋ ㄐㄩㄢˋ ㄌㄧˊ ㄒㄧㄚˊ ㄌㄤˊ ㄅㄟˋ ㄍㄨㄛˇ ㄔㄤ ㄓㄥ ㄇㄥˇ ㄘㄞ ㄨㄟˇ ㄒㄧㄥ ㄏㄡˊ ㄧㄡˊ ㄧㄡˊ ㄏㄨㄚˊ ㄩㄢˊ ㄩˋ ㄕ ㄐㄧㄤˇ ㄓㄤ ㄐㄩㄝˊ ㄉㄨˊ ㄋㄧㄥˊ ㄏㄨㄛˋ ㄌㄧㄝˋ ㄍㄨㄤˇ ㄕㄡˋ ㄊㄚˇ ㄒㄧㄢˋ ㄌㄨㄛˊ ㄒㄩㄢˊ ㄗ ㄌㄩˋ ㄩˋ ㄨㄤˊ ㄐㄧㄡˇ ㄨㄣˊ ㄩㄝˋ ㄐㄩㄝˊ ㄨㄢˊ ㄇㄟˊ ㄌㄧㄥˊ ㄉㄞˋ ㄉㄧㄢˋ ㄅㄛ ㄆㄛˋ ㄕㄢ ㄓㄣ ㄌㄨㄛˋ ㄓㄨ ㄍㄨㄟ ㄅㄢ ㄆㄟˋ ㄒㄧㄢˋ ㄑㄧㄡˊ ㄌㄤˊ ㄌㄧˇ ㄌㄧㄡˊ ㄧㄚˊ ㄌㄧˊ ㄔㄣ ㄗㄨㄛˊ ㄏㄨˇ ㄑㄧˊ ㄎㄨㄣ ㄑㄧˊ ㄍㄨㄢˇ ㄌㄧㄣˊ ㄑㄧㄣˊ ㄆㄧˊ ㄆㄚˊ ㄈㄚˋ ㄏㄨㄣˊ ㄇㄠˋ ㄒㄧㄚˊ ㄋㄠˇ ㄏㄨˊ ㄧㄥ ㄩˊ ㄖㄨㄟˋ ㄙㄜˋ ㄙㄨㄛˇ ㄧㄠˊ ㄧㄥˊ ㄇㄚˇ ㄊㄤˊ ㄌㄤˊ ㄍㄨㄟ ㄐㄧㄣˇ ㄘㄨㄟˇ ㄌㄧˊ ㄓㄤ ㄌㄧㄣˊ ㄏㄨㄤˊ ㄆㄨˊ ㄐㄧㄥˇ ㄐㄧ ㄞˋ ㄅㄧˋ ㄘㄢˋ ㄑㄩˊ ㄏㄨㄢˊ ㄒㄧˇ ㄒㄩㄢˊ ㄑㄩㄥˊ ㄌㄨㄥˊ ㄧㄥ ㄒㄧㄤ ㄗㄢˋ ㄍㄨㄚ ㄏㄨˋ ㄆㄧㄠˊ ㄅㄢˋ ㄖㄤˊ ㄨㄚˇ ㄆㄧㄥˊ ㄘˊ ㄓㄣ ㄡ ㄇㄥˊ ㄨㄥˋ ㄍㄢ ㄕㄣˋ ㄊㄧㄢˊ ㄕㄥ ㄔㄢˇ ㄕㄥ ㄙㄨ ㄩㄥˋ ㄕㄨㄞˇ ㄈㄨˇ ㄩㄥˇ ㄅㄥˊ ㄊㄧㄢˊ ㄧㄡˊ ㄐㄧㄚˇ ㄕㄣ ㄋㄢˊ ㄉㄧㄢ ㄓㄣˋ ㄊㄧㄢˊ ㄐㄧㄝˋ ㄑㄩㄢˇ ㄨㄟˋ ㄆㄢˋ ㄌㄧㄡˊ ㄅㄣˇ ㄔㄨˋ ㄇㄨˇ ㄅㄧˋ ㄌㄩㄝˋ ㄑㄧˊ ㄈㄢ ㄏㄨㄚˋ ㄧˋ ㄉㄤ ㄐㄧ ㄐㄧ ㄐㄧㄤ ㄔㄡˊ ㄉㄧㄝˊ ㄆㄧˇ ㄕㄨ ㄧˊ ㄍㄜ ㄐㄧㄡˋ ㄕㄢˋ ㄔㄣˋ ㄧㄡˊ ㄅㄚ ㄐㄧㄝˋ ㄧˋ ㄆㄧˊ ㄍㄢ ㄘ ㄉㄢˇ ㄓㄣˇ ㄊㄥˊ ㄐㄩ ㄐㄧˊ ㄐㄧㄚ ㄅㄧㄥˋ ㄓㄥˋ ㄑㄩㄢˊ ㄧˊ ㄓˋ ㄏㄣˊ ㄉㄡˋ ㄐㄧㄥˋ ㄊㄨㄥˋ ㄆㄧˇ ㄙㄨㄢ ㄌㄧˋ ㄓˋ ㄊㄢˊ ㄈㄟˋ ㄇㄚˊ ㄌㄧㄣˊ ㄔ ㄅㄧˋ ㄨㄟˇ ㄩ ㄘㄨㄟˋ ㄩˋ ㄈㄥ ㄧㄤˊ ㄏㄨㄢˋ ㄨㄣ ㄐㄧˊ ㄔㄨㄤ ㄅㄢ ㄌㄧㄡˊ ㄕㄡˋ ㄋㄩㄝˋ ㄉㄚ ㄓㄤˋ ㄑㄩㄝˊ ㄌㄡˋ ㄌㄧㄠˊ ㄌㄠˊ ㄞˊ ㄩˋ ㄆㄧˇ ㄌㄧˋ ㄅㄧㄝˇ ㄔ ㄧㄤˇ ㄓㄥ ㄌㄞˋ ㄒㄩㄢˇ ㄧㄣˇ ㄊㄢ ㄉㄧㄢ ㄍㄨㄟˇ ㄉㄥ ㄈㄚ ㄅㄞˊ ㄅㄞˇ ㄗㄠˋ ㄉㄜ˙ ㄐㄧㄝ ㄏㄨㄤˊ ㄍㄨㄟ ㄍㄠ ㄐㄧㄠˇ ㄏㄠˋ ㄨㄢˇ ㄞˊ ㄆㄧˊ ㄆㄠˋ ㄘㄨㄣ ㄓㄡˋ ㄇㄧㄣˇ ㄩˊ ㄅㄟ ㄓㄨㄥ ㄆㄣˊ ㄧㄥˊ ㄧˋ ㄏㄜˊ ㄤˋ ㄏㄜˊ ㄎㄨㄟ ㄕㄥˋ ㄉㄠˋ ㄓㄢˇ ㄇㄥˊ ㄐㄧㄣˇ ㄐㄧㄢ ㄆㄢˊ ㄍㄨㄢˋ ㄌㄨˊ ㄉㄤˋ ㄇㄨˋ ㄉㄧㄥ ㄇㄤˊ ㄓˊ ㄒㄧㄤ ㄉㄨㄣˇ ㄆㄢˋ ㄉㄨㄣˋ ㄕㄥˇ ㄇㄧㄠˇ ㄇㄟˊ ㄎㄢˋ ㄓㄣ ㄇㄧㄢˊ ㄓㄚˇ ㄒㄩㄢˋ ㄎㄨㄤˋ ㄐㄩㄢˋ ㄇㄡˊ ㄊㄧㄠˋ ㄧㄢˇ ㄓㄨㄥˋ ㄎㄨㄣˋ ㄐㄧㄥ ㄓㄥ ㄌㄞˋ ㄕㄨㄟˋ ㄙㄨㄟ ㄉㄨ ㄆㄧˋ ㄇㄨˋ ㄋㄧˋ ㄧˋ ㄐㄧㄝˊ ㄘㄞˇ ㄉㄨˇ ㄎㄨㄟˊ ㄖㄨㄟˋ ㄇㄧㄠˊ ㄇㄧ ㄔㄣ ㄎㄜ ㄒㄧㄚ ㄇㄧㄥˊ ㄇㄢˊ ㄆㄧㄠˇ ㄔㄥ ㄆㄧㄝ ㄑㄧㄠˊ ㄉㄥˋ ㄕㄨㄣˋ ㄌㄧㄠˇ ㄎㄢˋ ㄊㄨㄥˊ ㄓㄢ ㄐㄧㄢˇ ㄍㄨˇ ㄑㄩˊ ㄇㄥˊ ㄌㄨㄥˊ ㄔㄨˋ ㄓㄨˇ ㄇㄠˊ ㄐㄧㄣ ㄕˇ ㄧˇ ㄓ ㄐㄩˇ ㄉㄨㄢˇ ㄞˇ ㄐㄧㄠˇ ㄕˊ ㄒㄧˋ ㄕㄚ ㄑㄧˋ ㄎㄢˇ ㄧㄢˊ ㄈㄚˊ ㄓㄚˇ ㄐㄩ ㄉㄧˇ ㄓㄣ ㄅㄧㄢ ㄆㄥ ㄆㄠˋ ㄆㄛˋ ㄕㄣ ㄗㄚˊ ㄓㄨ ㄒㄧㄥˊ ㄒㄧㄠ ㄌㄧㄡˊ ㄧㄥˋ ㄧㄢˋ ㄆㄥˊ ㄎㄨㄥ ㄉㄧㄠ ㄌㄨˋ ㄙㄨㄟˋ ㄅㄟ ㄉㄨㄟˋ ㄨㄢˇ ㄉㄧㄢˇ ㄉㄧㄝˊ ㄐㄧㄝˊ ㄅㄧˋ ㄕㄨㄛˋ ㄆㄥˋ ㄊㄢˋ ㄑㄩㄝˋ ㄇㄚˇ ㄋㄧㄢˇ ㄘˊ ㄅㄤˋ ㄌㄟˇ ㄘㄨㄛ ㄆㄢˊ ㄎㄜ ㄓㄨㄢ ㄑㄧˋ ㄇㄛˊ ㄑㄧㄥˋ ㄐㄧ ㄉㄥˋ ㄌㄧㄣˊ ㄏㄨㄤˊ ㄐㄧㄠ ㄔㄨˇ ㄞˋ ㄎㄨㄤˋ ㄌㄧˋ ㄌㄧˋ ㄈㄢˊ ㄕˋ ㄕㄜˋ ㄙˋ ㄑㄧˊ ㄒㄧㄢ ㄑㄧˊ ㄑㄧˊ ㄓˇ ㄧㄡˋ ㄇㄧˋ ㄗㄨˇ ㄓ ㄗㄨㄛˋ ㄓㄨˋ ㄕㄣˊ ㄙㄨㄟˋ ㄘˊ ㄒㄧㄤˊ ㄆㄧㄠˋ ㄐㄧˋ ㄑㄧˊ ㄌㄨˋ ㄐㄧㄣˋ ㄏㄨㄛˋ ㄓㄣ ㄈㄨˊ ㄩˋ ㄒㄧˇ ㄔㄢˊ ㄌㄧˇ ㄉㄠˇ ㄖㄤˊ ㄩˇ ㄩˊ ㄑㄧㄣˊ ㄏㄜˊ ㄊㄨ ㄒㄧㄡˋ ㄙ ㄒㄧㄢ ㄅㄧㄥˇ ㄑㄧㄡ ㄎㄜ ㄇㄧㄠˇ ㄇㄧˋ ㄗㄨ ㄇㄛˋ ㄔㄥˋ ㄑㄧㄣˊ ㄧㄤ ㄓˋ ㄧˊ ㄒㄧ ㄕㄨㄟˋ ㄍㄢˇ ㄔㄥˊ ㄕㄠ ㄖㄣˇ ㄓˋ ㄌㄥˊ ㄎㄜ ㄅㄧㄥˇ ㄔㄡˊ ㄓㄨㄥˇ ㄔㄥ ㄐㄧˋ ㄉㄠˋ ㄐㄧㄚˋ ㄐㄧ ㄍㄠˇ ㄍㄨˇ ㄇㄨˋ ㄌㄨˋ ㄙㄨ ㄐㄧ ㄧㄥˇ ㄙㄨㄟˋ ㄋㄨㄥˊ ㄙㄜˋ ㄏㄨㄟˋ ㄨㄣˇ ㄏㄨㄛˋ ㄒㄩㄝˊ ㄐㄧㄡ ㄑㄩㄥˊ ㄎㄨㄥ ㄔㄨㄢ ㄊㄨ ㄓㄞˇ ㄧㄠˇ ㄓˋ ㄊㄧㄠˇ ㄐㄧㄠˋ ㄔㄨㄤ ㄐㄩㄥˇ ㄎㄨ ㄎㄜ ㄨㄛ ㄨㄚ ㄑㄩㄥˊ ㄧㄠˊ ㄎㄨㄟ ㄌㄨㄥˊ ㄘㄨㄢˋ ㄑㄧㄠˋ ㄉㄡˋ ㄑㄧㄝˋ ㄌㄧˋ ㄓㄢˋ ㄐㄧㄥˋ ㄓㄤ ㄐㄩㄣˋ ㄊㄨㄥˊ ㄐㄧㄝˊ ㄉㄨㄢ ㄐㄧㄥˋ ㄓㄨˊ ㄓㄨˊ ㄩˊ ㄍㄢ ㄅㄚ ㄒㄧㄠˋ ㄕㄥ ㄉㄧˊ ㄔ ㄌㄧˋ ㄈㄨˊ ㄅㄣˋ ㄉㄧˋ ㄗㄜˊ ㄅㄧˇ ㄉㄥˇ ㄐㄧㄣ ㄙㄨㄣˇ ㄈㄚˊ ㄎㄨㄤ ㄓㄨˋ ㄊㄨㄥˇ ㄉㄚˊ ㄘㄜˋ ㄩㄣˊ ㄐㄧㄢˇ ㄕˋ ㄧㄢˊ ㄎㄨㄞˋ ㄅㄧˇ ㄍㄜˋ ㄐㄧㄢ ㄓㄥ ㄅㄛˊ ㄐㄧ ㄙㄨㄢˋ ㄑㄧㄢˊ ㄔㄨㄟˊ ㄍㄨㄢˇ ㄐㄧㄢˋ ㄒㄧㄤ ㄓㄣ ㄓㄨˋ ㄐㄧㄝˊ ㄏㄨㄤˊ ㄈㄢˋ ㄓㄨㄢˋ ㄆㄧㄢ ㄓㄨˋ ㄏㄡˊ ㄍㄠ ㄖㄨㄛˋ ㄒㄧㄠˇ ㄘㄨㄢˋ ㄉㄨˇ ㄅㄧˋ ㄕㄞ ㄆㄥˊ ㄇㄧㄝˋ ㄘㄨˋ ㄙㄨˋ ㄌㄡˇ ㄙㄨㄛ ㄉㄢ ㄐㄧㄢˇ ㄎㄨㄟˋ ㄏㄨㄤˊ ㄗㄢ ㄒㄧㄠ ㄧㄢˊ ㄅㄛˇ ㄑㄧㄢ ㄌㄧㄢˊ ㄅㄨˋ ㄓㄡˋ ㄌㄢˊ ㄔㄡˊ ㄐㄧˊ ㄊㄥˊ ㄌㄞˋ ㄌㄨㄥˊ ㄌㄢˊ ㄑㄧㄢ ㄩㄝˋ ㄌㄧˊ ㄌㄨㄛˊ ㄩˋ ㄇㄧˇ ㄗˇ ㄈㄣˇ ㄌㄧˋ ㄆㄛˋ ㄘㄨ ㄙㄨˋ ㄓㄡ ㄌㄧㄤˊ ㄐㄧㄥ ㄩㄝˋ ㄘㄨㄟˋ ㄗㄨㄥˋ ㄐㄧㄥ ㄏㄨˊ ㄍㄠ ㄊㄤˊ ㄘㄠ ㄇㄧˊ ㄙㄢˇ ㄈㄣˋ ㄗㄠ ㄎㄤ ㄇㄛˊ ㄌㄧㄤˊ ㄋㄨㄛˋ ㄊㄨㄢˊ ㄇㄧˋ ㄒㄧˋ ㄐㄧㄡ ㄐㄧˋ ㄓㄡˋ ㄩㄝ ㄏㄨㄥˊ ㄩ ㄏㄜˊ ㄖㄣˋ ㄨㄣˇ ㄨㄣˊ ㄋㄚˋ ㄋㄧㄡˇ ㄔㄨㄣˊ ㄆㄧ ㄕㄚ ㄓˇ ㄐㄧˊ ㄈㄣ ㄩㄣˊ ㄙㄨˋ ㄈㄤˇ ㄙㄨㄛˇ ㄗˇ ㄗㄚ ㄌㄟˋ ㄒㄧˋ ㄈㄨˊ ㄒㄧㄝˋ ㄕㄣ ㄕㄠˋ ㄈㄨˊ ㄔㄨˋ ㄓㄨㄥ ㄒㄧㄢˊ ㄗㄨˇ ㄅㄢˋ ㄐㄧㄝˊ ㄐㄩㄝˊ ㄊㄠ ㄐㄧㄠˇ ㄌㄨㄛˋ ㄒㄩㄢˋ ㄍㄟˇ ㄖㄨㄥˊ ㄒㄩˋ ㄉㄧㄝˊ ㄊㄨㄥˇ ㄙ ㄐㄧㄤˋ ㄐㄩㄢˋ ㄅㄤˇ ㄙㄨㄟ ㄎㄨㄣˇ ㄐㄧㄥ ㄗㄨㄥ ㄉㄨㄛˇ ㄌㄩˋ ㄔㄡˊ ㄕㄡˋ ㄨㄟˊ ㄨㄢˇ ㄍㄤ ㄨㄤˇ ㄓㄨㄟˋ ㄘㄞˇ ㄌㄨㄣˊ ㄑㄧˇ ㄓㄢˋ ㄔㄨㄛˋ ㄌㄧㄥˊ ㄇㄧㄢˊ ㄗ ㄐㄧㄣˇ ㄒㄩˋ ㄐㄧㄢ ㄎㄜˋ ㄒㄧㄢˋ ㄐㄧ ㄉㄨㄢˋ ㄉㄧˋ ㄩㄢˊ ㄅㄧㄢ ㄏㄨㄢˇ ㄇㄧㄢˇ ㄨㄟˇ ㄇㄧㄠˇ ㄌㄧㄢˋ ㄊㄧˊ ㄓˋ ㄧㄥˊ ㄐㄧㄣˋ ㄧˋ ㄓㄡˋ ㄐㄧㄢ ㄈㄨˋ ㄔㄣ ㄍㄠˇ ㄒㄧㄢˋ ㄈㄥˋ ㄙㄨㄛ ㄧㄢˇ ㄗㄨㄥˋ ㄌㄟˊ ㄑㄧㄢˋ ㄇㄢˋ ㄌㄩˇ ㄆㄧㄠˇ ㄗㄨㄥˇ ㄐㄧ ㄕㄢ ㄈㄢˊ ㄅㄥˇ ㄙㄠ ㄇㄡˊ ㄑㄧㄤˇ ㄗㄥ ㄓ ㄕㄢˋ ㄈㄢ ㄌㄧㄠˊ ㄖㄠˋ ㄒㄧㄡˋ ㄕㄥˊ ㄏㄨㄟˋ ㄒㄧˋ ㄐㄧㄢˇ ㄐㄧㄠˇ ㄧˋ ㄐㄧˋ ㄅㄧㄣ ㄗㄨㄢˇ ㄒㄩˋ ㄔㄢˊ ㄧㄥ ㄘㄞˊ ㄒㄧㄢ ㄌㄢˇ ㄈㄡˇ ㄍㄤ ㄑㄩㄝ ㄅㄛ ㄑㄧㄥˋ ㄊㄢˊ ㄧㄥ ㄍㄨㄢˋ ㄨㄤˇ ㄏㄢˇ ㄍㄨˇ ㄓㄠˋ ㄗㄨㄟˋ ㄓˋ ㄈㄚˊ ㄕㄨˇ ㄇㄚˋ ㄅㄚˋ ㄌㄧˊ ㄌㄨㄛˊ ㄐㄧ ㄧㄤˊ ㄇㄧˇ ㄑㄧㄤ ㄇㄟˇ ㄍㄠ ㄌㄧㄥˊ ㄒㄧㄡ ㄑㄩㄣˊ ㄒㄧㄢˋ ㄧˋ ㄐㄧㄝˊ ㄒㄧ ㄕㄢ ㄌㄟˊ ㄍㄥ ㄔㄢˋ ㄩˇ ㄧˋ ㄨㄥ ㄔˋ ㄧˋ ㄌㄧㄥˊ ㄒㄧˊ ㄒㄧㄤˊ ㄒㄧ ㄉㄧˊ ㄘㄨㄟˋ ㄈㄟˇ ㄆㄧㄢ ㄏㄜˊ ㄏㄢˋ ㄠˊ ㄧˋ ㄑㄧㄠˋ ㄈㄢ ㄧˋ ㄧㄠˋ ㄌㄠˇ ㄎㄠˇ ㄇㄠˋ ㄓㄜˇ ㄑㄧˊ ㄉㄧㄝˊ ㄦˊ ㄕㄨㄚˇ ㄋㄞˋ ㄉㄨㄢ ㄌㄟˇ ㄍㄥ ㄏㄠˋ ㄩㄣˊ ㄅㄚˋ ㄙˋ ㄡˇ ㄋㄡˋ ㄦˇ ㄧㄝˊ ㄉㄢ ㄍㄥˇ ㄌㄧㄥˊ ㄌㄧㄠˊ ㄍㄨㄚ ㄕㄥˋ ㄆㄧㄣˋ ㄐㄩˋ ㄨㄣˊ ㄌㄧㄢˊ ㄘㄨㄥ ㄠˊ ㄕㄥ ㄙㄨㄥˇ ㄋㄧㄝˋ ㄓˊ ㄊㄧㄥ ㄌㄨㄥˊ ㄩˋ ㄧˋ ㄙㄨˋ ㄙˋ ㄓㄠˋ ㄖㄡˋ ㄌㄜ ㄐㄧ ㄏㄨㄤ ㄒㄧㄠˋ ㄓㄡˇ ㄉㄨˋ ㄍㄤ ㄍㄢ ㄍㄨˇ ㄓ ㄈㄟˊ ㄐㄧㄢ ㄈㄤˊ ㄓㄨㄣ ㄎㄣˇ ㄍㄨㄥ ㄩˋ ㄧㄠˊ ㄈㄟˋ ㄨㄟˋ ㄓㄡˋ ㄅㄟˋ ㄊㄞ ㄆㄤˋ ㄆㄟ ㄐㄧㄚˇ ㄓ ㄅㄠ ㄏㄨˊ ㄧㄣˋ ㄒㄩ ㄧㄢ ㄎㄨㄚˋ ㄧˊ ㄍㄨㄤ ㄍㄜ ㄉㄨㄥˋ ㄒㄩㄥ ㄆㄧㄢˊ ㄋㄥˊ ㄓ ㄒㄧㄝˊ ㄘㄨㄟˋ ㄇㄞˋ ㄐㄧˊ ㄅㄛˊ ㄔㄨㄣˊ ㄕㄣˋ ㄒㄧㄡ ㄊㄨㄛ ㄆㄨˊ ㄉㄡˋ ㄓㄤˋ ㄆㄧˊ ㄊㄧㄢˇ ㄧㄝˋ ㄧㄢ ㄕㄣˋ ㄈㄨˇ ㄈㄨˇ ㄈㄟˊ ㄑㄧㄤ ㄨㄢˋ ㄒㄧㄥ ㄋㄠˇ ㄓㄨㄥˇ ㄙㄞ ㄧㄠ ㄐㄧㄢˋ ㄐㄧㄠˇ ㄩˊ ㄔㄤˊ ㄈㄨˋ ㄒㄧㄢˋ ㄊㄨㄟˇ ㄅㄤˇ ㄌㄩˇ ㄍㄜˊ ㄅㄛˊ ㄍㄠ ㄅㄧㄠ ㄈㄨ ㄊㄤˊ ㄇㄛˊ ㄒㄧ ㄐㄧㄠ ㄆㄥˊ ㄋㄧˋ ㄕㄢˋ ㄧㄥ ㄉㄢˇ ㄎㄨㄞˋ ㄋㄨㄥˊ ㄊㄨㄣˊ ㄅㄧˋ ㄩㄥ ㄧˋ ㄌㄧㄢˇ ㄑㄧˊ ㄅㄧㄣˋ ㄌㄚˋ ㄌㄨˊ ㄗㄤˋ ㄗㄚ ㄔㄣˊ ㄨㄛˋ ㄗㄤ ㄌㄧㄣˊ ㄗˋ ㄋㄧㄝˋ ㄔㄡˋ ㄓˋ ㄓˋ ㄊㄞˊ ㄓㄣ ㄐㄧㄡˋ ㄩˊ ㄧㄠˇ ㄔㄨㄥ ㄐㄧㄡˋ ㄩˇ ㄒㄧㄥˋ ㄐㄩˇ ㄐㄧㄡˋ ㄕㄜˊ ㄕㄜˇ ㄕˋ ㄕㄨ ㄊㄧㄢˇ ㄔㄨㄢˇ ㄕㄨㄣˋ ㄨˇ ㄓㄡ ㄕㄢ ㄅㄢˇ ㄏㄤˊ ㄈㄤˇ ㄅㄢ ㄉㄨㄛˋ ㄅㄛˊ ㄒㄧㄢˊ ㄔㄨㄢˊ ㄊㄧㄥˇ ㄇㄥˇ ㄙㄡ ㄘㄤ ㄐㄧㄢˋ ㄍㄣˇ ㄌㄧㄤˊ ㄐㄧㄢ ㄙㄜˋ ㄧㄢˋ ㄘㄠˇ ㄘㄠˇ ㄞˋ ㄩˋ ㄕㄠˊ ㄇㄤˊ ㄈㄨˊ ㄓ ㄕㄢ ㄈㄨˊ ㄐㄧㄝˋ ㄈㄣ ㄅㄚ ㄒㄧㄣ ㄐㄧˋ ㄏㄨㄚ ㄈㄤ ㄓˇ ㄩㄣˊ ㄑㄧㄣˊ ㄔㄨˊ ㄧㄚˊ ㄈㄟˋ ㄩㄢˋ ㄖㄢˇ ㄌㄧㄥˊ ㄊㄞˊ ㄇㄧㄠˊ ㄎㄜ ㄇㄨˋ ㄅㄠ ㄍㄡˇ ㄐㄩˋ ㄖㄨㄛˋ ㄎㄨˇ ㄋㄧㄥˊ ㄅㄣˇ ㄧㄥ ㄓㄨㄛˊ ㄇㄠˋ ㄈㄢˋ ㄑㄧㄝˊ ㄇㄠˊ ㄇㄠˊ ㄇㄛˋ ㄇㄧㄥˊ ㄘˊ ㄇㄤˊ ㄓㄨ ㄗ ㄏㄨㄟˊ ㄧㄣ ㄔㄚˊ ㄖㄨㄥ ㄖㄨˊ ㄒㄩㄣˊ ㄑㄩㄢˊ ㄘㄠˇ ㄐㄧㄥ ㄖㄣˇ ㄐㄧㄢˋ ㄏㄨㄤ ㄌㄧˋ ㄏㄜˊ ㄅㄧˊ ㄉㄧˊ ㄊㄨˊ ㄆㄨˊ ㄌㄧˋ ㄓㄨㄤ ㄕㄚ ㄐㄩˇ ㄇㄟˊ ㄐㄧㄥ ㄕㄣ ㄍㄨㄢˇ ㄧㄡˇ ㄐㄧㄚˊ ㄒㄧㄢˋ ㄇㄛˋ ㄇㄤˇ ㄐㄧㄥ ㄐㄧㄢ ㄍㄨ ㄐㄩˊ ㄐㄩㄣ ㄈㄨˊ ㄘㄞˋ ㄊㄨˊ ㄅㄛ ㄆㄨˊ ㄏㄨㄚˊ ㄍㄨ ㄌㄧㄥˊ ㄈㄟ ㄢ ㄧㄢ ㄕㄨ ㄘㄨㄟˋ ㄊㄠˊ ㄔㄤˊ ㄌㄞˊ ㄑㄧ ㄇㄥˊ ㄆㄧㄥˊ ㄨㄟ ㄨㄢˋ ㄒㄩㄢ ㄨㄛ ㄩˊ ㄜˋ ㄌㄨㄛˋ ㄅㄠˇ ㄧㄝˋ ㄓㄜ˙ ㄍㄜˊ ㄆㄨˊ ㄉㄨㄥˇ ㄨㄟˇ ㄆㄚ ㄏㄨˊ ㄗㄤˋ ㄐㄧㄚ ㄎㄨㄟˊ ㄏㄨㄣ ㄉㄧˋ ㄙㄡ ㄇㄥˊ ㄙㄨㄢˋ ㄌㄧˋ ㄆㄨˊ ㄓㄥ ㄘㄤ ㄏㄠ ㄙㄨㄣ ㄒㄩˋ ㄒㄧˊ ㄖㄨㄥˊ ㄨㄥˇ ㄍㄞˋ ㄙㄨㄛ ㄅㄟˋ ㄆㄥˊ ㄌㄧㄢˊ ㄒㄩ˙ ㄌㄧㄥˊ ㄇㄧㄝˋ ㄇㄢˋ ㄅㄛˊ ㄓㄜˋ ㄨㄟˋ ㄘㄞˋ ㄐㄧㄤˇ ㄘㄨㄥ ㄕㄨ ㄧㄣ ㄅㄧˋ ㄈㄢ ㄒㄩㄣˋ ㄐㄧㄠ ㄖㄨㄟˇ ㄏㄨㄟˋ ㄗㄨㄟˋ ㄐㄩㄝˊ ㄉㄤˋ ㄨˊ ㄒㄧㄠ ㄌㄟˇ ㄅㄛˊ ㄨㄟ ㄐㄧˋ ㄐㄧㄤ ㄑㄧㄤˊ ㄒㄩㄝ ㄅㄧˋ ㄐㄧㄢˋ ㄏㄨㄥ ㄙㄚˋ ㄒㄧㄣ ㄕㄨˇ ㄒㄩㄣ ㄊㄞˊ ㄐㄧˋ ㄐㄧˊ ㄌㄢˊ ㄘㄤˊ ㄇㄧㄠˇ ㄡˇ ㄧˋ ㄊㄥˊ ㄧㄠˋ ㄈㄢ ㄙㄡˇ ㄕㄨˇ ㄞˇ ㄌㄧㄣˋ ㄗㄠˇ ㄌㄨˊ ㄙㄨ ㄩㄣˋ ㄆㄧㄥˊ ㄇㄛˊ ㄅㄛˋ ㄒㄧㄢˇ ㄌㄢˊ ㄓㄢˋ ㄌㄨㄛˊ ㄏㄨˇ ㄋㄩㄝˋ ㄑㄧㄢˊ ㄔㄨˇ ㄒㄩ ㄌㄨˇ ㄩˊ ㄏㄠˋ ㄎㄨㄟ ㄔㄨㄥˊ ㄕ ㄏㄨㄥˊ ㄏㄨㄟ ㄇㄥˊ ㄨㄣˊ ㄅㄤˋ ㄧㄣˇ ㄧㄚˊ ㄍㄨㄥ ㄗㄠˇ ㄔ ㄉㄡˇ ㄑㄧㄡ ㄓㄚˋ ㄏㄜˊ ㄏㄢ ㄓㄨˋ ㄍㄨ ㄑㄩ ㄕㄜˊ ㄌㄧㄥˊ ㄉㄢˋ ㄑㄩ ㄏㄨㄟˊ ㄨㄚ ㄓㄨ ㄎㄨㄛˋ ㄐㄧㄠ ㄏㄚˊ ㄓˋ ㄩㄥˇ ㄊㄨㄟˋ ㄜˊ ㄕㄨˇ ㄈㄥ ㄕㄣˋ ㄒㄧㄢˋ ㄓㄜ ㄨˊ ㄌㄧˊ ㄊㄧㄥˊ ㄓ ㄇㄧˋ ㄇㄥˇ ㄒㄧ ㄊㄧㄠˊ ㄧˋ ㄑㄩㄢˊ ㄑㄧㄥ ㄨㄢ ㄎㄜ ㄩˊ ㄕˊ ㄏㄨㄤˊ ㄅㄧㄢ ㄨㄟˋ ㄈㄨˊ ㄒㄧㄚ ㄕ ㄏㄨˊ ㄉㄧㄝˊ ㄨㄛ ㄌㄤˊ ㄆㄤˊ ㄖㄨㄥˊ ㄇㄚˇ ㄇㄧㄥˊ ㄧㄥˊ ㄕˋ ㄊㄤˊ ㄌㄨㄛˊ ㄌㄡˊ ㄕㄨㄞˋ ㄇㄚˊ ㄍㄨㄛ ㄒㄧ ㄓㄤ ㄇㄤˇ ㄆㄢˊ ㄔㄢˊ ㄋㄠˊ ㄔㄨㄥˊ ㄒㄧㄝˋ ㄧˇ ㄔㄢˊ ㄧㄥˊ ㄒㄧㄝ ㄏㄠˊ ㄖㄨˊ ㄌㄚˋ ㄌㄧˊ ㄔㄨㄣˇ ㄌㄧˋ ㄍㄨˇ ㄘㄢˊ ㄉㄨˋ ㄇㄢˊ ㄒㄧㄝˇ ㄒㄧㄥˊ ㄧㄢˇ ㄕㄨˋ ㄐㄧㄝ ㄧㄚˊ ㄨㄟˋ ㄔㄨㄥ ㄏㄥˊ ㄑㄩˊ ㄧ ㄅㄧㄠˇ ㄕㄢ ㄕㄨㄞ ㄓㄨㄥ ㄓˇ ㄖㄣˋ ㄩㄢˊ ㄇㄟˋ ㄐㄧㄚ ㄉㄞˋ ㄆㄠˊ ㄊㄢˇ ㄒㄧㄡˋ ㄍㄨㄣˇ ㄅㄟˋ ㄈㄨˊ ㄘㄞˊ ㄌㄧㄝˋ ㄋㄧㄠˇ ㄆㄡˊ ㄧˋ ㄩˋ ㄑㄧㄡˊ ㄑㄩㄣˊ ㄅㄨˇ ㄓㄨㄤ ㄕㄚ ㄌㄧˇ ㄅㄧˋ ㄔㄡˊ ㄕㄤ˙ ㄆㄟˊ ㄌㄨㄛˇ ㄍㄨㄛˇ ㄓˋ ㄍㄨㄚˋ ㄈㄨˋ ㄅㄧㄢˇ ㄏㄜˋ ㄅㄠ ㄅㄠˇ ㄩˊ ㄔㄨˇ ㄉㄚ ㄖㄨˋ ㄊㄨㄟˋ ㄔˇ ㄎㄨˋ ㄓㄜˇ ㄌㄩˇ ㄒㄧㄝˋ ㄨㄟˋ ㄒㄧㄤ ㄠˇ ㄅㄧˋ ㄐㄧㄣ ㄉㄤ ㄌㄢˊ ㄨㄚˋ ㄅㄞˇ ㄔㄣˋ ㄒㄧˊ ㄒㄧ ㄧㄠˋ ㄊㄢˊ ㄈㄨˋ ㄐㄧㄢˋ ㄍㄨㄟ ㄇㄧˋ ㄕˋ ㄊㄧㄠˋ ㄩˊ ㄑㄧㄣ ㄐㄧˋ ㄐㄧㄣˋ ㄐㄩㄝˊ ㄌㄢˇ ㄍㄨㄢ ㄐㄧㄠˇ ㄐㄧㄣ ㄐㄧㄝˇ ㄕㄤ ㄔㄨˋ ㄐㄩㄝˊ ㄧㄢˊ ㄧㄢˊ ㄉㄧㄥˋ ㄈㄨˋ ㄐㄧˋ ㄒㄩㄣˋ ㄏㄨㄥˋ ㄊㄠˇ ㄒㄩ ㄐㄧㄝˊ ㄧˊ ㄒㄩㄣˋ ㄕㄢˋ ㄑㄧˋ ㄊㄨㄛ ㄐㄧˋ ㄜˊ ㄧㄚˋ ㄙㄨㄥˋ ㄒㄧㄣ ㄐㄩㄝˊ ㄋㄜˋ ㄈㄤˇ ㄕㄜˋ ㄒㄩˇ ㄙㄨˋ ㄏㄜ ㄓㄣˇ ㄓㄨˋ ㄓㄥˋ ㄗ ㄍㄨˇ ㄉㄧˇ ㄓㄚˋ ㄓㄠˋ ㄆㄧㄥˊ ㄅㄧˋ ㄗㄨˇ ㄘˊ ㄩㄥˇ ㄒㄩㄣˊ ㄧˋ ㄕˋ ㄒㄧㄠˋ ㄕ ㄔㄚˋ ㄍㄡˋ ㄍㄨㄟˇ ㄑㄩㄢˊ ㄐㄧㄝˊ ㄏㄨㄚˋ ㄍㄞ ㄒㄧㄤˊ ㄓㄢ ㄜˋ ㄏㄨㄟ ㄓㄨ ㄎㄨㄚ ㄓˋ ㄖㄣˋ ㄎㄨㄤˊ ㄕˋ ㄉㄢˋ ㄧㄡˋ ㄑㄧㄠˋ ㄩˇ ㄔㄥˊ ㄐㄧㄝˋ ㄨ ㄨˋ ㄍㄠˋ ㄙㄨㄥˋ ㄅㄨ ㄏㄨㄟˋ ㄕㄨㄛ ㄕㄟˊ ㄎㄜˋ ㄙㄨㄟˋ ㄈㄟˇ ㄧˋ ㄉㄧㄠˋ ㄔㄢˇ ㄓㄨㄣ ㄊㄢˊ ㄨㄟˇ ㄑㄧㄥˇ ㄓㄥˋ ㄌㄧㄤˋ ㄌㄨㄣˋ ㄩˊ ㄉㄧㄝˊ ㄉㄧˋ ㄒㄧㄝˊ ㄐㄧㄢˋ ㄩˋ ㄗ ㄏㄨㄟˋ ㄢ ㄔㄣˊ ㄈㄥˇ ㄓㄨ ㄧㄢˋ ㄒㄩㄢ ㄋㄨㄛˋ ㄇㄡˊ ㄧㄝˋ ㄨㄟˋ ㄊㄥˊ ㄏㄨㄤˇ ㄇㄧˊ ㄇㄧˋ ㄅㄤˋ ㄑㄧㄢ ㄐㄧㄤˇ ㄒㄧㄝˋ ㄧㄠˊ ㄇㄛˊ ㄓㄜˊ ㄇㄧㄡˋ ㄐㄧㄣˇ ㄏㄨㄚˊ ㄒㄧ ㄓㄥˋ ㄐㄩㄝˊ ㄐㄧ ㄕˊ ㄑㄧㄠˋ ㄊㄢˊ ㄆㄨˇ ㄗㄠˋ ㄐㄧㄥˇ ㄓㄢ ㄆㄧˋ ㄧˋ ㄧˋ ㄑㄧㄢˇ ㄏㄨˋ ㄩˋ ㄉㄨˊ ㄅㄧㄢˋ ㄔㄢˊ ㄖㄤˋ ㄔㄣˋ ㄗㄢˋ ㄉㄤˇ ㄍㄨˇ ㄒㄧ ㄏㄨㄛ ㄉㄡˋ ㄑㄧˇ ㄕˋ ㄨㄢ ㄕㄨˋ ㄈㄥ ㄧㄢˋ ㄕˇ ㄊㄨㄣˊ ㄒㄧㄤˋ ㄏㄨㄢˋ ㄏㄠˊ ㄩˋ ㄓㄨ ㄐㄧㄚ ㄅㄧㄣ ㄅㄠˋ ㄔㄞˊ ㄉㄧㄠ ㄏㄠˊ ㄇㄛˋ ㄇㄠˋ ㄌㄧˊ ㄇㄠ ㄅㄟˋ ㄓㄣ ㄈㄨˋ ㄘㄞˊ ㄍㄨㄥˋ ㄆㄧㄣˊ ㄏㄨㄛˋ ㄈㄢˋ ㄊㄢ ㄍㄨㄢˋ ㄗㄜˊ ㄓㄨˋ ㄗ ㄦˋ ㄍㄨㄟˋ ㄅㄧㄢˇ ㄇㄞˇ ㄉㄞˋ ㄈㄟˋ ㄊㄧㄝ ㄧˊ ㄇㄠˋ ㄏㄜˋ ㄅㄧˋ ㄌㄨˋ ㄌㄧㄣˋ ㄏㄨㄟˋ ㄍㄞ ㄗ ㄐㄧㄚˇ ㄗㄟˊ ㄓㄣˋ ㄕㄜ ㄅㄧㄣ ㄘˋ ㄕㄤˇ ㄆㄟˊ ㄍㄥ ㄒㄧㄢˊ ㄇㄞˋ ㄐㄧㄢˋ ㄈㄨˋ ㄓˋ ㄓㄤˋ ㄉㄨˇ ㄌㄞˋ ㄕㄥˋ ㄓㄨㄢˋ ㄈㄨˋ ㄍㄡˋ ㄙㄞˋ ㄓㄨㄟˋ ㄗㄥˋ ㄗㄢˋ ㄕㄢˋ ㄧㄥˊ ㄗㄤ ㄕㄨˊ ㄧㄢˋ ㄍㄢˋ ㄔˋ ㄕㄜˋ ㄋㄢˇ ㄏㄜˋ ㄓㄜˇ ㄗㄡˇ ㄐㄧㄡ ㄈㄨˋ ㄑㄧˇ ㄔㄣˋ ㄔㄠ ㄩㄝˋ ㄍㄢˇ ㄓㄠˋ ㄊㄤˋ ㄑㄩˋ ㄑㄩ ㄗㄨˊ ㄆㄚ ㄈㄨ ㄓˇ ㄊㄞˊ ㄅㄚˊ ㄉㄧㄝ ㄊㄨㄛˊ ㄆㄠˇ ㄕㄢ ㄅㄛˇ ㄐㄩˋ ㄍㄣ ㄐㄧ ㄐㄧㄠ ㄓㄨ ㄎㄨㄚˋ ㄍㄨㄟˋ ㄌㄨˋ ㄊㄧㄠˋ ㄉㄨㄛˋ ㄐㄩˊ ㄊㄚˋ ㄐㄧㄢˋ ㄏㄨㄞˊ ㄐㄩˋ ㄔˊ ㄑㄩㄢˊ ㄊㄧ ㄘㄞˇ ㄆㄥˋ ㄉㄨㄛˊ ㄩㄥˇ ㄓㄨㄥˇ ㄔㄨㄞˋ ㄖㄡˊ ㄊㄧˊ ㄉㄠˇ ㄘㄨㄛ ㄑㄧ ㄊㄚˋ ㄅㄧˋ ㄘㄨˋ ㄐㄧ ㄆㄢˊ ㄗㄨㄥ ㄅㄥˋ ㄉㄥ ㄉㄨㄣ ㄘㄨˋ ㄐㄩㄝˊ ㄑㄧㄠ ㄆㄨˇ ㄗㄠˋ ㄉㄚˊ ㄓㄨˊ ㄔㄨˊ ㄉㄨㄣˇ ㄔㄡˊ ㄐㄧ ㄩㄝˋ ㄓˊ ㄓˋ ㄋㄧㄝˋ ㄌㄧㄣˋ ㄕㄣ ㄍㄨㄥ ㄉㄨㄛˇ ㄊㄤˇ ㄑㄩ ㄔㄜ ㄧㄚˋ ㄍㄨㄟˇ ㄐㄩㄣ ㄩㄝˋ ㄒㄩㄢ ㄖㄣˋ ㄜˋ ㄖㄨㄢˇ ㄓㄡˊ ㄎㄜ ㄧˋ ㄕˋ ㄐㄧㄠˋ ㄗㄞˋ ㄓˋ ㄓㄜˊ ㄨㄢˇ ㄈㄨˇ ㄑㄧㄥ ㄌㄧㄤˋ ㄗ ㄏㄨㄟ ㄨㄤˇ ㄔㄨㄛˋ ㄍㄨㄣˇ ㄋㄧㄢˇ ㄅㄟˋ ㄌㄨㄣˊ ㄐㄧˊ ㄘㄡˋ ㄕㄨ ㄈㄨˊ ㄓㄢˇ ㄩˊ ㄍㄨˇ ㄒㄧㄚˊ ㄩㄢˊ ㄓㄨㄢˇ ㄓㄜˊ ㄐㄧㄠˋ ㄌㄧㄣˊ ㄏㄨㄥ ㄆㄟˋ ㄒㄧㄣ ㄍㄨ ㄆㄧˋ ㄌㄚˋ ㄅㄢˋ ㄅㄧㄢˋ ㄘˊ ㄅㄧㄢˋ ㄅㄧㄢˋ ㄔㄣˊ ㄖㄨˇ ㄋㄨㄥˊ ㄩ ㄑㄧˋ ㄒㄩㄣˋ ㄧˊ ㄧㄥˊ ㄐㄧㄣˋ ㄈㄢˇ ㄊㄧㄠˊ ㄧˊ ㄐㄩㄥˇ ㄐㄧㄚ ㄉㄞˋ ㄉㄧˊ ㄆㄛˋ ㄉㄧㄝˊ ㄕㄨˋ ㄏㄨㄟˊ ㄇㄧˊ ㄅㄥˋ ㄋㄞˇ ㄓㄨㄟ ㄊㄨㄟˋ ㄙㄨㄥˋ ㄊㄠˊ ㄏㄡˋ ㄋㄧˋ ㄒㄧㄠ ㄊㄡˋ ㄓㄨˊ ㄊㄨˊ ㄐㄧㄥˋ ㄊㄧˋ ㄉㄡˋ ㄓㄜˋ ㄊㄨㄥ ㄍㄨㄤˋ ㄕˋ ㄔㄥˇ ㄙㄨˋ ㄗㄠˋ ㄈㄥˊ ㄌㄧㄢˊ ㄉㄞˇ ㄓㄡ ㄐㄧㄣˋ ㄎㄨㄟˊ ㄨㄟ ㄧˋ ㄅㄧ ㄩˊ ㄉㄨㄣˋ ㄙㄨㄟˋ ㄩˋ ㄧㄡˊ ㄩㄣˋ ㄅㄧㄢˋ ㄍㄨㄛˋ ㄜˋ ㄒㄧㄚˊ ㄏㄨㄤˊ ㄉㄠˋ ㄉㄚˊ ㄨㄟˊ ㄍㄡˋ ㄧㄠˊ ㄌㄧㄡˊ ㄒㄩㄣˋ ㄊㄚˋ ㄉㄧˋ ㄩㄢˇ ㄊㄚˋ ㄑㄧㄢˇ ㄠˊ ㄕˋ ㄗㄠ ㄓㄜ ㄔˊ ㄌㄧㄣˊ ㄗㄨㄣ ㄑㄧㄢ ㄒㄩㄢˇ ㄧˊ ㄌㄧㄠˊ ㄐㄩˋ ㄅㄧˋ ㄧㄠ ㄇㄞˋ ㄒㄧㄝˋ ㄙㄨㄟˋ ㄏㄞˊ ㄦˇ ㄇㄧㄠˇ ㄅㄧㄢ ㄌㄚ ㄌㄨㄛˊ ㄌㄧˇ ㄧˋ ㄩㄥ ㄒㄧㄥˊ ㄋㄚˋ ㄅㄤ ㄒㄧㄝˊ ㄑㄧㄡ ㄕㄠˋ ㄅㄟˋ ㄉㄧˇ ㄩˋ ㄏㄜˊ ㄐㄧㄠ ㄌㄤˊ ㄏㄠˇ ㄐㄩㄣˋ ㄧㄥˇ ㄅㄨˋ ㄍㄨㄛ ㄧㄡˊ ㄉㄡ ㄧㄢˇ ㄜˋ ㄒㄧㄤ ㄗㄡ ㄏㄠˋ ㄩㄥ ㄅㄧˇ ㄧㄣˊ ㄉㄥˋ ㄓㄥˋ ㄌㄧㄣˊ ㄆㄛˊ ㄧㄝˋ ㄗㄡ ㄌㄧˋ ㄧㄡˇ ㄉㄧㄥ ㄑㄧㄡˊ ㄓㄨㄛˊ ㄆㄟˋ ㄐㄧㄡˇ ㄒㄩˋ ㄏㄢ ㄙㄨ ㄇㄧㄥˇ ㄌㄠˋ ㄔㄡˊ ㄊㄨˊ ㄐㄧㄠˋ ㄎㄨˋ ㄙㄨㄢ ㄧㄢ ㄔㄨㄣˊ ㄗㄨㄟˋ ㄘㄨˋ ㄒㄧㄥˇ ㄔㄡˇ ㄩㄣˋ ㄊㄤˊ ㄧ ㄐㄧㄤˋ ㄐㄧㄠˋ ㄈㄚ ㄌㄧˇ ㄒㄩㄣ ㄋㄧㄤˋ ㄒㄧㄣˋ ㄧㄢˋ ㄅㄧㄢˋ ㄘㄞˇ ㄧㄡˋ ㄕˋ ㄌㄧˇ ㄓㄨㄥˋ ㄧㄝˇ ㄌㄧㄤˊ ㄌㄧˊ ㄐㄧㄣ ㄐㄧㄣ ㄓㄠ ㄉㄧㄥ ㄆㄛˋ ㄈㄨˇ ㄓㄣ ㄉㄧㄠˋ ㄎㄡˋ ㄔㄨㄢˋ ㄈㄢˇ ㄍㄤ ㄔㄞ ㄈㄨ ㄋㄚˋ ㄉㄨㄣˋ ㄑㄧㄢˊ ㄅㄢˇ ㄔㄠ ㄋㄧㄡˇ ㄐㄩㄣ ㄍㄞˋ ㄌㄧㄥˊ ㄍㄨˇ ㄅㄛˊ ㄆㄧ ㄅㄨ ㄧㄡˊ ㄊㄧㄢˊ ㄐㄧㄚˇ ㄐㄩˋ ㄒㄩㄢˋ ㄅㄠˋ ㄅㄧˋ ㄅㄛˊ ㄑㄧㄢˊ ㄇㄠˇ ㄑㄧㄢ ㄍㄡ ㄐㄧㄠˇ ㄍㄜˋ ㄅㄧㄥˇ ㄧㄣˊ ㄊㄨㄥˊ ㄒㄧㄢˇ ㄑㄩㄢˊ ㄓㄨ ㄇㄧㄥˊ ㄒㄧㄢˊ ㄢˇ ㄎㄠˋ ㄏㄢˋ ㄖㄨㄟˋ ㄒㄧㄠ ㄊㄧˊ ㄘㄨㄛˋ ㄌㄩˇ ㄒㄧㄣ ㄅㄟˋ ㄈㄥ ㄔㄨˊ ㄆㄨˋ ㄌㄧˇ ㄐㄩˋ ㄍㄤ ㄌㄨˋ ㄓㄨㄟ ㄎㄨㄣ ㄔㄨㄟˊ ㄗ ㄓㄥ ㄉㄧㄥˋ ㄑㄧˊ ㄑㄧㄢˊ ㄐㄧㄣˇ ㄇㄠˊ ㄒㄧ ㄍㄨˋ ㄘㄨㄛˋ ㄇㄥˇ ㄅㄧㄠˇ ㄌㄧㄢˋ ㄍㄨㄛ ㄉㄨˋ ㄜˋ ㄧㄤˊ ㄉㄨㄢˋ ㄑㄧㄝˋ ㄑㄧㄠ ㄏㄨㄢˊ ㄐㄧㄢˋ ㄓㄨㄥ ㄇㄟˇ ㄅㄤˋ ㄖㄨㄥˊ ㄙㄨㄛˇ ㄑㄧㄤ ㄌㄧˋ ㄔㄨㄟˊ ㄨ ㄎㄞˇ ㄏㄠˋ ㄓㄣˋ ㄧˋ ㄋㄧㄝˋ ㄗㄨˊ ㄌㄧㄢˋ ㄌㄨㄛˊ ㄉㄧˊ ㄠˊ ㄎㄥ ㄑㄧㄤ ㄊㄤ ㄇㄢˋ ㄔㄢˇ ㄐㄧㄥˋ ㄅㄧㄠ ㄌㄡˋ ㄗㄢˋ ㄒㄧㄡˋ ㄋㄠˊ ㄓㄨㄥ ㄐㄩㄢ ㄌㄧㄢˊ ㄓㄨㄛˊ ㄌㄟˊ ㄊㄧㄝˇ ㄉㄨㄛˊ ㄉㄤ ㄓㄨˋ ㄐㄧㄢˋ ㄐㄧㄢˋ ㄕㄨㄛˋ ㄅㄧㄠ ㄅㄠˋ ㄌㄨˊ ㄧㄠˋ ㄒㄧㄤ ㄋㄧㄝˋ ㄌㄨㄛˊ ㄗㄨㄢ ㄌㄨㄢˊ ㄗㄠˊ ㄔㄤˊ ㄇㄣˊ ㄕㄨㄢ ㄕㄢˇ ㄅㄧˋ ㄎㄞ ㄏㄨㄥˊ ㄖㄨㄣˋ ㄒㄧㄢˊ ㄒㄧㄢˊ ㄐㄧㄢ ㄇㄧㄣˇ ㄓㄚˊ ㄞˋ ㄍㄜˊ ㄍㄜˊ ㄈㄚˊ ㄍㄨㄟ ㄇㄧㄣˇ ㄌㄩˊ ㄩㄝˋ ㄧㄢˊ ㄅㄢˇ ㄨㄟˊ ㄎㄨㄛˋ ㄑㄩㄝˋ ㄌㄢˊ ㄊㄧㄢˊ ㄏㄜˊ ㄑㄩㄝˋ ㄔㄨㄤˇ ㄍㄨㄢ ㄔㄢˇ ㄆㄧˋ ㄈㄨˋ ㄑㄧㄢ ㄅㄢˇ ㄎㄥ ㄖㄨㄢˇ ㄐㄧㄥˇ ㄈㄤˊ ㄗㄨˇ ㄚ ㄊㄨㄛˊ ㄅㄟ ㄈㄨˋ ㄌㄡˋ ㄇㄛˋ ㄐㄧㄤˋ ㄒㄧㄢˋ ㄒㄧㄥˊ ㄅㄧˋ ㄕㄢˇ ㄕㄥ ㄉㄡˇ ㄩㄢˋ ㄓㄣˋ ㄔㄨˊ ㄆㄟˊ ㄗㄡ ㄧㄣ ㄔㄨㄟˊ ㄔㄣˊ ㄆㄧˊ ㄌㄧㄥˊ ㄊㄠˊ ㄒㄧㄢˋ ㄌㄨˋ ㄧㄤˊ ㄉㄧ ㄩˊ ㄌㄨㄥˊ ㄉㄨㄟˋ ㄙㄨㄟˊ ㄏㄨㄤˊ ㄐㄧㄝ ㄍㄜˊ ㄩㄣˇ ㄞˋ ㄒㄧˋ ㄐㄧˋ ㄓㄤˋ ㄙㄨㄟˋ ㄙㄨㄟˊ ㄒㄧㄢˇ ㄧㄣˇ ㄌㄨㄥˇ ㄌㄧˋ ㄓㄨㄟ ㄓ ㄑㄩㄝˋ ㄧㄢˋ ㄒㄩㄥˊ ㄧㄚˇ ㄐㄧˊ ㄍㄨˋ ㄓˋ ㄍㄡˋ ㄐㄩㄢˋ ㄘˊ ㄩㄥ ㄌㄨㄛˋ ㄉㄧㄠ ㄙㄨㄟ ㄕㄨㄤ ㄔㄨˊ ㄗㄚˊ ㄐㄧ ㄌㄧˊ ㄋㄢˊ ㄩˇ ㄩˊ ㄒㄩㄝˇ ㄨㄣˊ ㄩㄣˊ ㄌㄧㄥˊ ㄌㄟˊ ㄅㄠˊ ㄉㄧㄢˋ ㄒㄩ ㄒㄧㄠ ㄊㄧㄥˊ ㄓㄣˋ ㄇㄟˊ ㄏㄨㄛˋ ㄕㄚˋ ㄈㄟ ㄓㄢ ㄋㄧˊ ㄌㄧㄣˊ ㄕㄨㄤ ㄒㄧㄚˊ ㄌㄧㄡˋ ㄨˋ ㄧㄣˊ ㄒㄧㄢˋ ㄌㄨˋ ㄅㄚˋ ㄆㄧ ㄐㄧˋ ㄇㄞˊ ㄌㄧˋ ㄞˇ ㄌㄧㄥˊ ㄑㄧㄥ ㄐㄧㄥˋ ㄉㄧㄢˋ ㄐㄧㄥˋ ㄈㄟ ㄎㄠˋ ㄇㄧˊ ㄇㄧㄢˋ ㄊㄧㄢˇ ㄧㄝˋ ㄍㄜˊ ㄒㄩㄝ ㄅㄚˇ ㄉㄚˊ ㄧㄤ ㄒㄧㄝˊ ㄢ ㄍㄨㄥˇ ㄑㄧㄠˋ ㄐㄩ ㄖㄡˊ ㄑㄧㄡ ㄅㄧㄢ ㄐㄧㄤ ㄉㄚˊ ㄑㄧㄢ ㄐㄧㄢ ㄨㄟˊ ㄖㄣˋ ㄏㄢˊ ㄊㄠ ㄐㄧㄡˇ ㄧㄣ ㄕㄠˊ ㄏㄨㄤˊ ㄩㄣˋ ㄒㄧㄤˇ ㄧㄝˋ ㄉㄧㄥˇ ㄑㄧㄥˇ ㄒㄧㄤˋ ㄕㄨㄣˋ ㄒㄩ ㄒㄩ ㄙㄨㄥˋ ㄩˋ ㄨㄢˊ ㄅㄢ ㄉㄨㄣˋ ㄆㄛ ㄌㄧㄥˇ ㄏㄜˊ ㄒㄧㄝˊ ㄧˊ ㄈㄨˇ ㄊㄡˊ ㄐㄧㄚˊ ㄏㄢˋ ㄐㄧㄥˇ ㄊㄨㄟˊ ㄆㄧㄣˊ ㄎㄜ ㄊㄧˊ ㄜˊ ㄜˋ ㄧㄢˊ ㄓㄨㄢ ㄩㄢˋ ㄉㄧㄢ ㄌㄟˋ ㄏㄠˋ ㄍㄨˋ ㄔㄢˋ ㄒㄧㄢˇ ㄆㄧㄣˊ ㄌㄨˊ ㄈㄥ ㄙㄚˋ ㄊㄞˊ ㄍㄨㄚ ㄐㄩˋ ㄧㄤˊ ㄙㄡ ㄆㄧㄠ ㄈㄟ ㄕˊ ㄐㄧ ㄙㄨㄣ ㄊㄨㄣˊ ㄖㄣˋ ㄔˋ ㄈㄢˋ ㄧㄣˇ ㄧˊ ㄙˋ ㄅㄠˇ ㄕˋ ㄐㄧㄠˇ ㄅㄧㄥˇ ㄒㄧㄤˇ ㄧㄤˇ ㄦˇ ㄘㄢ ㄋㄟˇ ㄜˋ ㄩˊ ㄧㄠˊ ㄏㄨㄣˊ ㄐㄧㄢˋ ㄒㄧㄢˋ ㄍㄨㄢˇ ㄊㄧㄝˋ ㄨㄟˋ ㄎㄨㄟˋ ㄌㄧㄡˋ ㄙㄡ ㄇㄢˊ ㄐㄧㄣˇ ㄐㄧ ㄖㄠˊ ㄊㄠ ㄒㄧㄤˇ ㄧㄢˋ ㄔㄢˊ ㄕㄡˇ ㄒㄧㄤ ㄈㄨˋ ㄒㄧㄣ ㄇㄚˇ ㄩˋ ㄈㄥˊ ㄊㄨㄛˊ ㄔˊ ㄒㄩㄣˊ ㄅㄛˊ ㄓㄨˋ ㄋㄨˊ ㄐㄩ ㄐㄧㄚˋ ㄈㄨˋ ㄕˇ ㄊㄨㄛˊ ㄙˋ ㄆㄧㄢˊ ㄏㄞˋ ㄌㄨㄛˋ ㄐㄩㄣˋ ㄔㄥˇ ㄑㄧˊ ㄨˋ ㄆㄧㄢˋ ㄑㄧㄢ ㄊㄥˊ ㄩㄢˊ ㄙㄠ ㄌㄨㄛˊ ㄇㄛˋ ㄅㄧㄠ ㄑㄩ ㄒㄧㄠ ㄐㄧㄠ ㄧㄢˋ ㄐㄧㄥ ㄧˋ ㄓㄡˋ ㄌㄩˊ ㄐㄧˋ ㄌㄧˊ ㄍㄨˇ ㄤ ㄊㄡˊ ㄎㄨ ㄏㄞˊ ㄍㄜˊ ㄎㄜ ㄌㄡˊ ㄉㄨˊ ㄗㄤ ㄙㄨㄟˇ ㄊㄧˇ ㄎㄨㄢ ㄍㄠ ㄎㄨㄣ ㄇㄠˊ ㄗ ㄈㄚˋ ㄖㄢˊ ㄐㄧˋ ㄗㄨㄥ ㄙㄨㄥ ㄏㄨˊ ㄒㄩ ㄅㄧㄣˋ ㄌㄧㄝˋ ㄉㄡˋ ㄋㄠˋ ㄏㄨㄥˋ ㄩˋ ㄍㄜˊ ㄍㄨㄟˇ ㄎㄨㄟˊ ㄏㄨㄣˊ ㄆㄛˋ ㄇㄟˋ ㄨㄤˇ ㄌㄧㄤˇ ㄨㄟˋ ㄔ ㄇㄛˊ ㄧㄢˇ ㄩˊ ㄌㄨˇ ㄧㄡˊ ㄅㄠˋ ㄨㄟˇ ㄐㄧㄠ ㄍㄨㄟ ㄒㄧㄢ ㄍㄨㄣˇ ㄊㄧㄠˊ ㄌㄧˇ ㄕㄚ ㄓㄥ ㄉㄧㄠ ㄔㄤ ㄐㄧㄥ ㄗㄟˊ ㄑㄧㄡ ㄙㄞ ㄍㄨㄢ ㄑㄧˊ ㄌㄧㄢˊ ㄇㄢˊ ㄅㄧㄠˋ ㄅㄧㄝ ㄕㄢˋ ㄍㄨㄟˋ ㄌㄧㄣˊ ㄏㄡˋ ㄜˋ ㄌㄨˊ ㄋㄧㄠˇ ㄐㄧㄡ ㄈㄥˋ ㄇㄧㄥˊ ㄩㄢ ㄐㄩㄝˊ ㄓㄣˋ ㄧㄚ ㄌㄧㄥˊ ㄊㄨㄛˊ ㄩㄢ ㄍㄨ ㄧㄤ ㄧㄚ ㄏㄨㄥˊ ㄍㄜ ㄐㄩㄢ ㄜˊ ㄏㄨˊ ㄨˇ ㄢ ㄆㄥˊ ㄑㄩㄝˋ ㄔㄨㄣˊ ㄧㄥ ㄏㄜˋ ㄖㄨㄛˋ ㄧㄠˋ ㄓㄜˋ ㄡ ㄙ ㄐㄧㄡˋ ㄧㄥ ㄌㄨˋ ㄧㄥ ㄍㄨㄢˋ ㄌㄨㄢˊ ㄌㄨˇ ㄒㄧㄢˊ ㄐㄧㄢˇ ㄧㄢˊ ㄌㄨˋ ㄐㄧˇ ㄇㄧˊ ㄑㄧˊ ㄌㄨˋ ㄌㄧˋ ㄕㄜˋ ㄌㄧㄣˊ ㄇㄞˋ ㄈㄨ ㄑㄩ ㄇㄧㄢˋ ㄇㄚˊ ㄇㄜ˙ ㄏㄨㄟ ㄏㄨㄤˊ ㄏㄨㄥˊ ㄕㄨˇ ㄌㄧˊ ㄋㄧㄢˊ ㄏㄟ ㄑㄧㄢˊ ㄇㄛˋ ㄉㄞˋ ㄔㄨˋ ㄧㄡˇ ㄉㄧㄢˇ ㄒㄧㄚˊ ㄉㄤˇ ㄢˋ ㄇㄟˊ ㄉㄨˊ ㄠˊ ㄉㄧㄥˇ ㄍㄨˇ ㄉㄨㄥ ㄆㄧˊ ㄕㄨˇ ㄧㄡˋ ㄨˊ ㄧㄢˇ ㄅㄧˊ ㄏㄢ ㄑㄧˊ ㄓㄞ ㄔˇ ㄔㄞˊ ㄐㄩˇ ㄌㄧㄥˊ ㄔㄨ ㄎㄣˇ ㄋㄧㄝˋ ㄔㄨㄛˋ ㄩˇ ㄑㄩˇ ㄨㄛˋ ㄌㄨㄥˊ ㄆㄤˊ ㄍㄨㄥ ㄍㄨㄟ","p":[["三角形","ㄙㄢ ㄐㄧㄠˇ ㄒㄧㄥˊ"],["差不多","ㄔㄚ ㄅㄨˋ ㄉㄨㄛ"],["為什麼","ㄨㄟˋ ㄕㄣˊ ㄇㄜ˙"],["百分比","ㄅㄞˇ ㄈㄣ ㄅㄧˇ"],["長方形","ㄔㄤˊ ㄈㄤ ㄒㄧㄥˊ"],["長頸鹿","ㄔㄤˊ ㄐㄧㄥˇ ㄌㄨˋ"],["一個","ㄧˊ ㄍㄜˋ"],["一定","ㄧˊ ㄉㄧㄥˋ"],["一樣","ㄧˊ ㄧㄤˋ"],["一直","ㄧˋ ㄓˊ"],["一般","ㄧˋ ㄅㄢ"],["一起","ㄧˋ ㄑㄧˇ"],["一點","ㄧˋ ㄉㄧㄢˇ"],["三角","ㄙㄢ ㄐㄧㄠˇ"],["上學","ㄕㄤˋ ㄒㄩㄝˊ"],["不一","ㄅㄨˋ ㄧˊ"],["不得","ㄅㄨˋ ㄉㄜˊ"],["不是","ㄅㄨˊ ㄕˋ"],["不會","ㄅㄨˊ ㄏㄨㄟˋ"],["不要","ㄅㄨˊ ㄧㄠˋ"],["中間","ㄓㄨㄥ ㄐㄧㄢ"],["主角","ㄓㄨˇ ㄐㄩㄝˊ"],["乘以","ㄔㄥˊ ㄧˇ"],["乘法","ㄔㄥˊ ㄈㄚˇ"],["了解","ㄌㄧㄠˇ ㄐㄧㄝˇ"],["人為","ㄖㄣˊ ㄨㄟˋ"],["什麼","ㄕㄣˊ ㄇㄜ˙"],["今朝","ㄐㄧㄣ ㄓㄠ"],["仔細","ㄗˇ ㄒㄧˋ"],["作品","ㄗㄨㄛˋ ㄆㄧㄣˇ"],["作文","ㄗㄨㄛˋ ㄨㄣˊ"],["作業","ㄗㄨㄛˋ ㄧㄝˋ"],["作者","ㄗㄨㄛˋ ㄓㄜˇ"],["便宜","ㄆㄧㄢˊ ㄧˊ"],["便當","ㄅㄧㄢˋ ㄉㄤ"],["倔強","ㄐㄩㄝˊ ㄐㄧㄤˋ"],["假日","ㄐㄧㄚˋ ㄖˋ"],["假的","ㄐㄧㄚˇ ㄉㄜ˙"],["做作","ㄗㄨㄛˋ ㄗㄨㄛˋ"],["傳記","ㄓㄨㄢˋ ㄐㄧˋ"],["傳說","ㄔㄨㄢˊ ㄕㄨㄛ"],["償還","ㄔㄤˊ ㄏㄨㄢˊ"],["兒童","ㄦˊ ㄊㄨㄥˊ"],["兔子","ㄊㄨˋ ㄗ˙"],["兩個","ㄌㄧㄤˇ ㄍㄜˋ"],["公分","ㄍㄨㄥ ㄈㄣ"],["公轉","ㄍㄨㄥ ㄓㄨㄢˋ"],["出差","ㄔㄨ ㄔㄞ"],["出發","ㄔㄨ ㄈㄚ"],["出處","ㄔㄨ ㄔㄨˋ"],["分數","ㄈㄣ ㄕㄨˋ"],["分開","ㄈㄣ ㄎㄞ"],["到處","ㄉㄠˋ ㄔㄨˋ"],["力量","ㄌㄧˋ ㄌㄧㄤˋ"],["加法","ㄐㄧㄚ ㄈㄚˇ"],["助長","ㄓㄨˋ ㄓㄤˇ"],["勉強","ㄇㄧㄢˇ ㄑㄧㄤˇ"],["午覺","ㄨˇ ㄐㄧㄠˋ"],["參加","ㄘㄢ ㄐㄧㄚ"],["參差","ㄘㄣ ㄘ"],["反義","ㄈㄢˇ ㄧˋ"],["句子","ㄐㄩˋ ㄗ˙"],["吃得","ㄔ ㄉㄜ˙"],["含量","ㄏㄢˊ ㄌㄧㄤˋ"],["命中","ㄇㄧㄥˋ ㄓㄨㄥˋ"],["和好","ㄏㄜˊ ㄏㄠˇ"],["和平","ㄏㄜˊ ㄆㄧㄥˊ"],["哎呀","ㄞ ㄧㄚ"],["哪個","ㄋㄚˇ ㄍㄜˋ"],["唱得","ㄔㄤˋ ㄉㄜ˙"],["商量","ㄕㄤ ㄌㄧㄤˊ"],["喔喔","ㄨㄛ ㄨㄛ"],["喧嘩","ㄒㄩㄢ ㄏㄨㄚˊ"],["因為","ㄧㄣ ㄨㄟˋ"],["地殼","ㄉㄧˋ ㄑㄧㄠˋ"],["垃圾","ㄌㄜˋ ㄙㄜˋ"],["堵塞","ㄉㄨˇ ㄙㄜˋ"],["塞車","ㄙㄜˋ ㄔㄜ"],["填空","ㄊㄧㄢˊ ㄎㄨㄥˋ"],["增長","ㄗㄥ ㄓㄤˇ"],["多少","ㄉㄨㄛ ㄕㄠˇ"],["大將","ㄉㄚˋ ㄐㄧㄤˋ"],["大都","ㄉㄚˋ ㄉㄡ"],["天空","ㄊㄧㄢ ㄎㄨㄥ"],["好像","ㄏㄠˇ ㄒㄧㄤˋ"],["好吃","ㄏㄠˇ ㄔ"],["好奇","ㄏㄠˋ ㄑㄧˊ"],["好學","ㄏㄠˋ ㄒㄩㄝˊ"],["好玩","ㄏㄠˇ ㄨㄢˊ"],["好的","ㄏㄠˇ ㄉㄜ˙"],["好看","ㄏㄠˇ ㄎㄢˋ"],["好處","ㄏㄠˇ ㄔㄨˋ"],["好長","ㄏㄠˇ ㄔㄤˊ"],["孩子","ㄏㄞˊ ㄗ˙"],["學校","ㄒㄩㄝˊ ㄒㄧㄠˋ"],["學生","ㄒㄩㄝˊ ㄕㄥ"],["學習","ㄒㄩㄝˊ ㄒㄧˊ"],["家長","ㄐㄧㄚ ㄓㄤˇ"],["容量","ㄖㄨㄥˊ ㄌㄧㄤˋ"],["寒假","ㄏㄢˊ ㄐㄧㄚˋ"],["寫得","ㄒㄧㄝˇ ㄉㄜ˙"],["將來","ㄐㄧㄤ ㄌㄞˊ"],["將軍","ㄐㄧㄤ ㄐㄩㄣ"],["對應","ㄉㄨㄟˋ ㄧㄥˋ"],["少數","ㄕㄠˇ ㄕㄨˋ"],["工作","ㄍㄨㄥ ㄗㄨㄛˋ"],["差別","ㄔㄚ ㄅㄧㄝˊ"],["市長","ㄕˋ ㄓㄤˇ"],["干擾","ㄍㄢ ㄖㄠˇ"],["幾個","ㄐㄧˇ ㄍㄜˋ"],["弟弟","ㄉㄧˋ ㄉㄧ˙"],["強大","ㄑㄧㄤˊ ㄉㄚˋ"],["影子","ㄧㄥˇ ㄗ˙"],["很長","ㄏㄣˇ ㄔㄤˊ"],["得到","ㄉㄜˊ ㄉㄠˋ"],["快樂","ㄎㄨㄞˋ ㄌㄜˋ"],["急切","ㄐㄧˊ ㄑㄧㄝˋ"],["意思","ㄧˋ ㄙ˙"],["愛好","ㄞˋ ㄏㄠˋ"],["感覺","ㄍㄢˇ ㄐㄩㄝˊ"],["懂得","ㄉㄨㄥˇ ㄉㄜ˙"],["應用","ㄧㄥˋ ㄩㄥˋ"],["應當","ㄧㄥ ㄉㄤ"],["應該","ㄧㄥ ㄍㄞ"],["成分","ㄔㄥˊ ㄈㄣˋ"],["成長","ㄔㄥˊ ㄓㄤˇ"],["房子","ㄈㄤˊ ㄗ˙"],["房間","ㄈㄤˊ ㄐㄧㄢ"],["拿著","ㄋㄚˊ ㄓㄜ˙"],["指頭","ㄓˇ ㄊㄡ˙"],["挑戰","ㄊㄧㄠˇ ㄓㄢˋ"],["接著","ㄐㄧㄝ ㄓㄜ˙"],["提早","ㄊㄧˊ ㄗㄠˇ"],["提示","ㄊㄧˊ ㄕˋ"],["提醒","ㄊㄧˊ ㄒㄧㄥˇ"],["提高","ㄊㄧˊ ㄍㄠ"],["放假","ㄈㄤˋ ㄐㄧㄚˋ"],["放學","ㄈㄤˋ ㄒㄩㄝˊ"],["教室","ㄐㄧㄠˋ ㄕˋ"],["教書","ㄐㄧㄠ ㄕㄨ"],["教育","ㄐㄧㄠˋ ㄩˋ"],["數字","ㄕㄨˋ ㄗˋ"],["數學","ㄕㄨˋ ㄒㄩㄝˊ"],["數量","ㄕㄨˋ ㄌㄧㄤˋ"],["方便","ㄈㄤ ㄅㄧㄢˋ"],["旅行","ㄌㄩˇ ㄒㄧㄥˊ"],["旋轉","ㄒㄩㄢˊ ㄓㄨㄢˇ"],["時間","ㄕˊ ㄐㄧㄢ"],["暑假","ㄕㄨˇ ㄐㄧㄚˋ"],["暖和","ㄋㄨㄢˇ ㄏㄨㄛ˙"],["書包","ㄕㄨ ㄅㄠ"],["會長","ㄏㄨㄟˋ ㄓㄤˇ"],["有空","ㄧㄡˇ ㄎㄨㄥˋ"],["朋友","ㄆㄥˊ ㄧㄡˇ"],["朝代","ㄔㄠˊ ㄉㄞˋ"],["朝陽","ㄓㄠ ㄧㄤˊ"],["村長","ㄘㄨㄣ ㄓㄤˇ"],["杯子","ㄅㄟ ㄗ˙"],["枕頭","ㄓㄣˇ ㄊㄡ˙"],["校長","ㄒㄧㄠˋ ㄓㄤˇ"],["桌子","ㄓㄨㄛ ㄗ˙"],["梳子","ㄕㄨ ㄗ˙"],["樂器","ㄩㄝˋ ㄑㄧˋ"],["樂團","ㄩㄝˋ ㄊㄨㄢˊ"],["橘子","ㄐㄩˊ ㄗ˙"],["歸還","ㄍㄨㄟ ㄏㄨㄢˊ"],["水分","ㄕㄨㄟˇ ㄈㄣˋ"],["沙子","ㄕㄚ ㄗ˙"],["減法","ㄐㄧㄢˇ ㄈㄚˇ"],["測量","ㄘㄜˋ ㄌㄧㄤˊ"],["湯匙","ㄊㄤ ㄔˊ"],["溫和","ㄨㄣ ㄏㄜˊ"],["災難","ㄗㄞ ㄋㄢˋ"],["為了","ㄨㄟˋ ㄌㄜ˙"],["照相","ㄓㄠˋ ㄒㄧㄤˋ"],["猴子","ㄏㄡˊ ㄗ˙"],["玩得","ㄨㄢˊ ㄉㄜ˙"],["班長","ㄅㄢ ㄓㄤˇ"],["生長","ㄕㄥ ㄓㄤˇ"],["當然","ㄉㄤ ㄖㄢˊ"],["發現","ㄈㄚ ㄒㄧㄢˋ"],["發覺","ㄈㄚ ㄐㄩㄝˊ"],["百分","ㄅㄞˇ ㄈㄣ"],["的確","ㄉㄧˊ ㄑㄩㄝˋ"],["盡心","ㄐㄧㄣˋ ㄒㄧㄣ"],["盤子","ㄆㄢˊ ㄗ˙"],["目的","ㄇㄨˋ ㄉㄧˋ"],["直角","ㄓˊ ㄐㄧㄠˇ"],["相信","ㄒㄧㄤ ㄒㄧㄣˋ"],["相同","ㄒㄧㄤ ㄊㄨㄥˊ"],["相差","ㄒㄧㄤ ㄔㄚ"],["看看","ㄎㄢˋ ㄎㄢˋ"],["看著","ㄎㄢˋ ㄓㄜ˙"],["看見","ㄎㄢˋ ㄐㄧㄢˋ"],["睡著","ㄕㄨㄟˋ ㄓㄠˊ"],["睡覺","ㄕㄨㄟˋ ㄐㄧㄠˋ"],["知道","ㄓ ㄉㄠˋ"],["石頭","ㄕˊ ㄊㄡ˙"],["種子","ㄓㄨㄥˇ ㄗˇ"],["種樹","ㄓㄨㄥˋ ㄕㄨˋ"],["種花","ㄓㄨㄥˋ ㄏㄨㄚ"],["種類","ㄓㄨㄥˇ ㄌㄟˋ"],["空格","ㄎㄨㄥˋ ㄍㄜˊ"],["空氣","ㄎㄨㄥ ㄑㄧˋ"],["空間","ㄎㄨㄥ ㄐㄧㄢ"],["穿著","ㄔㄨㄢ ㄓㄨㄛˊ"],["笑得","ㄒㄧㄠˋ ㄉㄜ˙"],["答應","ㄉㄚ ㄧㄥ"],["筷子","ㄎㄨㄞˋ ㄗ˙"],["算數","ㄙㄨㄢˋ ㄕㄨˋ"],["累計","ㄌㄟˇ ㄐㄧˋ"],["聲調","ㄕㄥ ㄉㄧㄠˋ"],["肚子","ㄉㄨˋ ㄗ˙"],["背包","ㄅㄟˋ ㄅㄠ"],["背誦","ㄅㄟˋ ㄙㄨㄥˋ"],["能量","ㄋㄥˊ ㄌㄧㄤˋ"],["自傳","ㄗˋ ㄓㄨㄢˋ"],["自轉","ㄗˋ ㄓㄨㄢˋ"],["興盛","ㄒㄧㄥ ㄕㄥˋ"],["興趣","ㄒㄧㄥˋ ㄑㄩˋ"],["船長","ㄔㄨㄢˊ ㄓㄤˇ"],["苦難","ㄎㄨˇ ㄋㄢˋ"],["茄子","ㄑㄧㄝˊ ㄗ˙"],["著急","ㄓㄠ ㄐㄧˊ"],["蘿蔔","ㄌㄨㄛˊ ㄅㄛ˙"],["處理","ㄔㄨˇ ㄌㄧˇ"],["血量","ㄒㄩㄝˋ ㄌㄧㄤˋ"],["行動","ㄒㄧㄥˊ ㄉㄨㄥˋ"],["行星","ㄒㄧㄥˊ ㄒㄧㄥ"],["行李","ㄒㄧㄥˊ ㄌㄧˇ"],["行業","ㄏㄤˊ ㄧㄝˋ"],["行走","ㄒㄧㄥˊ ㄗㄡˇ"],["衡量","ㄏㄥˊ ㄌㄧㄤˊ"],["要塞","ㄧㄠ ㄙㄞˋ"],["覺得","ㄐㄩㄝˊ ㄉㄜ˙"],["角度","ㄐㄧㄠˇ ㄉㄨˋ"],["角色","ㄐㄩㄝˊ ㄙㄜˋ"],["解決","ㄐㄧㄝˇ ㄐㄩㄝˊ"],["說得","ㄕㄨㄛ ㄉㄜ˙"],["說話","ㄕㄨㄛ ㄏㄨㄚˋ"],["調查","ㄉㄧㄠˋ ㄔㄚˊ"],["調皮","ㄊㄧㄠˊ ㄆㄧˊ"],["請假","ㄑㄧㄥˇ ㄐㄧㄚˋ"],["請教","ㄑㄧㄥˇ ㄐㄧㄠˋ"],["走得","ㄗㄡˇ ㄉㄜ˙"],["走著","ㄗㄡˇ ㄓㄜ˙"],["跑得","ㄆㄠˇ ㄉㄜ˙"],["轉動","ㄓㄨㄢˋ ㄉㄨㄥˋ"],["轉彎","ㄓㄨㄢˇ ㄨㄢ"],["近義","ㄐㄧㄣˋ ㄧˋ"],["迫切","ㄆㄛˋ ㄑㄧㄝˋ"],["這個","ㄓㄜˋ ㄍㄜˋ"],["過分","ㄍㄨㄛˋ ㄈㄣˋ"],["還是","ㄏㄞˊ ㄕˋ"],["還有","ㄏㄞˊ ㄧㄡˇ"],["還給","ㄏㄨㄢˊ ㄍㄟˇ"],["邊塞","ㄅㄧㄢ ㄙㄞˋ"],["部分","ㄅㄨˋ ㄈㄣˋ"],["都市","ㄉㄨ ㄕˋ"],["都是","ㄉㄡ ㄕˋ"],["重新","ㄔㄨㄥˊ ㄒㄧㄣ"],["重複","ㄔㄨㄥˊ ㄈㄨˋ"],["重要","ㄓㄨㄥˋ ㄧㄠˋ"],["重量","ㄓㄨㄥˋ ㄌㄧㄤˋ"],["量詞","ㄌㄧㄤˋ ㄘˊ"],["銀行","ㄧㄣˊ ㄏㄤˊ"],["鑽石","ㄗㄨㄢˋ ㄕˊ"],["長久","ㄔㄤˊ ㄐㄧㄡˇ"],["長城","ㄔㄤˊ ㄔㄥˊ"],["長大","ㄓㄤˇ ㄉㄚˋ"],["長度","ㄔㄤˊ ㄉㄨˋ"],["長得","ㄓㄤˇ ㄉㄜ˙"],["長江","ㄔㄤˊ ㄐㄧㄤ"],["長相","ㄓㄤˇ ㄒㄧㄤˋ"],["長短","ㄔㄤˊ ㄉㄨㄢˇ"],["長處","ㄔㄤˊ ㄔㄨˋ"],["長輩","ㄓㄤˇ ㄅㄟˋ"],["長進","ㄓㄤˇ ㄐㄧㄣˋ"],["長高","ㄓㄤˇ ㄍㄠ"],["間接","ㄐㄧㄢˋ ㄐㄧㄝ"],["關卡","ㄍㄨㄢ ㄑㄧㄚˇ"],["院長","ㄩㄢˋ ㄓㄤˇ"],["除法","ㄔㄨˊ ㄈㄚˇ"],["隊長","ㄉㄨㄟˋ ㄓㄤˇ"],["雙重","ㄕㄨㄤ ㄔㄨㄥˊ"],["難過","ㄋㄢˊ ㄍㄨㄛˋ"],["鞋子","ㄒㄧㄝˊ ㄗ˙"],["音樂","ㄧㄣ ㄩㄝˋ"],["音調","ㄧㄣ ㄉㄧㄠˋ"],["頭髮","ㄊㄡˊ ㄈㄚˇ"],["飛得","ㄈㄟ ㄉㄜ˙"],["養分","ㄧㄤˇ ㄈㄣˋ"],["首相","ㄕㄡˇ ㄒㄧㄤˋ"],["首都","ㄕㄡˇ ㄉㄨ"],["骰子","ㄊㄡˊ ㄗ˙"],["體重","ㄊㄧˇ ㄓㄨㄥˋ"],["高興","ㄍㄠ ㄒㄧㄥˋ"],["高處","ㄍㄠ ㄔㄨˋ"],["高麗","ㄍㄠ ㄌㄧˊ"],["鴨子","ㄧㄚ ㄗ˙"],["鼻子","ㄅㄧˊ ㄗ˙"],["個","ㄍㄜˋ"],["覺","ㄐㄩㄝˊ"]]};
 const ZY = {
-  mode: 'auto',           // auto 依年級（幼兒園～小二自動開）/ std 標準 / big 放大 / off 關
+  mode: 'std',            // 預設所有年級都標注音；auto 依年級（幼兒園～小二自動開）/ std 標準 / big 放大 / off 關
   _eff: null,
   ready: false, map: null, phr: null, obs: null,
   SKIP: new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'CANVAS', 'NOSCRIPT', 'TITLE', 'svg', 'SVG', 'IMG']),
@@ -4690,7 +5743,7 @@ const ZY = {
 };
 window.ZY = ZY;
 
-window.addEventListener('DOMContentLoaded', () => { QBank.load(); Game.init(); ZY.init(); Assets.initUI(); Voice.init(); });
+window.addEventListener('DOMContentLoaded', () => { QBank.load(); Game.init(); try { Dedup.prune(); } catch (e) {} ZY.init(); Assets.initUI(); Voice.init(); });
 window.Game = Game;
 </script>
 </body>
